@@ -257,7 +257,24 @@ async function handleSubscription(request, kv, url, env) {
 
   // 获取已启用的规则列表
   const rulesets = getRulesetList();
-  const enabledRules = rulesets.filter(r => enabled.includes(r.id) || r.builtin);
+  
+  // 兼容旧数据：如果新键为空，尝试从旧键迁移
+  let actualSubs = subs;
+  let actualEnabled = enabled;
+  const oldSubs = await kvGet(kv, 'subscriptions');
+  const oldEnabled = await kvGet(kv, 'rules:enabled');
+  if ((!actualSubs || actualSubs.length === 0) && oldSubs && oldSubs.length > 0) {
+    await kvPut(kv, `subscriptions:${targetUser}`, oldSubs);
+    await kvPut(kv, 'subscriptions', null);
+    actualSubs = oldSubs;
+  }
+  if ((!actualEnabled || actualEnabled.length === 0) && oldEnabled && oldEnabled.length > 0) {
+    await kvPut(kv, `rules:enabled:${targetUser}`, oldEnabled);
+    await kvPut(kv, 'rules:enabled', null);
+    actualEnabled = oldEnabled;
+  }
+  
+  const enabledRules = rulesets.filter(r => actualEnabled.includes(r.id) || r.builtin);
   
   // 兼容不在预设列表中的规则（从额外规则集中查找或直接使用）
   const extraRules = [];
@@ -274,7 +291,7 @@ async function handleSubscription(request, kv, url, env) {
 
   // 抓取并解析节点
   const allNodes = [];
-  for (const item of subs) {
+  for (const item of actualSubs) {
     const url = typeof item === 'string' ? item : item.url;
     const nodes = await fetchNodes(url);
     allNodes.push(...nodes);
