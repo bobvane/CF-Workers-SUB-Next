@@ -56,7 +56,7 @@
 
 1. Fork 本仓库到你的 GitHub 账号
 2. 进入你的仓库 → **Settings → Secrets and variables → Actions**
-3. 点击 **New repository secret**
+3. 点击 **New repository secret**（选择 Repository secrets，不是 Environment secrets）
 4. 添加 Secret：
 
 | 名称 | 值 |
