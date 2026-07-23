@@ -310,7 +310,8 @@ const DEFAULT_HTML = `<!DOCTYPE html>
       <div class="card">
         <div class="card-header"><h2>🔗 订阅链接</h2><span class="badge">3 个订阅</span></div>
         <div class="sub-input">
-          <input type="text" id="subInput" placeholder="输入节点链接或订阅 URL，每行一个…" onkeydown="if(event.key==='Enter')addSubscription()">
+          <input type="text" id="subRemark" placeholder="备注（可选）" style="width:140px;flex:none;">
+          <input type="text" id="subInput" placeholder="输入节点链接或订阅 URL…" onkeydown="if(event.key==='Enter')addSubscription()">
           <button onclick="addSubscription()">添加</button>
         </div>
         <div class="sub-list" id="subList">
@@ -740,52 +741,58 @@ const DEFAULT_HTML = `<!DOCTYPE html>
   }
 
   function renderSubscriptions(subs) {
-    const listEl = document.getElementById('subList');
-    const badge = document.querySelector('#pageSubscribe .badge');
-    if (badge) badge.textContent = subs.length + ' 个订阅';
+      const listEl = document.getElementById('subList');
+      const badge = document.querySelector('#pageSubscribe .badge');
+      if (badge) badge.textContent = subs.length + ' 个订阅';
 
-    if (!subs || subs.length === 0) {
-      listEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);">暂无订阅链接，添加一个试试</div>';
-      return;
+      if (!subs || subs.length === 0) {
+        listEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);">暂无订阅链接，添加一个试试</div>';
+        return;
+      }
+
+      listEl.innerHTML = subs.map(item => {
+        const url = typeof item === 'string' ? item : item.url;
+        const remark = typeof item === 'string' ? '' : (item.remark || '');
+        const displayName = remark ? '<strong>' + escapeHtml(remark) + '</strong>：' : '';
+        const isOk = url.startsWith('http://') || url.startsWith('https://') || url.includes('://');
+        return \`<div class="sub-item">
+          <span class="status \${isOk ? 'ok' : 'err'}">\${isOk ? '✓' : '✗'}</span>
+          <span class="url" title="\${escapeHtml(url)}">\${displayName}<span style="color:var(--text3)">\${escapeHtml(url)}</span></span>
+          <span class="del" onclick="deleteSubscription('\${escapeHtml(url)}')">✕</span>
+        </div>\`;
+      }).join('');
     }
 
-    listEl.innerHTML = subs.map(url => {
-      const isOk = url.startsWith('http://') || url.startsWith('https://') || url.includes('://');
-      return \`<div class="sub-item">
-        <span class="status \${isOk ? 'ok' : 'err'}">\${isOk ? '✓' : '✗'}</span>
-        <span class="url" title="\${escapeHtml(url)}">\${escapeHtml(url)}</span>
-        <span class="del" onclick="deleteSubscription('\${escapeHtml(url)}')">✕</span>
-      </div>\`;
-    }).join('');
-  }
-
-  async function addSubscription() {
-    const input = document.getElementById('subInput');
-    const url = input.value.trim();
-    if (!url) return;
-    input.disabled = true;
-    try {
-      const data = await api('/subscriptions', { method: 'POST', body: JSON.stringify({ url }) });
-      const subs = Array.isArray(data) ? data : (data.data || []);
-      renderSubscriptions(subs);
-      input.value = '';
-    } catch (e) {
-      alert('添加失败: ' + e.message);
+    async function addSubscription() {
+      const input = document.getElementById('subInput');
+      const remarkInput = document.getElementById('subRemark');
+      const url = input.value.trim();
+      const remark = remarkInput.value.trim();
+      if (!url) return;
+      input.disabled = true;
+      try {
+        const data = await api('/subscriptions', { method: 'POST', body: JSON.stringify({ url, remark }) });
+        const subs = Array.isArray(data) ? data : (data.data || []);
+        renderSubscriptions(subs);
+        input.value = '';
+        remarkInput.value = '';
+      } catch (e) {
+        alert('添加失败: ' + e.message);
+      }
+      input.disabled = false;
+      input.focus();
     }
-    input.disabled = false;
-    input.focus();
-  }
 
-  async function deleteSubscription(url) {
-    if (!confirm('确认删除此订阅链接？')) return;
-    try {
-      const data = await api('/subscriptions', { method: 'DELETE', body: JSON.stringify({ url }) });
-      const subs = Array.isArray(data) ? data : (data.data || []);
-      renderSubscriptions(subs);
-    } catch (e) {
-      alert('删除失败: ' + e.message);
+    async function deleteSubscription(url) {
+      if (!confirm('确认删除此订阅链接？')) return;
+      try {
+        const data = await api('/subscriptions', { method: 'DELETE', body: JSON.stringify({ url }) });
+        const subs = Array.isArray(data) ? data : (data.data || []);
+        renderSubscriptions(subs);
+      } catch (e) {
+        alert('删除失败: ' + e.message);
+      }
     }
-  }
 
   function escapeHtml(str) {
     return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');

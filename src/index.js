@@ -111,7 +111,8 @@ async function handleApi(request, path, method, kv, url, env) {
     const body = await request.json();
     const current = (await kvGet(kv, 'subscriptions')) || [];
     if (body.url) {
-      current.push(body.url);
+      // 存储为对象 {url, remark}，兼容旧格式纯字符串
+      current.push({ url: body.url, remark: body.remark || '' });
       await kvPut(kv, 'subscriptions', current);
     }
     return jsonOk(current);
@@ -120,7 +121,11 @@ async function handleApi(request, path, method, kv, url, env) {
   if (path === '/api/subscriptions' && method === 'DELETE') {
     const body = await request.json();
     const current = (await kvGet(kv, 'subscriptions')) || [];
-    const filtered = current.filter(u => u !== body.url);
+    // 兼容新旧格式：纯字符串或 {url, remark}
+    const filtered = current.filter(u => {
+      const url = typeof u === 'string' ? u : u.url;
+      return url !== body.url;
+    });
     await kvPut(kv, 'subscriptions', filtered);
     return jsonOk(filtered);
   }
@@ -168,7 +173,8 @@ async function handleApi(request, path, method, kv, url, env) {
   if (path === '/api/nodes/list' && method === 'GET') {
     const subs = (await kvGet(kv, 'subscriptions')) || [];
     const allNodes = [];
-    for (const url of subs) {
+    for (const item of subs) {
+      const url = typeof item === 'string' ? item : item.url;
       const nodes = await fetchNodes(url);
       allNodes.push(...nodes);
     }
@@ -227,7 +233,8 @@ async function handleSubscription(request, kv, url, env) {
 
   // 抓取并解析节点
   const allNodes = [];
-  for (const url of subs) {
+  for (const item of subs) {
+    const url = typeof item === 'string' ? item : item.url;
     const nodes = await fetchNodes(url);
     allNodes.push(...nodes);
   }
