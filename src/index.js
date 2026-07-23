@@ -6,6 +6,9 @@
 import { initAdmin, login, logout, validateSession, changePassword } from './auth.js';
 import { kvGet, kvPut, kvDelete } from './kv.js';
 import { jsonOk, jsonError, setCookieHeader, clearCookieHeader } from './utils.js';
+import { fetchNodes, deduplicateNodes, parseNode } from './parser.js';
+import { generateOutput } from './formatter.js';
+import { fullHealthCheck } from './health.js';
 import DEFAULT_HTML from './html.js';
 
 // ── 配置 ──
@@ -161,6 +164,37 @@ async function handleApi(request, path, method, kv, url, env) {
     return jsonOk({ saved: true });
   }
 
+  // ── 节点管理 ──
+  if (path === '/api/nodes/list' && method === 'GET') {
+    const subs = (await kvGet(kv, 'subscriptions')) || [];
+    const allNodes = [];
+    for (const url of subs) {
+      const nodes = await fetchNodes(url);
+      allNodes.push(...nodes);
+    }
+    const unique = deduplicateNodes(allNodes);
+    return jsonOk({ total: unique.length, nodes: unique });
+  }
+
+  if (path === '/api/nodes/health-check' && method === 'POST' && isAdmin) {
+    const subs = (await kvGet(kv, 'subscriptions')) || [];
+    const result = await fullHealthCheck(subs);
+    // 缓存检测结果（保留最近一次）
+    await kvPut(kv, 'health_check_result', {
+      time: new Date().toISOString(),
+      total: result.all.length,
+      valid: result.valid.length,
+      invalid: result.invalid.length,
+      nodes: result.valid,
+    });
+    return jsonOk(result);
+  }
+
+  if (path === '/api/nodes/health-check' && method === 'GET') {
+    const cached = await kvGet(kv, 'health_check_result');
+    return jsonOk(cached || { time: null, total: 0, valid: 0, invalid: 0, nodes: [] });
+  }
+
   // ── 版本信息 ──
   if (path === '/api/version' && method === 'GET') {
     return jsonOk({ version: VERSION, repo: 'BobVane/CF-Workers-SUB-Next' });
@@ -180,21 +214,66 @@ async function handleSubscription(request, kv, url, env) {
     return jsonError('Token 无效', 403);
   }
 
-  const enabled = (await kvGet(kv, 'rules:enabled')) || [];
   const subs = (await kvGet(kv, 'subscriptions')) || [];
+  const enabled = (await kvGet(kv, 'rules:enabled')) || [];
+
+  // 获取已启用的规则列表
+  const rulesets = getRulesetList();
+  const enabledRules = rulesets.filter(r => enabled.includes(r.id) || r.builtin);
   const linkReplace = {
     from: await kvGet(kv, 'link_replace:from') || '',
     to: await kvGet(kv, 'link_replace:to') || ''
   };
 
-  const yaml = await generateClashConfig(enabled, subs, linkReplace, { includeNodes: true });
+  // 抓取并解析节点
+  const allNodes = [];
+  for (const url of subs) {
+    const nodes = await fetchNodes(url);
+    allNodes.push(...nodes);
+  }
+  const nodes = deduplicateNodes(allNodes);
 
-  return new Response(yaml, {
+  // 生成 rule-provider 引用列表
+  const rules = enabledRules.map(r => {
+    let url = r.url;
+    if (linkReplace.from && linkReplace.to) {
+      url = url.replace(linkReplace.from, linkReplace.to);
+    }
+    return `RULE-SET,${r.id},🚀 节点选择`;
+  });
+
+  // 生成输出
+  const output = generateOutput(nodes, format, {
+    rules,
+    linkReplace,
+    subscriptionUrls: subs,
+  });
+
+  const contentTypes = {
+    clash: 'text/yaml; charset=utf-8',
+    base64: 'text/plain; charset=utf-8',
+    singbox: 'application/json; charset=utf-8',
+    surge: 'text/plain; charset=utf-8',
+    loon: 'text/plain; charset=utf-8',
+    auto: 'text/yaml; charset=utf-8',
+  };
+
+  const filenames = {
+    clash: 'config.yaml',
+    base64: 'nodes.txt',
+    singbox: 'config.json',
+    surge: 'surge.conf',
+    loon: 'loon.conf',
+    auto: 'config.yaml',
+  };
+
+  return new Response(output, {
     status: 200,
     headers: {
-      'Content-Type': 'text/yaml; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="config.yaml"',
-      'Cache-Control': 'no-cache'
+      'Content-Type': contentTypes[format] || 'text/plain; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filenames[format] || 'config'}"`,
+      'Cache-Control': 'no-cache',
+      'Access-Control-Allow-Origin': '*',
     }
   });
 }
@@ -225,130 +304,6 @@ async function getSession(kv, request) {
     return { valid: false };
   }
   return { valid: true, user: { username: session.username, role: session.role }, token };
-}
-
-// ── YAML 配置生成 ──
-async function generateClashConfig(enabledIds, subscriptions, linkReplace, options = {}) {
-  const rulesets = getRulesetList();
-  const enabledRules = rulesets.filter(r => enabledIds.includes(r.id));
-  const builtinRules = rulesets.filter(r => r.builtin);
-
-  // 所有规则 = 内置规则 + 用户勾选的规则
-  const allRules = [...builtinRules, ...enabledRules];
-
-  // 去重（防止内置规则也被勾选了）
-  const seen = new Set();
-  const uniqueRules = allRules.filter(r => {
-    if (seen.has(r.id)) return false;
-    seen.add(r.id);
-    return true;
-  });
-
-  let yaml = `# CF-Workers-SUB-Next 自动生成配置
-# 版本: ${VERSION}
-# 生成时间: ${new Date().toISOString()}
-# ---
-
-port: 7890
-socks-port: 7891
-allow-lan: true
-mode: rule
-log-level: info
-external-controller: 0.0.0.0:9090
-
-`;
-
-  // 代理节点（如果有）
-  if (options.includeNodes && subscriptions.length > 0) {
-    yaml += `# 代理节点提供者
-proxy-providers:
-  my_proxies:
-    type: http
-    url: "https://raw.githubusercontent.com/BobVane/CF-Workers-SUB-Next/main/proxies.yaml"
-    interval: 21600
-    path: ./providers/my_proxies.yaml
-    health-check:
-      enable: true
-      url: https://www.gstatic.com/generate_204
-      interval: 300
-
-`;
-  }
-
-  // 规则提供者
-  yaml += `# 规则集
-rule-providers:
-`;
-  for (const rule of uniqueRules) {
-    let url = rule.url;
-    if (linkReplace.from && linkReplace.to) {
-      url = url.replace(linkReplace.from, linkReplace.to);
-    }
-    yaml += `  ${rule.id}:
-    type: http
-    behavior: classical
-    url: "${url}"
-    interval: 86400
-    path: ./rules/${rule.id}.yaml
-`;
-  }
-
-  // 代理组
-  yaml += `
-# 代理组
-proxy-groups:
-  - name: 🚀 节点选择
-    type: select
-    proxies:
-      - ♻️ 自动选择
-      - DIRECT
-` + (options.includeNodes ? `      - my_proxies\n` : ``) + `
-  - name: ♻️ 自动选择
-    type: url-test
-    url: https://www.gstatic.com/generate_204
-    interval: 300
-    tolerance: 50
-` + (options.includeNodes ? `    use:
-      - my_proxies\n` : `    proxies:
-      - DIRECT\n`) + `
-  - name: 🎯 全球直连
-    type: select
-    proxies:
-      - DIRECT
-
-  - name: 🛑 全球拦截
-    type: select
-    proxies:
-      - REJECT
-
-  - name: 🐟 漏网之鱼
-    type: select
-    proxies:
-      - 🚀 节点选择
-      - ♻️ 自动选择
-
-# 规则
-rules:
-  - RULE-SET,BanAD,🛑 全球拦截
-  - RULE-SET,BanProgramAD,🛑 全球拦截
-`;
-
-  // 用户勾选的规则集
-  for (const rule of enabledRules) {
-    if (rule.id === 'BanAD' || rule.id === 'BanProgramAD') continue;
-    yaml += `  - RULE-SET,${rule.id},🚀 节点选择
-`;
-  }
-
-  // 内置安全规则
-  yaml += `  - RULE-SET,ChinaDomain,🎯 全球直连
-  - RULE-SET,ChinaCompanyIp,🎯 全球直连
-  - RULE-SET,LocalAreaNetwork,🎯 全球直连
-  - GEOIP,CN,🎯 全球直连
-  - MATCH,🐟 漏网之鱼
-`;
-
-  return yaml;
 }
 
 // ── 规则集清单 ──
