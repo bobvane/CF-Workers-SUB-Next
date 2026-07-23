@@ -27,16 +27,23 @@ export default {
     const subToken = env.SUB_TOKEN || '';
     if (subToken) {
       const requestToken = url.searchParams.get('token');
+      // 白名单：登录、登出、会话检查、订阅输出不需要 SUB_TOKEN（它们有自己的认证）
+      const publicPaths = ['/api/login', '/api/logout', '/api/session'];
+      const isPublicApi = publicPaths.some(p => path === p || path.startsWith(p + '/'));
+      
       if (requestToken !== subToken) {
-        // 如果是 API 请求，返回 JSON 错误
-        if (path.startsWith('/api/') || path === '/sub' || path === '/sub/') {
+        // 如果是公开 API，允许通过（它们有自己的认证机制）
+        if (isPublicApi) {
+          // 继续处理
+        } else if (path.startsWith('/api/') || path === '/sub' || path === '/sub/') {
           return jsonError('Token 无效', 403);
+        } else {
+          // 如果是页面请求，返回简约页面提示
+          return new Response(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>访问受限</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f6f8fa;color:#1f2328}.card{text-align:center;padding:40px;max-width:400px}h1{font-size:22px;margin-bottom:8px}p{color:#656d76;font-size:14px;line-height:1.6}code{background:#eaeef2;padding:3px 8px;border-radius:4px;font-size:13px}</style></head><body><div class="card"><h1>🔒 访问受限</h1><p>此页面需要访问令牌。<br>请在 URL 中添加 <code>?token=你的令牌</code></p></div></body></html>`, {
+            status: 403,
+            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+          });
         }
-        // 如果是页面请求，返回简约页面提示
-        return new Response(`<!DOCTYPE html><html><head><meta charset="utf-8"><title>访问受限</title><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{font-family:-apple-system,BlinkMacSystemFont,sans-serif;display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f6f8fa;color:#1f2328}.card{text-align:center;padding:40px;max-width:400px}h1{font-size:22px;margin-bottom:8px}p{color:#656d76;font-size:14px;line-height:1.6}code{background:#eaeef2;padding:3px 8px;border-radius:4px;font-size:13px}</style></head><body><div class="card"><h1>🔒 访问受限</h1><p>此页面需要访问令牌。<br>请在 URL 中添加 <code>?token=你的令牌</code></p></div></body></html>`, {
-          status: 403,
-          headers: { 'Content-Type': 'text/html; charset=utf-8' }
-        });
       }
     }
 
