@@ -364,8 +364,18 @@
           <h3>📋 操作</h3>
           <div class="output-actions">
             <button class="primary" onclick="previewConfig()">👁 预览配置</button>
-            <button class="secondary" onclick="copyAllUrls()">📋 全部复制</button>
-            <button class="secondary" onclick="loadOutputInfo()">🔄 刷新节点数</button>
+            <button class="secondary" onclick="refreshNodeHealth()">🔄 刷新节点数</button>
+          </div>
+        </div>
+
+        <div class="modal" id="qrcodeModal">
+          <div class="modal-content" style="max-width:360px;">
+            <div class="modal-header"><h3>📱 扫码订阅</h3><span class="close" onclick="closeModal('qrcodeModal')">✕</span></div>
+            <div class="modal-body" style="text-align:center;padding:24px;">
+              <div id="qrcodeImage" style="margin:0 auto 16px;width:240px;height:240px;background:var(--bg);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--text3);font-size:13px;">加载中…</div>
+              <p id="qrcodeUrl" style="font-size:12px;color:var(--text2);word-break:break-all;"></p>
+              <button class="primary" onclick="copyQrCodeUrl()" style="margin-top:12px;padding:8px 20px;">📋 复制链接</button>
+            </div>
           </div>
         </div>
 
@@ -1071,8 +1081,11 @@
 
   function renderOutputUrls(hasNodes) {
     const listEl = document.getElementById('outputUrlList');
-    const baseUrl = window.location.origin;
-    const token = document.cookie.match(/token=([^;]+)/)?.[1] || '';
+    const baseUrl = window.location.origin + '/sub';
+    // 从 URL 获取 token 和 user
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token') || '';
+    const user = 'admin'; // 当前用户，简化处理
     
     const formats = [
       { key: 'auto', name: '🔄 自适应', desc: 'Clash YAML（自动适配）' },
@@ -1084,14 +1097,15 @@
     ];
 
     listEl.innerHTML = formats.map(f => {
-      const url = `${baseUrl}/sub?format=${f.key}${token ? '&token=' + token : ''}`;
+      const params = `format=${f.key}${token ? '&token=' + encodeURIComponent(token) : ''}&user=${user}`;
+      const url = `${baseUrl}?${params}`;
       return `
-        <div class="sub-item" style="flex-direction:column;align-items:flex-start;gap:6px;">
+        <div class="sub-item" style="flex-direction:column;align-items:flex-start;gap:6px;cursor:pointer;" onclick="showQrCode('${url}', '${f.name}')">
           <div style="display:flex;align-items:center;gap:10px;width:100%;">
             <strong style="min-width:100px;">${f.name}</strong>
             <span style="font-size:12px;color:var(--text2);flex:1;">${f.desc}</span>
-            <input type="text" readonly value="${url}" style="flex:1;font-size:12px;padding:6px 10px;background:var(--bg);">
-            <button class="copy-btn" onclick="copyToClipboard('${url}', this)">复制</button>
+            <input type="text" readonly value="${url}" style="flex:1;font-size:12px;padding:6px 10px;background:var(--bg);" onclick="event.stopPropagation()">
+            <button class="copy-btn" onclick="event.stopPropagation();copyToClipboard('${url}', this)">复制</button>
           </div>
         </div>
       `;
@@ -1196,6 +1210,61 @@
   window.scrollTo = scrollTo;
   window.editRuleUrl = editRuleUrl;
   window.deleteRule = deleteRule;
+
+  // ════════════════════════════════════════
+  // 输出配置页面功能
+  // ════════════════════════════════════════
+
+  // QR 码缓存
+  let qrCodeUrl = '';
+
+  // 显示二维码
+  function showQrCode(url, name) {
+    qrCodeUrl = url;
+    document.getElementById('qrcodeUrl').textContent = url;
+    document.getElementById('qrcodeModal').classList.add('show');
+    // 使用 API 生成 QR 码
+    const qrImg = document.getElementById('qrcodeImage');
+    qrImg.innerHTML = `<img src="https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(url)}" alt="QR Code" style="border-radius:4px;" onerror="this.parentElement.textContent='二维码加载失败'">`;
+  }
+
+  // 复制二维码链接
+  async function copyQrCodeUrl() {
+    try {
+      await navigator.clipboard.writeText(qrCodeUrl);
+      const btn = document.querySelector('#qrcodeModal .primary');
+      const old = btn.textContent;
+      btn.textContent = '✓ 已复制';
+      setTimeout(() => btn.textContent = old, 1500);
+    } catch {
+      alert('复制失败，请手动复制');
+    }
+  }
+
+  // 刷新节点数（含健康检测）
+  async function refreshNodeHealth() {
+    const badge = document.getElementById('outputNodeCount');
+    badge.textContent = '⏳ 检测中…';
+    try {
+      // 触发健康检测
+      const result = await api('/nodes/health-check', { method: 'POST' });
+      const validCount = result.valid ? result.valid.length : 0;
+      badge.textContent = validCount + ' 个节点';
+      // 刷新订阅地址列表
+      renderOutputUrls(validCount > 0);
+    } catch (e) {
+      badge.textContent = '检测失败';
+      // 降级：只显示节点数
+      try {
+        const data = await api('/nodes/list');
+        badge.textContent = (data.total || 0) + ' 个节点';
+      } catch {}
+    }
+  }
+
+  window.showQrCode = showQrCode;
+  window.copyQrCodeUrl = copyQrCodeUrl;
+  window.refreshNodeHealth = refreshNodeHealth;
 </script>
 </body>
 </html>
