@@ -827,7 +827,9 @@
     const url = API_BASE + path + (token ? `${separator}token=${token}` : '');
     try {
       const res = await fetch(url, {
-        headers: { 'Content-Type': 'application/json', ...options.headers },
+        method: 'GET',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
         ...options,
       });
       const data = await res.json();
