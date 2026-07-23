@@ -622,16 +622,20 @@ const DEFAULT_HTML = `<!DOCTYPE html>
   document.querySelectorAll('.sidebar nav a').forEach(link => {
     link.addEventListener('click', function(e) {
       e.preventDefault();
-      document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
-      this.classList.add('active');
-      const page = this.dataset.page;
-      document.querySelectorAll('.main .page').forEach(p => p.style.display = 'none');
-      const target = document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1));
-      if (target) target.style.display = 'block';
-      const titles = { rules:'📋 规则管理', subscribe:'🔗 订阅管理', output:'⚙️ 输出配置', help:'📖 使用说明' };
-      document.getElementById('pageTitle').textContent = titles[page] || '📋 规则管理';
+      switchPage(this.dataset.page);
     });
   });
+
+  // 页面切换函数
+  function switchPage(page) {
+    document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+    document.querySelector(\`.sidebar nav a[data-page="\${page}"]\`)?.classList.add('active');
+    document.querySelectorAll('.main .page').forEach(p => p.style.display = 'none');
+    const target = document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1));
+    if (target) target.style.display = 'block';
+    const titles = { rules:'📋 规则管理', subscribe:'🔗 订阅管理', output:'⚙️ 输出配置', help:'📖 使用说明' };
+    document.getElementById('pageTitle').textContent = titles[page] || '📋 规则管理';
+  }
 
   // ── Upgrade Check ──
   // 生产环境通过 GitHub Releases API 检查：https://api.github.com/repos/BobVane/CF-Workers-SUB-Next/releases/latest
@@ -712,6 +716,8 @@ const DEFAULT_HTML = `<!DOCTYPE html>
       document.getElementById('loginPwd').value = '';
       document.getElementById('app').style.display = 'flex';
       document.getElementById('loginPage').style.display = 'none';
+      // 默认显示订阅管理页面
+      switchPage('subscribe');
       loadSubscriptions();
     } catch (e) {
       errEl.textContent = '密码错误';
