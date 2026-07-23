@@ -81,14 +81,14 @@ id = "你的命名空间 ID"
 
 进入你的 GitHub 仓库 → **Settings → Secrets and variables → Actions → Repository secrets**（不是 Environment secrets），添加：
 
-| 名称 | 值 |
-|------|------|
-| `CLOUDFLARE_API_TOKEN` | 刚复制的 API Token |
+| 名称 | 值 | 说明 |
+|------|------|------|
+| `CLOUDFLARE_API_TOKEN` | 刚复制的 API Token | 必填，用于部署 Worker |
+| `SUB_TOKEN` | 自定义字符串 | 可选，设置后订阅地址需带此 token 才能访问 |
 
 ### 第六步：推送触发部署
 
 ```bash
-wrangler.toml 中 KV ID 已填好
 git add .
 git commit -m "配置 KV 命名空间"
 git push origin main
@@ -96,18 +96,19 @@ git push origin main
 
 GitHub Actions 会自动部署到 Cloudflare Workers。
 
-部署完成后，打开 Cloudflare Dashboard → Workers & Pages → `sub-next` → 访问分配域名。
-
 ### 可选：配置 SUB_TOKEN
 
-部署后如果不想公开订阅地址，可以在 `wrangler.toml` 中设置：
+部署后如果不想公开订阅地址，可以在 GitHub 仓库中设置 `SUB_TOKEN` Secret：
 
-```toml
-[vars]
-SUB_TOKEN = "你的自定义Token"
-```
+1. 仓库 **Settings → Secrets and variables → Actions → Repository secrets**
+2. 添加 `SUB_TOKEN`，值填你想要的自定义 Token
+3. 重新推送代码或手动触发 Actions 部署
 
-重新部署后，访问 `/sub?token=你的自定义Token` 才能获取配置。
+部署完成后，订阅地址需要带 `?token=你的自定义Token` 参数才能访问。
+
+**安全说明：**
+- `CLOUDFLARE_API_TOKEN` 和 `SUB_TOKEN` 都存储在 GitHub Secrets 中，不会暴露在代码里
+- `wrangler.toml` 中的 KV 命名空间 ID 是 CF 资源标识符，不是敏感信息，可放心保留
 
 ---
 

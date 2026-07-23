@@ -10,4 +10,4 @@ id = "49f51d7e299443f8842ec77e76d3f222"
 # 环境变量
 [vars]
 SESSION_EXPIRY_HOURS = "168"
-SUB_TOKEN = ""
+# SUB_TOKEN 通过 GitHub Secrets 注入（见 .github/workflows/deploy.yml）
