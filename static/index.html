@@ -276,9 +276,9 @@
   <aside class="sidebar">
     <div class="logo">⚡ SUB-Next <span>原型</span></div>
     <nav>
-      <a class="active" data-page="rules">📋 规则管理</a>
-      <a data-page="subscribe">🔗 订阅管理</a>
+      <a class="active" data-page="subscribe">🔗 订阅管理</a>
       <a data-page="output">⚙️ 输出配置</a>
+      <a data-page="rules">📋 规则管理</a>
       <a data-page="help">📖 使用说明</a>
     </nav>
     <div class="footer">v0.1 · 原型设计</div>
@@ -286,7 +286,7 @@
 
   <main class="main">
     <div class="topbar">
-      <h1 id="pageTitle">📋 规则管理</h1>
+      <h1 id="pageTitle">🔗 订阅管理</h1>
       <div class="right">
         <div class="theme-btn" onclick="cycleTheme()" title="切换主题"><span id="themeIcon">🌙</span></div>
         <div class="user-menu" onclick="toggleUserMenu()">
@@ -299,6 +299,37 @@
             <div class="divider"></div>
             <a class="danger" onclick="logout()">🚪 退出登录</a>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!── Page: 订阅管理 ──>
+    <div class="page" id="pageSubscribe" style="display:none">
+      <div class="card">
+        <div class="card-header"><h2>🔗 订阅链接</h2><span class="badge">3 个订阅</span></div>
+        <div class="sub-input"><input type="text" placeholder="输入节点链接或订阅 URL，每行一个…"><button>添加</button></div>
+        <div class="sub-list">
+          <div class="sub-item"><span class="status ok">✓</span><span class="url">https://example1.com/link/xxxxx</span><span class="del">✕</span></div>
+          <div class="sub-item"><span class="status ok">✓</span><span class="url">https://example2.com/link/yyyyy</span><span class="del">✕</span></div>
+          <div class="sub-item"><span class="status err">✗</span><span class="url">https://expired.com/link/zzzzz</span><span class="del">✕</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!── Page: 输出配置 ──>
+    <div class="page" id="pageOutput" style="display:none">
+      <div class="card">
+        <div class="card-header"><h2>📤 输出配置</h2><span class="badge">YAML</span></div>
+        <div class="output-actions">
+          <button class="primary">✔ 保存配置</button>
+          <button class="secondary">👁 预览 YAML</button>
+          <button class="secondary">📋 复制配置</button>
+          <button class="secondary">⬇ 下载文件</button>
+        </div>
+        <div class="output-url">
+          <span style="font-size:13px;color:var(--text2);white-space:nowrap;">订阅地址</span>
+          <input type="text" readonly value="https://sub-next.workers.dev/sub?token=xxxxxxxx">
+          <button class="copy-btn">复制</button>
         </div>
       </div>
     </div>
@@ -461,45 +492,14 @@
       </div>
     </div>
 
-    <!── Page: 订阅管理 ──>
-    <div class="page" id="pageSubscribe" style="display:none">
-      <div class="card">
-        <div class="card-header"><h2>🔗 订阅链接</h2><span class="badge">3 个订阅</span></div>
-        <div class="sub-input"><input type="text" placeholder="输入节点链接或订阅 URL，每行一个…"><button>添加</button></div>
-        <div class="sub-list">
-          <div class="sub-item"><span class="status ok">✓</span><span class="url">https://example1.com/link/xxxxx</span><span class="del">✕</span></div>
-          <div class="sub-item"><span class="status ok">✓</span><span class="url">https://example2.com/link/yyyyy</span><span class="del">✕</span></div>
-          <div class="sub-item"><span class="status err">✗</span><span class="url">https://expired.com/link/zzzzz</span><span class="del">✕</span></div>
-        </div>
-      </div>
-    </div>
-
-    <!── Page: 输出配置 ──>
-    <div class="page" id="pageOutput" style="display:none">
-      <div class="card">
-        <div class="card-header"><h2>📤 输出配置</h2><span class="badge">YAML</span></div>
-        <div class="output-actions">
-          <button class="primary">✔ 保存配置</button>
-          <button class="secondary">👁 预览 YAML</button>
-          <button class="secondary">📋 复制配置</button>
-          <button class="secondary">⬇ 下载文件</button>
-        </div>
-        <div class="output-url">
-          <span style="font-size:13px;color:var(--text2);white-space:nowrap;">订阅地址</span>
-          <input type="text" readonly value="https://sub-next.workers.dev/sub?token=xxxxxxxx">
-          <button class="copy-btn">复制</button>
-        </div>
-      </div>
-    </div>
-
     <!── Page: 使用说明 ──>
     <div class="page" id="pageHelp" style="display:none">
       <div class="card">
         <div class="card-header"><h2>📖 使用说明</h2></div>
         <div class="card-body" style="padding:20px;font-size:14px;line-height:1.8;color:var(--text2);">
           <p>1. 在 <strong>订阅管理</strong> 中添加你的机场订阅链接或节点链接</p>
-          <p>2. 在 <strong>规则管理</strong> 中勾选你需要的规则集</p>
-          <p>3. 在 <strong>输出配置</strong> 中复制订阅地址，粘贴到 OpenClash 中</p>
+          <p>2. 在 <strong>输出配置</strong> 中复制订阅地址，粘贴到 OpenClash 中</p>
+          <p>3. 在 <strong>规则管理</strong> 中勾选你需要的规则集</p>
           <p>4. 规则集每 24 小时自动更新，无需手动维护</p>
           <p style="margin-top:12px;font-size:12px;">💡 管理员可在右上角用户菜单进入管理后台</p>
         </div>
