@@ -655,7 +655,80 @@ const DEFAULT_HTML = `<!DOCTYPE html>
       ? '📁 收起完整列表'
       : '📂 显示全部 147 个规则集';
     document.getElementById('ruleCount').textContent = showingAll ? '147 / 147 个' : '显示 24 / 147 个';
+    // 展开全部后同步规则状态
+    if (showingAll) loadEnabledRules();
   }
+
+  // ── 规则集 API 同步 ──
+
+  // 从 URL 中提取规则 ID
+  function getRuleIdFromUrl(url) {
+    const parts = url.split('/');
+    const file = parts[parts.length - 1] || '';
+    return file.replace(/\\.(yaml|yml|list|txt)$/i, '');
+  }
+
+  // 给每个规则项加上 data-rule-id
+  function initRuleIds() {
+    document.querySelectorAll('.rule-item').forEach(item => {
+      const urlEl = item.querySelector('.url');
+      if (urlEl && !item.dataset.ruleId) {
+        const url = urlEl.textContent.trim();
+        item.dataset.ruleId = getRuleIdFromUrl(url);
+      }
+    });
+  }
+
+  // 从 API 加载已启用的规则并同步开关状态
+  async function loadEnabledRules() {
+    initRuleIds();
+    try {
+      const data = await api('/rules/enabled');
+      const enabledIds = Array.isArray(data) ? data : (data.data || []);
+      document.querySelectorAll('.rule-item').forEach(item => {
+        const cb = item.querySelector('input[type="checkbox"]');
+        const ruleId = item.dataset.ruleId;
+        if (cb && ruleId) {
+          // 锁定规则（已勾选且禁用）不修改
+          if (cb.disabled) return;
+          cb.checked = enabledIds.includes(ruleId) || enabledIds.includes(ruleId.toLowerCase());
+        }
+      });
+    } catch (e) {
+      console.error('加载规则集状态失败:', e);
+    }
+  }
+
+  // 保存当前所有规则开关状态到 API
+  async function saveEnabledRules() {
+    initRuleIds();
+    const enabledIds = [];
+    document.querySelectorAll('.rule-item').forEach(item => {
+      const cb = item.querySelector('input[type="checkbox"]');
+      const ruleId = item.dataset.ruleId;
+      if (cb && ruleId && cb.checked && !cb.disabled) {
+        enabledIds.push(ruleId);
+      }
+    });
+    try {
+      await api('/rules/enabled', { method: 'PUT', body: JSON.stringify({ ids: enabledIds }) });
+      console.log('规则集已保存:', enabledIds.length);
+    } catch (e) {
+      console.error('保存规则集失败:', e);
+    }
+  }
+
+  // 监听所有规则开关变化 → 自动保存
+  document.addEventListener('change', function(e) {
+    if (e.target.closest('.rule-item') && e.target.type === 'checkbox') {
+      saveEnabledRules();
+    }
+  });
+
+  // 页面加载时同步规则状态
+  document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(loadEnabledRules, 500);
+  });
 
   const themes = ['light', 'dark', 'auto'];
   let themeIdx = 0;
@@ -691,6 +764,8 @@ const DEFAULT_HTML = `<!DOCTYPE html>
     const titles = { rules:'📋 规则管理', subscribe:'🔗 订阅管理', output:'⚙️ 输出配置', help:'📖 使用说明' };
     document.getElementById('pageTitle').textContent = titles[page] || '📋 规则管理';
 
+    // 切换到规则管理页时加载规则状态
+    if (page === 'rules') loadEnabledRules();
     // 切换到输出配置页时加载数据
     if (page === 'output') initOutputPage();
   }
