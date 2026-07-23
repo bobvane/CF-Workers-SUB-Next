@@ -73,6 +73,14 @@ export default {
 // ── API 处理 ──
 async function handleApi(request, path, method, kv, url, env) {
   const SESSION_EXPIRY = parseInt(env.SESSION_EXPIRY_HOURS || '168', 10);
+  
+  // ── 获取当前用户（用于 API 数据隔离）──
+  const currentSession = await getSession(kv, request);
+  const currentUser = (currentSession.valid && currentSession.user)
+    ? currentSession.user.username : 'admin';
+  
+  // 用户数据 KV 键前缀
+  const userKey = (key) => `${key}:${currentUser}`;
   // ── 认证（登录/登出/会话检查）─
   if (path === '/api/login' && method === 'POST') {
     const body = await request.json();
@@ -115,49 +123,49 @@ async function handleApi(request, path, method, kv, url, env) {
   }
 
   if (path === '/api/rules/enabled' && method === 'GET') {
-    const enabled = await kvGet(kv, 'rules:enabled');
+    const enabled = await kvGet(kv, userKey('rules:enabled'));
     return jsonOk(enabled || []);
   }
 
   if (path === '/api/rules/enabled' && method === 'PUT') {
     const body = await request.json();
-    await kvPut(kv, 'rules:enabled', body.ids || []);
+    await kvPut(kv, userKey('rules:enabled'), body.ids || []);
     return jsonOk({ saved: true });
   }
 
   // ── 订阅管理 ──
   if (path === '/api/subscriptions' && method === 'GET') {
-    const subs = await kvGet(kv, 'subscriptions');
+    const subs = await kvGet(kv, userKey('subscriptions'));
     return jsonOk(subs || []);
   }
 
   if (path === '/api/subscriptions' && method === 'POST') {
     const body = await request.json();
-    const current = (await kvGet(kv, 'subscriptions')) || [];
+    const current = (await kvGet(kv, userKey('subscriptions'))) || [];
     if (body.url) {
       // 存储为对象 {url, remark}，兼容旧格式纯字符串
       current.push({ url: body.url, remark: body.remark || '' });
-      await kvPut(kv, 'subscriptions', current);
+      await kvPut(kv, userKey('subscriptions'), current);
     }
     return jsonOk(current);
   }
 
   if (path === '/api/subscriptions' && method === 'DELETE') {
     const body = await request.json();
-    const current = (await kvGet(kv, 'subscriptions')) || [];
+    const current = (await kvGet(kv, userKey('subscriptions'))) || [];
     // 兼容新旧格式：纯字符串或 {url, remark}
     const filtered = current.filter(u => {
       const url = typeof u === 'string' ? u : u.url;
       return url !== body.url;
     });
-    await kvPut(kv, 'subscriptions', filtered);
+    await kvPut(kv, userKey('subscriptions'), filtered);
     return jsonOk(filtered);
   }
 
   // ── 配置预览 ──
   if (path === '/api/config/preview' && method === 'GET') {
-    const enabled = (await kvGet(kv, 'rules:enabled')) || [];
-    const subs = (await kvGet(kv, 'subscriptions')) || [];
+    const enabled = (await kvGet(kv, userKey('rules:enabled'))) || [];
+    const subs = (await kvGet(kv, userKey('subscriptions'))) || [];
     const linkReplace = {
       from: await kvGet(kv, 'link_replace:from') || '',
       to: await kvGet(kv, 'link_replace:to') || ''
@@ -193,7 +201,7 @@ async function handleApi(request, path, method, kv, url, env) {
 
   // ── 节点管理 ──
   if (path === '/api/nodes/list' && method === 'GET') {
-    const subs = (await kvGet(kv, 'subscriptions')) || [];
+    const subs = (await kvGet(kv, userKey('subscriptions'))) || [];
     const allNodes = [];
     for (const item of subs) {
       const url = typeof item === 'string' ? item : item.url;
@@ -205,7 +213,7 @@ async function handleApi(request, path, method, kv, url, env) {
   }
 
   if (path === '/api/nodes/health-check' && method === 'POST' && isAdmin) {
-    const subs = (await kvGet(kv, 'subscriptions')) || [];
+    const subs = (await kvGet(kv, userKey('subscriptions'))) || [];
     const result = await fullHealthCheck(subs);
     // 缓存检测结果（保留最近一次）
     await kvPut(kv, 'health_check_result', {
@@ -236,14 +244,16 @@ async function handleSubscription(request, kv, url, env) {
   const format = url.searchParams.get('format') || 'auto';
   const token = url.searchParams.get('token');
   const subToken = env.SUB_TOKEN || '';
+  // 支持指定用户（默认 admin）
+  const targetUser = url.searchParams.get('user') || 'admin';
 
   // 如果设置了 SUB_TOKEN，需要校验
   if (subToken && token !== subToken) {
     return jsonError('Token 无效', 403);
   }
 
-  const subs = (await kvGet(kv, 'subscriptions')) || [];
-  const enabled = (await kvGet(kv, 'rules:enabled')) || [];
+  const subs = (await kvGet(kv, `subscriptions:${targetUser}`)) || [];
+  const enabled = (await kvGet(kv, `rules:enabled:${targetUser}`)) || [];
 
   // 获取已启用的规则列表
   const rulesets = getRulesetList();
