@@ -8,21 +8,21 @@ const DEFAULT_HTML = `<!DOCTYPE html>
 <title>CF-Workers-SUB-Next · 原型</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  :root, [data-theme="dark"] {
-    --bg: #0f1117; --bg2: #161b22; --bg3: #1c2128; --bg4: #21262d;
-    --border: #30363d; --border2: #21262d;
-    --text: #e1e4e8; --text2: #8b949e; --text3: #484f58;
-    --accent: #58a6ff; --accent2: #1f6feb; --accent3: #388bfd;
-    --green: #3fb950; --red: #f85149; --red2: #da3633;
-    --input-bg: #0d1117; --shadow: rgba(0,0,0,.3);
-  }
-  [data-theme="light"] {
+  :root, [data-theme="light"] {
     --bg: #ffffff; --bg2: #f6f8fa; --bg3: #eaeef2; --bg4: #d0d7de;
     --border: #d0d7de; --border2: #d8dee4;
     --text: #1f2328; --text2: #656d76; --text3: #8b949e;
     --accent: #0969da; --accent2: #0969da; --accent3: #218bff;
     --green: #1a7f37; --red: #cf222e; --red2: #b62324;
     --input-bg: #ffffff; --shadow: rgba(0,0,0,.08);
+  }
+  [data-theme="dark"] {
+    --bg: #0f1117; --bg2: #161b22; --bg3: #1c2128; --bg4: #21262d;
+    --border: #30363d; --border2: #21262d;
+    --text: #e1e4e8; --text2: #8b949e; --text3: #484f58;
+    --accent: #58a6ff; --accent2: #1f6feb; --accent3: #388bfd;
+    --green: #3fb950; --red: #f85149; --red2: #da3633;
+    --input-bg: #0d1117; --shadow: rgba(0,0,0,.3);
   }
   body {
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
@@ -290,7 +290,7 @@ const DEFAULT_HTML = `<!DOCTYPE html>
     <div class="topbar">
       <h1 id="pageTitle">🔗 订阅管理</h1>
       <div class="right">
-        <div class="theme-btn" onclick="cycleTheme()" title="切换主题"><span id="themeIcon">🌙</span></div>
+        <div class="theme-btn" onclick="cycleTheme()" title="切换主题"><span id="themeIcon">☀️</span></div>
         <div class="user-menu" onclick="toggleUserMenu()">
           <div class="avatar" id="userAvatar">A</div>
           <span id="userName">admin</span>
@@ -602,9 +602,9 @@ const DEFAULT_HTML = `<!DOCTYPE html>
     document.getElementById('ruleCount').textContent = showingAll ? '147 / 147 个' : '显示 24 / 147 个';
   }
 
-  const themes = ['dark', 'light', 'auto'];
+  const themes = ['light', 'dark', 'auto'];
   let themeIdx = 0;
-  const themeIcons = { dark: '🌙', light: '☀️', auto: '💻' };
+  const themeIcons = { light: '☀️', dark: '🌙', auto: '💻' };
   function cycleTheme() {
     themeIdx = (themeIdx + 1) % themes.length;
     const t = themes[themeIdx];
