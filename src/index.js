@@ -272,17 +272,17 @@ async function handleSubscription(request, kv, url, env) {
   const nodes = deduplicateNodes(allNodes);
 
   // 生成 rule-provider 引用列表
-  const rules = allEnabledRules.map(r => {
+  const ruleNames = allEnabledRules.map(r => {
     let url = r.url;
     if (linkReplace.from && linkReplace.to) {
       url = url.replace(linkReplace.from, linkReplace.to);
     }
-    return `RULE-SET,${r.id},🚀 节点选择`;
+    return { id: r.id, url, name: `RULE-SET,${r.id},🚀 节点选择` };
   });
 
   // 生成输出
   const output = generateOutput(nodes, format, {
-    rules,
+    rules: ruleNames,
     linkReplace,
     subscriptionUrls: subs,
   });

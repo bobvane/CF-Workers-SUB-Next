@@ -141,8 +141,22 @@ proxies:
 
   // 代理组（如果有规则配置）
   if (options.rules && options.rules.length > 0) {
-    yaml += `
-proxy-groups:
+    // 规则提供者
+    yaml += `\n# 规则集
+rule-providers:
+`;
+    for (const r of options.rules) {
+      if (r.url) {
+        yaml += `  ${r.id}:
+    type: http
+    behavior: classical
+    url: "${r.url}"
+    interval: 86400
+    path: ./rules/${r.id}.yaml
+`;
+      }
+    }
+    yaml += `\nproxy-groups:
   - name: 🚀 节点选择
     type: select
     proxies:
@@ -178,9 +192,10 @@ proxy-groups:
       - ♻️ 自动选择
 
 rules:
+rules:
 `;
     for (const rule of options.rules) {
-      yaml += `  - ${rule}\n`;
+      yaml += `  - ${rule.name}\n`;
     }
     yaml += `  - GEOIP,CN,🎯 全球直连
   - MATCH,🐟 漏网之鱼
