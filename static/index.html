@@ -1254,7 +1254,7 @@
       } catch {}
       // 获取节点列表
       const data = await api('/nodes/list');
-      const total = data.total || 0;
+      const total = data.data?.total || 0;
       badge.textContent = total + ' 个节点';
       renderOutputUrls(total > 0);
     } catch (e) {
