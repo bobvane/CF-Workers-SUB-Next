@@ -17,13 +17,13 @@ jobs:
       - run: npm run build
       - name: Update wrangler.toml with KV namespace ID
         run: sed -i 's/id = ""/id = "${{ secrets.KV_NAMESPACE_ID }}"/' wrangler.toml
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
       - name: Set SUB_TOKEN secret (if configured)
         if: env.SUB_TOKEN != '' && env.SUB_TOKEN != 'none'
         run: echo "${{ secrets.SUB_TOKEN }}" | npx wrangler secret put SUB_TOKEN
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           SUB_TOKEN: ${{ secrets.SUB_TOKEN || '' }}
-      - name: Deploy to Cloudflare Workers
-        run: npx wrangler deploy
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
