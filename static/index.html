@@ -719,8 +719,13 @@
   const API_BASE = '/api';
 
   async function api(path, options = {}) {
+    // 自动附加全局 SUB_TOKEN（从当前 URL 获取）
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token');
+    const separator = path.includes('?') ? '&' : '?';
+    const url = API_BASE + path + (token ? `${separator}token=${token}` : '');
     try {
-      const res = await fetch(API_BASE + path, {
+      const res = await fetch(url, {
         headers: { 'Content-Type': 'application/json', ...options.headers },
         ...options,
       });
@@ -883,7 +888,7 @@
 
     const listEl = document.getElementById('outputUrlList');
     listEl.innerHTML = formats.map(f => {
-      const url = token ? `${baseUrl}?format=${f.key}&token=${token}` : `${baseUrl}?format=${f.key}`;
+      const url = token ? `${baseUrl}?format=${f.key}&token=${encodeURIComponent(token)}` : `${baseUrl}?format=${f.key}`;
       return `<div class="sub-item">
         <span class="status ok">🔗</span>
         <div style="flex:1;min-width:0;">
@@ -900,9 +905,10 @@
 
   async function copyAllUrls() {
     const baseUrl = window.location.origin + '/sub';
-    const token = '';
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token') || '';
     const formats = ['auto', 'clash', 'base64', 'singbox', 'surge', 'loon'];
-    const urls = formats.map(f => token ? `${baseUrl}?format=${f}&token=${token}` : `${baseUrl}?format=${f}`);
+    const urls = formats.map(f => `${baseUrl}?format=${f}${token ? '&token=' + encodeURIComponent(token) : ''}`);
     await copyToClipboard(urls.join('\n'));
     alert('已复制所有格式的订阅地址');
   }
@@ -1015,9 +1021,10 @@
 
   async function copyAllUrls() {
     const baseUrl = window.location.origin;
-    const token = document.cookie.match(/token=([^;]+)/)?.[1] || '';
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token') || '';
     const formats = ['auto', 'clash', 'base64', 'singbox', 'surge', 'loon'];
-    const urls = formats.map(f => `${baseUrl}/sub?format=${f}${token ? '&token=' + token : ''}`);
+    const urls = formats.map(f => `${baseUrl}/sub?format=${f}${token ? '&token=' + encodeURIComponent(token) : ''}`);
     await copyToClipboard(urls.join('\n'), document.querySelector('.output-actions .secondary'));
   }
 
@@ -1028,8 +1035,9 @@
     document.getElementById('previewModal').classList.add('show');
 
     try {
-      const token = document.cookie.match(/token=([^;]+)/)?.[1] || '';
-      const url = '/sub?format=' + format + (token ? '&token=' + token : '');
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get('token') || '';
+      const url = '/sub?format=' + format + (token ? '&token=' + encodeURIComponent(token) : '');
       const res = await fetch(url);
       const text = await res.text();
       pre.textContent = text;
