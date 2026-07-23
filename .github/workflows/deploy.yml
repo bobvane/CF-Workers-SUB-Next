@@ -15,7 +15,7 @@ jobs:
           node-version: 20
       - run: npm ci
       - run: npm run build
-      - name: Update wrangler.toml KV namespace ID
+      - name: Update wrangler.toml with KV namespace ID
         run: sed -i 's/id = ""/id = "${{ secrets.KV_NAMESPACE_ID }}"/' wrangler.toml
       - name: Deploy to Cloudflare Workers
         uses: cloudflare/wrangler-action@v3
@@ -23,8 +23,3 @@ jobs:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           secrets: |
             SUB_TOKEN=${{ secrets.SUB_TOKEN }}
-        env:
-          KV_NAMESPACE_ID: ${{ secrets.KV_NAMESPACE_ID }}
-      - name: Update wrangler.toml with KV namespace ID
-        run: |
-          sed -i 's/id = ""/id = "'$KV_NAMESPACE_ID'"/' wrangler.toml
