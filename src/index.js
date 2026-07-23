@@ -9,7 +9,7 @@ import { jsonOk, jsonError, setCookieHeader, clearCookieHeader } from './utils.j
 import DEFAULT_HTML from './html.js';
 
 // ── 配置 ──
-const SESSION_EXPIRY = parseInt(SESSION_EXPIRY_HOURS || '168', 10);
+// 注意：环境变量通过 env 参数传入，不能在模块顶层直接引用
 const VERSION = 'v0.1.0';
 
 // ── 请求路由 ──
@@ -26,12 +26,12 @@ export default {
     try {
       // ── API 路由 ──
       if (path.startsWith('/api/')) {
-        return handleApi(request, path, method, kv, url);
+        return handleApi(request, path, method, kv, url, env);
       }
 
       // ── 订阅输出 ──
       if (path === '/sub' || path === '/sub/') {
-        return handleSubscription(request, kv, url);
+        return handleSubscription(request, kv, url, env);
       }
 
       // ── 前端页面 ──
@@ -44,7 +44,8 @@ export default {
 };
 
 // ── API 处理 ──
-async function handleApi(request, path, method, kv, url) {
+async function handleApi(request, path, method, kv, url, env) {
+  const SESSION_EXPIRY = parseInt(env.SESSION_EXPIRY_HOURS || '168', 10);
   // ── 认证（登录/登出/会话检查）─
   if (path === '/api/login' && method === 'POST') {
     const body = await request.json();
@@ -169,10 +170,10 @@ async function handleApi(request, path, method, kv, url) {
 }
 
 // ── 订阅输出 ──
-async function handleSubscription(request, kv, url) {
+async function handleSubscription(request, kv, url, env) {
   const format = url.searchParams.get('format') || 'auto';
   const token = url.searchParams.get('token');
-  const subToken = SUB_TOKEN || '';
+  const subToken = env.SUB_TOKEN || '';
 
   // 如果设置了 SUB_TOKEN，需要校验
   if (subToken && token !== subToken) {
