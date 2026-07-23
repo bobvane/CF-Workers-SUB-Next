@@ -192,6 +192,20 @@
   .output-actions .primary:hover { background: var(--accent3); }
   .output-actions .secondary { background: var(--bg4); color: var(--text); }
   .output-actions .secondary:hover { background: var(--border); }
+
+  .section { padding: 0 20px 16px; }
+  .section h3 { font-size: 13px; font-weight: 600; color: var(--text2); margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .modal { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none; align-items: center; justify-content: center; z-index: 100; }
+  .modal.show { display: flex; }
+  .modal-content { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; width: 90%; max-width: 800px; max-height: 90vh; overflow: hidden; display: flex; flex-direction: column; }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-bottom: 1px solid var(--border); }
+  .modal-header h3 { font-size: 15px; }
+  .modal-header .close { cursor: pointer; color: var(--text2); font-size: 18px; }
+  .modal-header .close:hover { color: var(--red); }
+  .modal-body { padding: 16px; overflow: auto; }
+  .modal-body select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); margin-bottom: 12px; }
+  .modal-body pre { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 12px; font-size: 12px; line-height: 1.5; white-space: pre-wrap; word-break: break-all; color: var(--text); }
   .output-url { padding: 10px 20px 16px; display: flex; gap: 8px; align-items: center; }
   .output-url input {
     flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);
@@ -322,17 +336,42 @@
     <!── Page: 输出配置 ──>
     <div class="page" id="pageOutput" style="display:none">
       <div class="card">
-        <div class="card-header"><h2>📤 输出配置</h2><span class="badge">YAML</span></div>
-        <div class="output-actions">
-          <button class="primary">✔ 保存配置</button>
-          <button class="secondary">👁 预览 YAML</button>
-          <button class="secondary">📋 复制配置</button>
-          <button class="secondary">⬇ 下载文件</button>
+        <div class="card-header"><h2>📤 输出配置</h2><span class="badge" id="outputNodeCount">0 个节点</span></div>
+        
+        <div class="section">
+          <h3>🔗 订阅地址</h3>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">
+            复制下方链接到 OpenClash / Clash / Sing-box / Surge / Loon 等客户端
+          </p>
+          <div class="sub-list" id="outputUrlList">
+            <div style="padding:16px;text-align:center;color:var(--text3);">加载中…</div>
+          </div>
         </div>
-        <div class="output-url">
-          <span style="font-size:13px;color:var(--text2);white-space:nowrap;">订阅地址</span>
-          <input type="text" readonly value="https://sub-next.workers.dev/sub?token=xxxxxxxx">
-          <button class="copy-btn">复制</button>
+
+        <div class="section" style="margin-top:20px;">
+          <h3>📋 操作</h3>
+          <div class="output-actions">
+            <button class="primary" onclick="previewConfig()">👁 预览配置</button>
+            <button class="secondary" onclick="copyAllUrls()">📋 全部复制</button>
+            <button class="secondary" onclick="loadOutputInfo()">🔄 刷新节点数</button>
+          </div>
+        </div>
+
+        <div class="modal" id="previewModal">
+          <div class="modal-content">
+            <div class="modal-header"><h3>👁 配置预览</h3><span class="close" onclick="closeModal('previewModal')">✕</span></div>
+            <div class="modal-body">
+              <select id="previewFormat" onchange="previewConfig()">
+                <option value="auto">自适应 (Clash YAML)</option>
+                <option value="clash">Clash YAML</option>
+                <option value="base64">Base64</option>
+                <option value="singbox">Sing-box JSON</option>
+                <option value="surge">Surge</option>
+                <option value="loon">Loon</option>
+              </select>
+              <pre id="previewContent" style="max-height:400px;overflow:auto;"></pre>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -633,6 +672,9 @@
     if (target) target.style.display = 'block';
     const titles = { rules:'📋 规则管理', subscribe:'🔗 订阅管理', output:'⚙️ 输出配置', help:'📖 使用说明' };
     document.getElementById('pageTitle').textContent = titles[page] || '📋 规则管理';
+
+    // 切换到输出配置页时加载数据
+    if (page === 'output') initOutputPage();
   }
 
   // ── Upgrade Check ──
@@ -807,6 +849,204 @@
   window.logout = logout;
   window.addSubscription = addSubscription;
   window.deleteSubscription = deleteSubscription;
+  window.previewConfig = previewConfig;
+  window.copyAllUrls = copyAllUrls;
+  window.loadOutputInfo = loadOutputInfo;
+  window.closeModal = closeModal;
+
+  // ── 输出配置页面功能 ──
+
+  async function loadOutputInfo() {
+    try {
+      const data = await api('/nodes/list');
+      document.getElementById('outputNodeCount').textContent = data.total + ' 个节点';
+      renderOutputUrls(data.total);
+    } catch (e) {
+      document.getElementById('outputNodeCount').textContent = '加载失败';
+    }
+  }
+
+  function renderOutputUrls(total) {
+    const baseUrl = window.location.origin + '/sub';
+    const token = ''; // 如果设置了 SUB_TOKEN 需要从配置获取
+    
+    const formats = [
+      { key: 'auto', name: '自适应', desc: '自动返回 Clash YAML 格式', ext: 'yaml' },
+      { key: 'clash', name: 'Clash', desc: 'Clash / OpenClash / Clash Verge', ext: 'yaml' },
+      { key: 'base64', name: 'Base64', desc: '通用 Base64 节点列表', ext: 'txt' },
+      { key: 'singbox', name: 'Sing-box', desc: 'Sing-box / Hiddify / NekoBox', ext: 'json' },
+      { key: 'surge', name: 'Surge', desc: 'Surge iOS / Mac 配置', ext: 'conf' },
+      { key: 'loon', name: 'Loon', desc: 'Loon iOS / Mac 配置', ext: 'conf' },
+    ];
+
+    const listEl = document.getElementById('outputUrlList');
+    listEl.innerHTML = formats.map(f => {
+      const url = token ? `${baseUrl}?format=${f.key}&token=${token}` : `${baseUrl}?format=${f.key}`;
+      return `<div class="sub-item">
+        <span class="status ok">🔗</span>
+        <div style="flex:1;min-width:0;">
+          <div style="display:flex;align-items:center;gap:8px;">
+            <strong>${f.name}</strong>
+            <span style="font-size:11px;color:var(--text3);">${f.desc}</span>
+          </div>
+          <div style="font-family:monospace;font-size:12px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${url}</div>
+        </div>
+        <button class="copy-btn" onclick="copyToClipboard('${url}')" style="padding:4px 10px;">复制</button>
+      </div>`;
+    }).join('');
+  }
+
+  async function copyAllUrls() {
+    const baseUrl = window.location.origin + '/sub';
+    const token = '';
+    const formats = ['auto', 'clash', 'base64', 'singbox', 'surge', 'loon'];
+    const urls = formats.map(f => token ? `${baseUrl}?format=${f}&token=${token}` : `${baseUrl}?format=${f}`);
+    await copyToClipboard(urls.join('\n'));
+    alert('已复制所有格式的订阅地址');
+  }
+
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // fallback
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+  }
+
+  async function previewConfig() {
+    const format = document.getElementById('previewFormat').value;
+    const pre = document.getElementById('previewContent');
+    pre.textContent = '加载中…';
+    document.getElementById('previewModal').classList.add('show');
+
+    try {
+      const url = '/sub?format=' + format + (document.getElementById('subToken')?.value ? '&token=' + document.getElementById('subToken').value : '');
+      const res = await fetch(url);
+      const text = await res.text();
+      pre.textContent = text;
+    } catch (e) {
+      pre.textContent = '预览失败: ' + e.message;
+    }
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+
+  // 加载页面时初始化输出配置
+  function initOutputPage() {
+    loadOutputInfo();
+  }
+
+  // 暴露到全局
+  window.initOutputPage = initOutputPage;
+
+  // ════════════════════════════════════════
+  // 输出配置页面功能
+  // ════════════════════════════════════════
+
+  async function loadOutputInfo() {
+    try {
+      // 获取订阅列表
+      const subsData = await api('/subscriptions');
+      const subs = Array.isArray(subsData) ? subsData : (subsData.data || []);
+      
+      // 获取节点总数
+      const nodesData = await api('/nodes/list');
+      const totalNodes = nodesData.total || 0;
+      
+      document.getElementById('outputNodeCount').textContent = totalNodes + ' 个节点';
+      renderOutputUrls(totalNodes > 0);
+      
+    } catch (e) {
+      console.error('加载输出信息失败:', e);
+      document.getElementById('outputNodeCount').textContent = '获取失败';
+    }
+  }
+
+  function renderOutputUrls(hasNodes) {
+    const listEl = document.getElementById('outputUrlList');
+    const baseUrl = window.location.origin;
+    const token = document.cookie.match(/token=([^;]+)/)?.[1] || '';
+    
+    const formats = [
+      { key: 'auto', name: '🔄 自适应', desc: 'Clash YAML（自动适配）' },
+      { key: 'clash', name: '🐱 Clash', desc: 'Clash / OpenClash / Clash Verge' },
+      { key: 'base64', name: '📄 Base64', desc: '通用 Base64 节点列表' },
+      { key: 'singbox', name: '📦 Sing-box', desc: 'Sing-box / sing-box-go' },
+      { key: 'surge', name: '⚡ Surge', desc: 'Surge iOS / Mac' },
+      { key: 'loon', name: '🚀 Loon', desc: 'Loon iOS / Mac' },
+    ];
+
+    listEl.innerHTML = formats.map(f => {
+      const url = `${baseUrl}/sub?format=${f.key}${token ? '&token=' + token : ''}`;
+      return `
+        <div class="sub-item" style="flex-direction:column;align-items:flex-start;gap:6px;">
+          <div style="display:flex;align-items:center;gap:10px;width:100%;">
+            <strong style="min-width:100px;">${f.name}</strong>
+            <span style="font-size:12px;color:var(--text2);flex:1;">${f.desc}</span>
+            <input type="text" readonly value="${url}" style="flex:1;font-size:12px;padding:6px 10px;background:var(--bg);">
+            <button class="copy-btn" onclick="copyToClipboard('${url}', this)">复制</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  async function copyToClipboard(text, btn) {
+    try {
+      await navigator.clipboard.writeText(text);
+      const oldText = btn.textContent;
+      btn.textContent = '✓ 已复制';
+      btn.style.background = 'var(--green)';
+      setTimeout(() => { btn.textContent = oldText; btn.style.background = ''; }, 1500);
+    } catch {
+      alert('复制失败');
+    }
+  }
+
+  async function copyAllUrls() {
+    const baseUrl = window.location.origin;
+    const token = document.cookie.match(/token=([^;]+)/)?.[1] || '';
+    const formats = ['auto', 'clash', 'base64', 'singbox', 'surge', 'loon'];
+    const urls = formats.map(f => `${baseUrl}/sub?format=${f}${token ? '&token=' + token : ''}`);
+    await copyToClipboard(urls.join('\n'), document.querySelector('.output-actions .secondary'));
+  }
+
+  async function previewConfig() {
+    const format = document.getElementById('previewFormat').value;
+    const pre = document.getElementById('previewContent');
+    pre.textContent = '加载中…';
+    document.getElementById('previewModal').classList.add('show');
+
+    try {
+      const token = document.cookie.match(/token=([^;]+)/)?.[1] || '';
+      const url = '/sub?format=' + format + (token ? '&token=' + token : '');
+      const res = await fetch(url);
+      const text = await res.text();
+      pre.textContent = text;
+    } catch (e) {
+      pre.textContent = '预览失败: ' + e.message;
+    }
+  }
+
+  function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+  }
+
+  // 加载页面时初始化输出配置
+  function initOutputPage() {
+    loadOutputInfo();
+  }
+
+  // 暴露到全局
+  window.initOutputPage = initOutputPage;
 </script>
 </body>
 </html>
