@@ -260,8 +260,8 @@
     <div class="logo">⚡ SUB-Next</div>
     <div class="sub">订阅汇聚 · 规则生成 · 一键配置</div>
     <label>管理密码</label>
-    <input type="password" id="loginPwd" placeholder="输入管理密码" onkeydown="if(event.key==='Enter')doLogin()">
-    <button class="login-btn" onclick="doLogin()">登 录</button>
+    <input type="password" id="loginPwd" placeholder="输入管理密码" onkeydown="if(event.key==='Enter')login()">
+    <button class="login-btn" onclick="login()">登 录</button>
     <div class="error" id="loginError">密码错误，请重试</div>
     <div class="hint">默认密码：admin · 登录后可在管理后台修改</div>
     <div class="login-footer">
@@ -307,11 +307,13 @@
     <div class="page" id="pageSubscribe" style="display:none">
       <div class="card">
         <div class="card-header"><h2>🔗 订阅链接</h2><span class="badge">3 个订阅</span></div>
-        <div class="sub-input"><input type="text" placeholder="输入节点链接或订阅 URL，每行一个…"><button>添加</button></div>
-        <div class="sub-list">
-          <div class="sub-item"><span class="status ok">✓</span><span class="url">https://example1.com/link/xxxxx</span><span class="del">✕</span></div>
-          <div class="sub-item"><span class="status ok">✓</span><span class="url">https://example2.com/link/yyyyy</span><span class="del">✕</span></div>
-          <div class="sub-item"><span class="status err">✗</span><span class="url">https://expired.com/link/zzzzz</span><span class="del">✕</span></div>
+        <div class="sub-input">
+          <input type="text" id="subInput" placeholder="输入节点链接或订阅 URL，每行一个…" onkeydown="if(event.key==='Enter')addSubscription()">
+          <button onclick="addSubscription()">添加</button>
+        </div>
+        <div class="sub-list" id="subList">
+          <!-- 动态加载 -->
+          <div style="padding:16px;text-align:center;color:var(--text3);">加载中…</div>
         </div>
       </div>
     </div>
@@ -572,22 +574,8 @@
 </div>
 
 <script>
-  function doLogin() {
-    const pwd = document.getElementById('loginPwd').value;
-    if (pwd === 'admin') {
-      document.getElementById('loginPage').style.display = 'none';
-      document.getElementById('app').classList.add('active');
-      document.getElementById('loginError').style.display = 'none';
-    } else {
-      document.getElementById('loginError').style.display = 'block';
-    }
-  }
-  function logout() {
-    document.getElementById('app').classList.remove('active');
-    document.getElementById('loginPage').style.display = 'flex';
-    document.getElementById('loginPwd').value = '';
-    closeUserMenu();
-  }
+  // 这些函数已在下方 API 集成部分重新实现（使用真实后端）
+  // 旧版 doLogin/logout 保留仅作为降级回退
   function toggleUserMenu() { document.getElementById('userDropdown').classList.toggle('show'); }
   function closeUserMenu() { document.getElementById('userDropdown').classList.remove('show'); }
   document.addEventListener('click', function(e) { if (!e.target.closest('.user-menu')) closeUserMenu(); });
@@ -672,7 +660,140 @@
   }
 
   // 页面加载后自动检查升级
-  document.addEventListener('DOMContentLoaded', checkUpgrade);
+  document.addEventListener('DOMContentLoaded', () => {
+    checkUpgrade();
+    checkSession();
+  });
+
+  // ════════════════════════════════════════
+  // API 集成
+  // ════════════════════════════════════════
+
+  const API_BASE = '/api';
+
+  async function api(path, options = {}) {
+    try {
+      const res = await fetch(API_BASE + path, {
+        headers: { 'Content-Type': 'application/json', ...options.headers },
+        ...options,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || '请求失败');
+      return data;
+    } catch (e) {
+      throw e;
+    }
+  }
+
+  // ── 会话管理 ──
+
+  async function checkSession() {
+    try {
+      const data = await api('/session');
+      document.getElementById('userName').textContent = data.data?.username || 'admin';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('loginPage').style.display = 'none';
+      loadSubscriptions();
+    } catch {
+      document.getElementById('loginPage').style.display = 'flex';
+      document.getElementById('app').style.display = 'none';
+    }
+  }
+
+  async function login() {
+    const pwd = document.getElementById('loginPwd').value;
+    const errEl = document.getElementById('loginError');
+    try {
+      await api('/login', { method: 'POST', body: JSON.stringify({ password: pwd }) });
+      errEl.style.display = 'none';
+      document.getElementById('loginPwd').value = '';
+      document.getElementById('app').style.display = 'flex';
+      document.getElementById('loginPage').style.display = 'none';
+      loadSubscriptions();
+    } catch (e) {
+      errEl.textContent = '密码错误';
+      errEl.style.display = 'block';
+    }
+  }
+
+  async function logout() {
+    try {
+      await api('/logout', { method: 'POST' });
+    } catch {}
+    document.getElementById('app').style.display = 'none';
+    document.getElementById('loginPage').style.display = 'flex';
+  }
+
+  // ── 订阅管理 ──
+
+  async function loadSubscriptions() {
+    const listEl = document.getElementById('subList');
+    try {
+      const data = await api('/subscriptions');
+      const subs = Array.isArray(data) ? data : (data.data || []);
+      renderSubscriptions(subs);
+    } catch {
+      listEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--red);">加载失败</div>';
+    }
+  }
+
+  function renderSubscriptions(subs) {
+    const listEl = document.getElementById('subList');
+    const badge = document.querySelector('#pageSubscribe .badge');
+    if (badge) badge.textContent = subs.length + ' 个订阅';
+
+    if (!subs || subs.length === 0) {
+      listEl.innerHTML = '<div style="padding:16px;text-align:center;color:var(--text3);">暂无订阅链接，添加一个试试</div>';
+      return;
+    }
+
+    listEl.innerHTML = subs.map(url => {
+      const isOk = url.startsWith('http://') || url.startsWith('https://') || url.includes('://');
+      return `<div class="sub-item">
+        <span class="status ${isOk ? 'ok' : 'err'}">${isOk ? '✓' : '✗'}</span>
+        <span class="url" title="${escapeHtml(url)}">${escapeHtml(url)}</span>
+        <span class="del" onclick="deleteSubscription('${escapeHtml(url)}')">✕</span>
+      </div>`;
+    }).join('');
+  }
+
+  async function addSubscription() {
+    const input = document.getElementById('subInput');
+    const url = input.value.trim();
+    if (!url) return;
+    input.disabled = true;
+    try {
+      const data = await api('/subscriptions', { method: 'POST', body: JSON.stringify({ url }) });
+      const subs = Array.isArray(data) ? data : (data.data || []);
+      renderSubscriptions(subs);
+      input.value = '';
+    } catch (e) {
+      alert('添加失败: ' + e.message);
+    }
+    input.disabled = false;
+    input.focus();
+  }
+
+  async function deleteSubscription(url) {
+    if (!confirm('确认删除此订阅链接？')) return;
+    try {
+      const data = await api('/subscriptions', { method: 'DELETE', body: JSON.stringify({ url }) });
+      const subs = Array.isArray(data) ? data : (data.data || []);
+      renderSubscriptions(subs);
+    } catch (e) {
+      alert('删除失败: ' + e.message);
+    }
+  }
+
+  function escapeHtml(str) {
+    return str.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/'/g, '&#39;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  // 将 login/logout 暴露到全局
+  window.login = login;
+  window.logout = logout;
+  window.addSubscription = addSubscription;
+  window.deleteSubscription = deleteSubscription;
 </script>
 </body>
 </html>
