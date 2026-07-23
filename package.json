@@ -1,0 +1,16 @@
+{
+  "name": "cf-workers-sub-next",
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Cloudflare Workers 订阅汇聚与规则生成工具",
+  "main": "src/index.js",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "npm run build && wrangler deploy",
+    "build": "node scripts/inline-html.js",
+    "test": "echo 'No tests yet'"
+  },
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}

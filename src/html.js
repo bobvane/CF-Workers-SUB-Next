@@ -1,0 +1,681 @@
+// 自动生成，请勿手动编辑
+// 运行 scripts/inline-html.js 更新
+const DEFAULT_HTML = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CF-Workers-SUB-Next · 原型</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root, [data-theme="dark"] {
+    --bg: #0f1117; --bg2: #161b22; --bg3: #1c2128; --bg4: #21262d;
+    --border: #30363d; --border2: #21262d;
+    --text: #e1e4e8; --text2: #8b949e; --text3: #484f58;
+    --accent: #58a6ff; --accent2: #1f6feb; --accent3: #388bfd;
+    --green: #3fb950; --red: #f85149; --red2: #da3633;
+    --input-bg: #0d1117; --shadow: rgba(0,0,0,.3);
+  }
+  [data-theme="light"] {
+    --bg: #ffffff; --bg2: #f6f8fa; --bg3: #eaeef2; --bg4: #d0d7de;
+    --border: #d0d7de; --border2: #d8dee4;
+    --text: #1f2328; --text2: #656d76; --text3: #8b949e;
+    --accent: #0969da; --accent2: #0969da; --accent3: #218bff;
+    --green: #1a7f37; --red: #cf222e; --red2: #b62324;
+    --input-bg: #ffffff; --shadow: rgba(0,0,0,.08);
+  }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans SC", sans-serif;
+    background: var(--bg); color: var(--text); line-height: 1.5;
+    transition: background .2s, color .2s;
+  }
+  .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
+  .login-card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+    padding: 40px; width: 100%; max-width: 400px; box-shadow: 0 8px 24px var(--shadow);
+  }
+  .login-card .logo { font-size: 24px; font-weight: 700; color: var(--accent); text-align: center; margin-bottom: 4px; }
+  .login-card .sub { text-align: center; color: var(--text2); font-size: 13px; margin-bottom: 28px; }
+  .login-card label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px; color: var(--text2); }
+  .login-card input[type="password"] {
+    width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--text); font-size: 14px; outline: none;
+    margin-bottom: 16px; transition: border .15s;
+  }
+  .login-card input:focus { border-color: var(--accent2); }
+  .login-card .login-btn {
+    width: 100%; padding: 10px; border: none; border-radius: 8px;
+    background: var(--accent2); color: #fff; font-size: 14px; font-weight: 500; cursor: pointer;
+    transition: background .15s;
+  }
+  .login-card .login-btn:hover { background: var(--accent3); }
+  .login-card .error { color: var(--red); font-size: 13px; margin-top: 10px; display: none; }
+  .login-card .hint { text-align: center; font-size: 12px; color: var(--text3); margin-top: 16px; }
+  .login-footer { text-align: center; font-size: 12px; color: var(--text3); margin-top: 16px; padding-top: 14px; border-top: 1px solid var(--border); line-height: 1.8; }
+  .login-footer a { color: var(--accent); text-decoration: none; }
+  .login-footer a:hover { text-decoration: underline; }
+  .app { display: none; }
+  .app.active { display: flex; min-height: 100vh; }
+  .sidebar {
+    width: 240px; background: var(--bg2); border-right: 1px solid var(--border);
+    padding: 24px 16px; display: flex; flex-direction: column; flex-shrink: 0;
+  }
+  .sidebar .logo { font-size: 18px; font-weight: 700; color: var(--accent); margin-bottom: 28px; display: flex; align-items: center; gap: 8px; }
+  .sidebar .logo span { background: var(--accent2); color: #fff; font-size: 11px; padding: 1px 6px; border-radius: 4px; }
+  .sidebar nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }
+  .sidebar nav a {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    border-radius: 8px; color: var(--text2); text-decoration: none; font-size: 14px; cursor: pointer;
+    transition: all .15s;
+  }
+  .sidebar nav a:hover { background: var(--bg3); color: var(--text); }
+  .sidebar nav a.active { background: color-mix(in srgb, var(--accent2) 15%, transparent); color: var(--accent); font-weight: 500; }
+  .sidebar .footer { font-size: 12px; color: var(--text3); padding-top: 16px; border-top: 1px solid var(--border); }
+  .app-footer {
+    margin-top: 40px; padding: 16px 0; border-top: 1px solid var(--border2);
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; color: var(--text3); flex-wrap: wrap; gap: 8px;
+  }
+  .app-footer a { color: var(--accent); text-decoration: none; }
+  .app-footer a:hover { text-decoration: underline; }
+  .app-footer .sep { margin: 0 6px; color: var(--border2); }
+  .app-footer .upgrade-ok { color: var(--green); }
+  .app-footer .upgrade-out { color: var(--accent); }
+  .app-footer .upgrade-out a { font-weight: 500; }
+  .main { flex: 1; padding: 28px 36px; max-width: 1100px; min-width: 0; display: flex; flex-direction: column; }
+  .topbar {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 28px; padding-bottom: 16px; border-bottom: 1px solid var(--border2);
+  }
+  .topbar h1 { font-size: 22px; font-weight: 600; }
+  .topbar .right { display: flex; align-items: center; gap: 12px; }
+  .theme-btn {
+    background: var(--bg4); border: 1px solid var(--border); border-radius: 6px;
+    padding: 6px 10px; cursor: pointer; font-size: 14px; color: var(--text2);
+    display: flex; align-items: center; gap: 4px; transition: all .15s;
+  }
+  .theme-btn:hover { color: var(--text); border-color: var(--text3); }
+  .user-menu {
+    position: relative; display: flex; align-items: center; gap: 8px;
+    padding: 6px 10px; border-radius: 8px; cursor: pointer; font-size: 13px; color: var(--text2);
+    transition: background .15s;
+  }
+  .user-menu:hover { background: var(--bg3); }
+  .user-menu .avatar {
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--accent2); color: #fff; font-size: 12px; font-weight: 600;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .user-menu .role-badge { font-size: 10px; padding: 1px 5px; border-radius: 4px; background: var(--bg4); color: var(--text3); }
+  .user-dropdown {
+    display: none; position: absolute; top: 100%; right: 0; margin-top: 4px;
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 8px;
+    padding: 6px; min-width: 160px; box-shadow: 0 8px 24px var(--shadow); z-index: 100;
+  }
+  .user-dropdown.show { display: block; }
+  .user-dropdown a { display: block; padding: 8px 12px; border-radius: 6px; font-size: 13px; color: var(--text); text-decoration: none; cursor: pointer; }
+  .user-dropdown a:hover { background: var(--bg3); }
+  .user-dropdown .divider { border-top: 1px solid var(--border); margin: 4px 0; }
+  .user-dropdown .danger { color: var(--red); }
+  .card {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 10px;
+    margin-bottom: 20px; overflow: hidden;
+  }
+  .card-header {
+    padding: 16px 20px; border-bottom: 1px solid var(--border2);
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .card-header h2 { font-size: 15px; font-weight: 600; }
+  .card-header .badge { font-size: 11px; padding: 2px 8px; border-radius: 10px; background: var(--bg4); color: var(--text2); }
+  .card-body { padding: 12px 0; }
+  .rule-group { border-bottom: 1px solid var(--border2); }
+  .rule-group:last-child { border-bottom: none; }
+  .rule-group-title { padding: 12px 20px 8px; font-size: 12px; font-weight: 600; color: var(--text2); text-transform: uppercase; letter-spacing: .5px; }
+  .rule-item {
+    display: flex; align-items: center; gap: 12px;
+    padding: 10px 20px; transition: background .1s;
+  }
+  .rule-item:hover { background: var(--bg3); }
+  .rule-item .toggle { position: relative; width: 36px; height: 20px; flex-shrink: 0; }
+  .rule-item .toggle input { opacity: 0; width: 0; height: 0; }
+  .rule-item .toggle .slider {
+    position: absolute; inset: 0; background: var(--bg4); border-radius: 10px; cursor: pointer; transition: .2s;
+  }
+  .rule-item .toggle .slider::before {
+    content: ""; position: absolute; left: 3px; top: 3px;
+    width: 14px; height: 14px; background: var(--text2); border-radius: 50%; transition: .2s;
+  }
+  .rule-item .toggle input:disabled + .slider { opacity: 0.5; cursor: not-allowed; }
+  .rule-item .toggle input:disabled:checked + .slider { background: var(--green); }
+  .rule-item .toggle input:checked + .slider::before { background: #fff; transform: translateX(16px); }
+  .rule-item .info { flex: 1; min-width: 0; }
+  .rule-item .info .name { font-size: 14px; font-weight: 500; }
+  .rule-item .info .desc { font-size: 12px; color: var(--text2); margin-top: 1px; }
+  .rule-item .info .url {
+    font-size: 11px; color: var(--text3); font-family: "SFMono-Regular", Consolas, monospace;
+    margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .rule-item .tag { font-size: 11px; padding: 2px 7px; border-radius: 4px; background: var(--bg3); color: var(--text2); white-space: nowrap; flex-shrink: 0; }
+  .locked-badge { font-size: 10px; padding: 1px 5px; border-radius: 3px; background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); font-weight: 400; margin-left: 6px; }
+  .extra-rules { display: none; }
+  .extra-rules.show { display: block; }
+  .show-all-btn {
+    display: block; width: 100%; padding: 14px; border: none; border-top: 1px solid var(--border2);
+    background: transparent; color: var(--accent); font-size: 13px; cursor: pointer; text-align: center;
+    transition: background .1s;
+  }
+  .show-all-btn:hover { background: var(--bg3); }
+  .sub-input { display: flex; gap: 8px; padding: 16px 20px; }
+  .sub-input input {
+    flex: 1; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--text); font-size: 13px; outline: none;
+  }
+  .sub-input input:focus { border-color: var(--accent2); }
+  .sub-input button {
+    padding: 10px 20px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer;
+    background: var(--accent2); color: #fff; font-weight: 500; transition: background .15s;
+  }
+  .sub-input button:hover { background: var(--accent3); }
+  .sub-list { padding: 0 20px 12px; }
+  .sub-item { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 6px; font-size: 13px; }
+  .sub-item:hover { background: var(--bg3); }
+  .sub-item .url { flex: 1; color: var(--text2); font-family: monospace; font-size: 12px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .sub-item .status { font-size: 11px; padding: 2px 6px; border-radius: 4px; }
+  .sub-item .status.ok { background: color-mix(in srgb, var(--green) 15%, transparent); color: var(--green); }
+  .sub-item .status.err { background: color-mix(in srgb, var(--red) 15%, transparent); color: var(--red); }
+  .sub-item .del { cursor: pointer; color: var(--text3); padding: 2px 4px; }
+  .sub-item .del:hover { color: var(--red); }
+  .output-actions { display: flex; gap: 10px; padding: 16px 20px; flex-wrap: wrap; }
+  .output-actions button {
+    padding: 10px 20px; border-radius: 8px; border: none; font-size: 13px; cursor: pointer;
+    font-weight: 500; transition: background .15s;
+  }
+  .output-actions .primary { background: var(--accent2); color: #fff; }
+  .output-actions .primary:hover { background: var(--accent3); }
+  .output-actions .secondary { background: var(--bg4); color: var(--text); }
+  .output-actions .secondary:hover { background: var(--border); }
+  .output-url { padding: 10px 20px 16px; display: flex; gap: 8px; align-items: center; }
+  .output-url input {
+    flex: 1; padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--input-bg); color: var(--accent); font-family: monospace; font-size: 12px; outline: none;
+  }
+  .output-url .copy-btn { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg4); color: var(--text2); cursor: pointer; font-size: 12px; }
+  .output-url .copy-btn:hover { background: var(--border); color: var(--text); }
+  .custom-rule { padding: 12px 20px; border-top: 1px dashed var(--border); }
+  .custom-rule .add-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 6px 14px; border-radius: 6px; border: 1px dashed var(--border);
+    background: transparent; color: var(--text2); cursor: pointer; font-size: 13px;
+  }
+  .custom-rule .add-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 200; align-items: center; justify-content: center; padding: 20px; }
+  .modal-overlay.show { display: flex; }
+  .modal {
+    background: var(--bg2); border: 1px solid var(--border); border-radius: 12px;
+    width: 100%; max-width: 640px; max-height: 80vh; overflow-y: auto; box-shadow: 0 16px 48px var(--shadow);
+  }
+  .modal-header { display: flex; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--border2); }
+  .modal-header h2 { font-size: 16px; }
+  .modal-header .close { background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; padding: 4px; line-height: 1; }
+  .modal-header .close:hover { color: var(--text); }
+  .modal-body { padding: 20px 24px; }
+  .modal-footer { padding: 16px 24px; border-top: 1px solid var(--border2); display: flex; justify-content: flex-end; gap: 8px; }
+  .modal-footer button { padding: 8px 16px; border-radius: 6px; border: none; font-size: 13px; cursor: pointer; }
+  .modal-footer .btn-primary { background: var(--accent2); color: #fff; }
+  .modal-footer .btn-primary:hover { background: var(--accent3); }
+  .modal-footer .btn-cancel { background: var(--bg4); color: var(--text); }
+  .modal-footer .btn-cancel:hover { background: var(--border); }
+  .admin-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border2); margin-bottom: 16px; }
+  .admin-tabs .tab { padding: 10px 16px; font-size: 13px; cursor: pointer; border-bottom: 2px solid transparent; color: var(--text2); transition: all .15s; }
+  .admin-tabs .tab:hover { color: var(--text); }
+  .admin-tabs .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+  .admin-panel { display: none; }
+  .admin-panel.active { display: block; }
+  .user-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  .user-table th { text-align: left; padding: 8px 12px; color: var(--text2); font-weight: 500; border-bottom: 1px solid var(--border2); }
+  .user-table td { padding: 8px 12px; border-bottom: 1px solid var(--border2); }
+  .user-table tr:hover td { background: var(--bg3); }
+  .user-table .role-admin { color: var(--accent); font-weight: 500; }
+  .user-table .role-user { color: var(--text2); }
+  .user-table .del-btn { color: var(--red); cursor: pointer; font-size: 12px; }
+  .user-table .del-btn:hover { text-decoration: underline; }
+  .add-user-row { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .add-user-row input { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 13px; outline: none; flex: 1; min-width: 120px; }
+  .add-user-row input:focus { border-color: var(--accent2); }
+  .add-user-row select { padding: 8px 12px; border-radius: 6px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 13px; outline: none; }
+  .add-user-row .add-btn { padding: 8px 16px; border-radius: 6px; border: none; background: var(--accent2); color: #fff; cursor: pointer; font-size: 13px; }
+  .add-user-row .add-btn:hover { background: var(--accent3); }
+  .rule-link-setting { margin-bottom: 12px; }
+  .rule-link-setting label { display: block; font-size: 13px; font-weight: 500; margin-bottom: 4px; }
+  .rule-link-setting .hint { font-size: 12px; color: var(--text2); margin-bottom: 6px; }
+  .rule-link-setting input { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--input-bg); color: var(--text); font-size: 13px; outline: none; }
+  .rule-link-setting input:focus { border-color: var(--accent2); }
+  .rule-link-setting .example { font-size: 11px; color: var(--text3); margin-top: 4px; font-family: monospace; }
+  @media (max-width: 768px) { .sidebar { display: none; } .main { padding: 16px; } .modal { max-width: 100%; } }
+</style>
+</head>
+<body>
+
+<!── Login Page ──>
+<div class="login-page" id="loginPage">
+  <div class="login-card">
+    <div class="logo">⚡ SUB-Next</div>
+    <div class="sub">订阅汇聚 · 规则生成 · 一键配置</div>
+    <label>管理密码</label>
+    <input type="password" id="loginPwd" placeholder="输入管理密码" onkeydown="if(event.key==='Enter')doLogin()">
+    <button class="login-btn" onclick="doLogin()">登 录</button>
+    <div class="error" id="loginError">密码错误，请重试</div>
+    <div class="hint">默认密码：admin · 登录后可在管理后台修改</div>
+    <div class="login-footer">
+      <p>📦 <a href="https://github.com/BobVane/CF-Workers-SUB-Next" target="_blank">github.com/BobVane/CF-Workers-SUB-Next</a></p>
+      <p>✏️ Made by <strong>Bob Vane</strong></p>
+    </div>
+  </div>
+</div>
+
+<!── App ──>
+<div class="app" id="app">
+  <aside class="sidebar">
+    <div class="logo">⚡ SUB-Next <span>原型</span></div>
+    <nav>
+      <a class="active" data-page="rules">📋 规则管理</a>
+      <a data-page="subscribe">🔗 订阅管理</a>
+      <a data-page="output">⚙️ 输出配置</a>
+      <a data-page="help">📖 使用说明</a>
+    </nav>
+    <div class="footer">v0.1 · 原型设计</div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <h1 id="pageTitle">📋 规则管理</h1>
+      <div class="right">
+        <div class="theme-btn" onclick="cycleTheme()" title="切换主题"><span id="themeIcon">🌙</span></div>
+        <div class="user-menu" onclick="toggleUserMenu()">
+          <div class="avatar" id="userAvatar">A</div>
+          <span id="userName">admin</span>
+          <span class="role-badge" id="userRole">管理员</span>
+          <span style="font-size:10px;color:var(--text3)">▼</span>
+          <div class="user-dropdown" id="userDropdown">
+            <a onclick="closeUserMenu();openAdmin()">⚙️ 管理后台</a>
+            <div class="divider"></div>
+            <a class="danger" onclick="logout()">🚪 退出登录</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!── Page: 规则管理 ──>
+    <div class="page" id="pageRules">
+      <div class="card">
+        <div class="card-header">
+          <h2>🧩 规则集</h2>
+          <span class="badge" id="ruleCount">显示 24 / 147 个</span>
+        </div>
+        <div class="card-body" id="ruleContainer">
+
+          <!── 常用规则 ──>
+          <div id="commonRules">
+            <!-- 🛑 广告过滤 -->
+            <div class="rule-group">
+              <div class="rule-group-title">🛑 广告过滤</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">全球拦截</div><div class="desc">拦截常见广告、跟踪器、挖矿域名</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/BanAD.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">应用净化</div><div class="desc">拦截 App 内广告、SDK 统计</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/BanProgramAD.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 🎬 流媒体 -->
+            <div class="rule-group">
+              <div class="rule-group-title">🎬 流媒体</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">Netflix</div><div class="desc">奈飞视频分流</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Netflix.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">YouTube</div><div class="desc">油管视频分流</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/YouTube.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Disney+</div><div class="desc">Disney+ 流媒体分流</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/DisneyPlus.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">TikTok</div><div class="desc">TikTok 国际版分流</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/TikTok.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">国外媒体</div><div class="desc">其他海外媒体平台合集</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/ProxyMedia.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 🔍 Google -->
+            <div class="rule-group">
+              <div class="rule-group-title">🔍 Google</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">Google 服务</div><div class="desc">Google 搜索、Gmail、Drive 等核心服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Google.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">Google FCM</div><div class="desc">Google 推送通知服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/GoogleFCM.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Google CN</div><div class="desc">Google 国内可访问服务（直连）</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/GoogleCN.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 🤖 AI 服务 -->
+            <div class="rule-group">
+              <div class="rule-group-title">🤖 AI 服务</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">OpenAI</div><div class="desc">ChatGPT、GPT API、OpenAI 全系服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/OpenAi.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">Claude</div><div class="desc">Anthropic Claude 系列服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Claude.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Gemini</div><div class="desc">Google Gemini AI 服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Gemini.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">GitHub</div><div class="desc">GitHub 开发平台</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Github.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 🎮 游戏 -->
+            <div class="rule-group">
+              <div class="rule-group-title">🎮 游戏</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">Steam</div><div class="desc">Steam 商店、社区、下载加速</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Steam.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">Steam CN</div><div class="desc">Steam 国区服务（直连）</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/SteamCN.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Epic</div><div class="desc">Epic 游戏商店</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Epic.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">游戏下载</div><div class="desc">游戏平台下载流量分流</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/GameDownload.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- ⚙️ 系统服务 -->
+            <div class="rule-group">
+              <div class="rule-group-title">⚙️ 系统服务</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">Apple 服务</div><div class="desc">iCloud、App Store、Apple 全系服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Apple.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">Microsoft</div><div class="desc">微软服务、Office 365、Azure</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Microsoft.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked><span class="slider"></span></label><div class="info"><div class="name">Telegram</div><div class="desc">Telegram 消息服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Telegram.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label><div class="info"><div class="name">国内直连 <span class="locked-badge">始终启用</span></div><div class="desc">国内域名列表，走直连</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/ChinaDomain.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label><div class="info"><div class="name">国内 IP 段 <span class="locked-badge">始终启用</span></div><div class="desc">国内 IP 地址段，直连</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/ChinaCompanyIp.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox" checked disabled><span class="slider"></span></label><div class="info"><div class="name">内网地址 <span class="locked-badge">始终启用</span></div><div class="desc">局域网、私有地址不走代理</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/LocalAreaNetwork.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+          </div>
+
+          <!── 全部规则（默认隐藏） ──>
+          <div class="extra-rules" id="extraRules">
+            <!-- 🌐 社交 -->
+            <div class="rule-group">
+              <div class="rule-group-title">🌐 社交网络</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Twitter</div><div class="desc">Twitter / X 社交平台</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Twitter.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Facebook</div><div class="desc">Facebook 社交平台</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Facebook.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Instagram</div><div class="desc">Instagram 图片社交</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Instagram.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Discord</div><div class="desc">Discord 语音聊天平台</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Discord.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Reddit</div><div class="desc">Reddit 社区</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Reddit.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">WhatsApp</div><div class="desc">WhatsApp 即时通讯</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Whatsapp.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">KakaoTalk</div><div class="desc">KakaoTalk 韩国即时通讯</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/KakaoTalk.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Zoom</div><div class="desc">Zoom 视频会议</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Zoom.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 🎬 更多流媒体 -->
+            <div class="rule-group">
+              <div class="rule-group-title">🎬 更多流媒体</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">HBO</div><div class="desc">HBO Max 流媒体</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/HBO.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">HBO GO HKG</div><div class="desc">HBO GO 香港地区</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/HBO_GO_HKG.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Hulu Japan</div><div class="desc">Hulu 日本流媒体</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/HuluJapan.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">AbemaTV</div><div class="desc">AbemaTV 日本在线电视</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/AbemaTV.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">BBC iPlayer</div><div class="desc">BBC 流媒体</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/BBCiPlayer.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Niconico</div><div class="desc">日本弹幕视频网</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Niconico.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Twitch</div><div class="desc">Twitch 游戏直播平台</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Twitch.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Spotify</div><div class="desc">Spotify 音乐流媒体</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Spotify.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">SoundCloud</div><div class="desc">SoundCloud 音频平台</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/SoundCloud.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Deezer</div><div class="desc">Deezer 音乐流媒体</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Deezer.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">TIDAL</div><div class="desc">TIDAL 无损音乐</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/TIDAL.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Pandora</div><div class="desc">Pandora 音乐电台</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Pandora.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Bahamut</div><div class="desc">巴哈姆特动画疯</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Bahamut.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Line TV</div><div class="desc">Line TV 台湾流媒体</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/LineTV.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">TaiWan Good</div><div class="desc">TaiWan Good 流媒体</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/TaiWanGood.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">ViuTV</div><div class="desc">ViuTV 香港流媒体</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/ViuTV.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 🎮 更多游戏 -->
+            <div class="rule-group">
+              <div class="rule-group-title">🎮 更多游戏</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Blizzard</div><div class="desc">暴雪游戏（守望、魔兽等）</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Blizzard.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Nintendo</div><div class="desc">任天堂 Switch 在线服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Nintendo.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Origin</div><div class="desc">EA Origin 游戏平台</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Origin.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Xbox</div><div class="desc">Xbox 游戏服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Xbox.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">PlayStation</div><div class="desc">Sony PlayStation 网络</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Sony.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 🐱 国内互联网 -->
+            <div class="rule-group">
+              <div class="rule-group-title">🇨🇳 国内互联网</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Bilibili</div><div class="desc">B站主站</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Bilibili.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">腾讯</div><div class="desc">腾讯系服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Tencent.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">阿里巴巴</div><div class="desc">阿里系服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Alibaba.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">百度</div><div class="desc">百度系服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Baidu.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">网易</div><div class="desc">网易系服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/NetEase.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">字节跳动</div><div class="desc">字节跳动系（抖音等）</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/ByteDance.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">华为</div><div class="desc">华为系服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/HuaWei.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">小米</div><div class="desc">小米系服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Xiaomi.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">爱奇艺</div><div class="desc">爱奇艺视频</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Iqiyi.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">腾讯视频</div><div class="desc">腾讯视频</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/TencentVideo.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">优酷</div><div class="desc">优酷视频</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Youku.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">斗鱼</div><div class="desc">斗鱼直播</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Douyu.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">哔哩哔哩港澳台</div><div class="desc">Bilibili 港澳台限定</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/BilibiliHMT.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 📦 开发者工具 -->
+            <div class="rule-group">
+              <div class="rule-group-title">📦 开发者工具</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Docker</div><div class="desc">Docker 容器服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Docker.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">OneDrive</div><div class="desc">微软 OneDrive 云存储</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/OneDrive.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">JetBrains</div><div class="desc">JetBrains IDE 工具</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/JetBrains.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">TeamViewer</div><div class="desc">远程桌面工具</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/TeamViewer.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">远程桌面</div><div class="desc">Remote Desktop 协议</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/RemoteDesktop.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Developer</div><div class="desc">开发者工具合集</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Developer.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 💰 金融与加密 -->
+            <div class="rule-group">
+              <div class="rule-group-title">💰 金融与加密</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Binance</div><div class="desc">币安交易所</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Binance.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">加密货币</div><div class="desc">加密货币相关服务合集</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Crypto.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+            <!-- 📋 其他规则 -->
+            <div class="rule-group">
+              <div class="rule-group-title">📋 其他规则</div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">AI 合集</div><div class="desc">AI 服务综合规则合集</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/AI.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Adobe</div><div class="desc">Adobe 软件服务</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Adobe.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Amazon</div><div class="desc">亚马逊 AWS + 购物</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Amazon.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Wikipedia</div><div class="desc">维基百科</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Wikipedia.yaml</div></div><span class="tag">ACL4SSR</span></div>
+              <div class="rule-item"><label class="toggle"><input type="checkbox"><span class="slider"></span></label><div class="info"><div class="name">Pixiv</div><div class="desc">Pixiv 画师社区</div><div class="url">https://raw.githubusercontent.com/ACL4SSR/ACL4SSR/master/Clash/Providers/Ruleset/Pixiv.yaml</div></div><span class="tag">ACL4SSR</span></div>
+            </div>
+          </div>
+
+          <!── Show All Button ──>
+          <button class="show-all-btn" id="showAllBtn" onclick="toggleExtraRules()">📂 显示全部 147 个规则集</button>
+
+          <div class="custom-rule">
+            <button class="add-btn">＋ 添加自定义规则集</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!── Page: 订阅管理 ──>
+    <div class="page" id="pageSubscribe" style="display:none">
+      <div class="card">
+        <div class="card-header"><h2>🔗 订阅链接</h2><span class="badge">3 个订阅</span></div>
+        <div class="sub-input"><input type="text" placeholder="输入节点链接或订阅 URL，每行一个…"><button>添加</button></div>
+        <div class="sub-list">
+          <div class="sub-item"><span class="status ok">✓</span><span class="url">https://example1.com/link/xxxxx</span><span class="del">✕</span></div>
+          <div class="sub-item"><span class="status ok">✓</span><span class="url">https://example2.com/link/yyyyy</span><span class="del">✕</span></div>
+          <div class="sub-item"><span class="status err">✗</span><span class="url">https://expired.com/link/zzzzz</span><span class="del">✕</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!── Page: 输出配置 ──>
+    <div class="page" id="pageOutput" style="display:none">
+      <div class="card">
+        <div class="card-header"><h2>📤 输出配置</h2><span class="badge">YAML</span></div>
+        <div class="output-actions">
+          <button class="primary">✔ 保存配置</button>
+          <button class="secondary">👁 预览 YAML</button>
+          <button class="secondary">📋 复制配置</button>
+          <button class="secondary">⬇ 下载文件</button>
+        </div>
+        <div class="output-url">
+          <span style="font-size:13px;color:var(--text2);white-space:nowrap;">订阅地址</span>
+          <input type="text" readonly value="https://sub-next.workers.dev/sub?token=xxxxxxxx">
+          <button class="copy-btn">复制</button>
+        </div>
+      </div>
+    </div>
+
+    <!── Page: 使用说明 ──>
+    <div class="page" id="pageHelp" style="display:none">
+      <div class="card">
+        <div class="card-header"><h2>📖 使用说明</h2></div>
+        <div class="card-body" style="padding:20px;font-size:14px;line-height:1.8;color:var(--text2);">
+          <p>1. 在 <strong>订阅管理</strong> 中添加你的机场订阅链接或节点链接</p>
+          <p>2. 在 <strong>规则管理</strong> 中勾选你需要的规则集</p>
+          <p>3. 在 <strong>输出配置</strong> 中复制订阅地址，粘贴到 OpenClash 中</p>
+          <p>4. 规则集每 24 小时自动更新，无需手动维护</p>
+          <p style="margin-top:12px;font-size:12px;">💡 管理员可在右上角用户菜单进入管理后台</p>
+        </div>
+      </div>
+    </div>
+
+    <!── App Footer ──>
+    <div class="app-footer">
+      <div class="footer-left">
+        📦 <a href="https://github.com/BobVane/CF-Workers-SUB-Next" target="_blank">github.com/BobVane/CF-Workers-SUB-Next</a>
+        <span class="sep">·</span>
+        ✏️ Made by <strong>Bob Vane</strong>
+      </div>
+      <div class="footer-right" id="upgradeCheck">
+        <span class="upgrade-ok">✅ 已是最新版本</span>
+        <span class="upgrade-out" style="display:none">🆕 发现新版本 · <a href="#">查看更新</a></span>
+        <span class="upgrade-load" style="display:none">⏳ 检查更新中…</span>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<!── Admin Modal ──>
+<div class="modal-overlay" id="adminModal">
+  <div class="modal">
+    <div class="modal-header"><h2>⚙️ 管理后台</h2><button class="close" onclick="closeAdmin()">✕</button></div>
+    <div class="modal-body">
+      <div class="admin-tabs">
+        <div class="tab active" onclick="switchAdminTab(this,'users')">👥 用户管理</div>
+        <div class="tab" onclick="switchAdminTab(this,'rulelinks')">🔗 规则链接替换</div>
+        <div class="tab" onclick="switchAdminTab(this,'system')">⚙️ 系统设置</div>
+      </div>
+      <div class="admin-panel active" id="adminUsers">
+        <table class="user-table">
+          <tr><th>用户名</th><th>角色</th><th>最后登录</th><th></th></tr>
+          <tr><td>admin</td><td><span class="role-admin">管理员</span></td><td>2026-07-23 19:30</td><td></td></tr>
+          <tr><td>zhangsan</td><td><span class="role-user">普通用户</span></td><td>2026-07-22 14:15</td><td><span class="del-btn">删除</span></td></tr>
+          <tr><td>lisi</td><td><span class="role-user">普通用户</span></td><td>2026-07-20 09:42</td><td><span class="del-btn">删除</span></td></tr>
+        </table>
+        <div class="add-user-row">
+          <input type="text" placeholder="用户名"><input type="password" placeholder="密码">
+          <select><option>普通用户</option><option>管理员</option></select>
+          <button class="add-btn">添加</button>
+        </div>
+      </div>
+      <div class="admin-panel" id="adminRulelinks">
+        <div class="rule-link-setting">
+          <label>规则链接前缀替换</label>
+          <div class="hint">将规则集中的 GitHub raw 链接替换为镜像加速地址，适用于国内网络环境</div>
+          <input type="text" value="https://raw.githubusercontent.com/" placeholder="原始前缀">
+          <div class="example">→</div>
+          <input type="text" value="https://ghproxy.net/https://raw.githubusercontent.com/" placeholder="替换为">
+          <div class="example">示例：raw.githubusercontent.com/ACL4SSR/... → ghproxy.net/...（国内加速）</div>
+        </div>
+      </div>
+      <div class="admin-panel" id="adminSystem">
+        <div class="rule-link-setting"><label>管理密码</label><input type="password" value="admin123" placeholder="新密码"></div>
+        <div class="rule-link-setting" style="margin-top:16px;">
+          <label>默认规则模式</label>
+          <div class="hint">新用户首次登录时默认启用的规则集</div>
+          <select style="padding:8px 12px;border-radius:6px;border:1px solid var(--border);background:var(--input-bg);color:var(--text);font-size:13px;width:100%;">
+            <option>全功能（推荐）</option><option>仅代理</option><option>媒体解锁</option><option>轻量模式</option>
+          </select>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer"><button class="btn-cancel" onclick="closeAdmin()">取消</button><button class="btn-primary">保存设置</button></div>
+  </div>
+</div>
+
+<script>
+  function doLogin() {
+    const pwd = document.getElementById('loginPwd').value;
+    if (pwd === 'admin') {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('app').classList.add('active');
+      document.getElementById('loginError').style.display = 'none';
+    } else {
+      document.getElementById('loginError').style.display = 'block';
+    }
+  }
+  function logout() {
+    document.getElementById('app').classList.remove('active');
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('loginPwd').value = '';
+    closeUserMenu();
+  }
+  function toggleUserMenu() { document.getElementById('userDropdown').classList.toggle('show'); }
+  function closeUserMenu() { document.getElementById('userDropdown').classList.remove('show'); }
+  document.addEventListener('click', function(e) { if (!e.target.closest('.user-menu')) closeUserMenu(); });
+  function openAdmin() { document.getElementById('adminModal').classList.add('show'); }
+  function closeAdmin() { document.getElementById('adminModal').classList.remove('show'); }
+  function switchAdminTab(el, panel) {
+    document.querySelectorAll('.admin-tabs .tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
+    const map = { users:'adminUsers', rulelinks:'adminRulelinks', system:'adminSystem' };
+    document.getElementById(map[panel]).classList.add('active');
+  }
+
+  let showingAll = false;
+  function toggleExtraRules() {
+    showingAll = !showingAll;
+    document.getElementById('extraRules').classList.toggle('show', showingAll);
+    document.getElementById('showAllBtn').textContent = showingAll
+      ? '📁 收起完整列表'
+      : '📂 显示全部 147 个规则集';
+    document.getElementById('ruleCount').textContent = showingAll ? '147 / 147 个' : '显示 24 / 147 个';
+  }
+
+  const themes = ['dark', 'light', 'auto'];
+  let themeIdx = 0;
+  const themeIcons = { dark: '🌙', light: '☀️', auto: '💻' };
+  function cycleTheme() {
+    themeIdx = (themeIdx + 1) % themes.length;
+    const t = themes[themeIdx];
+    document.getElementById('themeIcon').textContent = themeIcons[t];
+    if (t === 'auto') {
+      document.documentElement.setAttribute('data-theme', window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    } else {
+      document.documentElement.setAttribute('data-theme', t);
+    }
+  }
+  window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+    if (themes[themeIdx] === 'auto') document.documentElement.setAttribute('data-theme', e.matches ? 'dark' : 'light');
+  });
+
+  document.querySelectorAll('.sidebar nav a').forEach(link => {
+    link.addEventListener('click', function(e) {
+      e.preventDefault();
+      document.querySelectorAll('.sidebar nav a').forEach(a => a.classList.remove('active'));
+      this.classList.add('active');
+      const page = this.dataset.page;
+      document.querySelectorAll('.main .page').forEach(p => p.style.display = 'none');
+      const target = document.getElementById('page' + page.charAt(0).toUpperCase() + page.slice(1));
+      if (target) target.style.display = 'block';
+      const titles = { rules:'📋 规则管理', subscribe:'🔗 订阅管理', output:'⚙️ 输出配置', help:'📖 使用说明' };
+      document.getElementById('pageTitle').textContent = titles[page] || '📋 规则管理';
+    });
+  });
+
+  // ── Upgrade Check ──
+  // 生产环境通过 GitHub Releases API 检查：https://api.github.com/repos/BobVane/CF-Workers-SUB-Next/releases/latest
+  function checkUpgrade() {
+    const checkEl = document.getElementById('upgradeCheck');
+    const okEl = checkEl.querySelector('.upgrade-ok');
+    const outEl = checkEl.querySelector('.upgrade-out');
+    const loadEl = checkEl.querySelector('.upgrade-load');
+
+    loadEl.style.display = 'inline';
+
+    // 模拟检查延迟（生产环境替换为真实 fetch）
+    setTimeout(() => {
+      loadEl.style.display = 'none';
+      // 假设当前版本为 v0.1.0，最新为 v0.1.0（已是最新）
+      // fork 的用户可将 GITHUB_REPO 改为自己的仓库，自动对比版本
+      const currentVer = 'v0.1.0';
+      const latestVer  = 'v0.1.0';  // 生产环境从 API 获取
+
+      if (currentVer === latestVer) {
+        okEl.style.display = 'inline';
+        outEl.style.display = 'none';
+      } else {
+        okEl.style.display = 'none';
+        outEl.style.display = 'inline';
+        outEl.querySelector('a').href = 'https://github.com/BobVane/CF-Workers-SUB-Next/releases/latest';
+      }
+    }, 1200);
+  }
+
+  // 页面加载后自动检查升级
+  document.addEventListener('DOMContentLoaded', checkUpgrade);
+</script>
+</body>
+</html>`;
+export default DEFAULT_HTML;
