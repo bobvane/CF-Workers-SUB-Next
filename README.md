@@ -54,47 +54,28 @@ cd CF-Workers-SUB-Next
 3. 名称：`SUB_NEXT_DATA`
 4. 创建后复制 **命名空间 ID**
 
-### 第三步：更新 wrangler.toml
+### 第三步：配置 GitHub Secrets
 
-编辑 `wrangler.toml`，将 KV 命名空间 ID 填入：
-
-```toml
-[[kv_namespaces]]
-binding = "SUB_NEXT_DATA"
-id = "你的命名空间 ID"
-```
-
-### 第四步：创建 Cloudflare API Token
-
-1. [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) → **Create Token**
-2. 选择 **Edit Cloudflare Workers** 模板
-3. 权限：
-
-| 资源 | 权限 |
-|------|------|
-| Account Resources → Workers R2 | Edit |
-| Account Resources → Workers KV | Edit |
-
-4. 创建后 **立即复制 Token**
-
-### 第五步：配置 GitHub Secrets
-
-进入你的 GitHub 仓库 → **Settings → Secrets and variables → Actions → Repository secrets**（不是 Environment secrets），添加：
+进入你的 GitHub 仓库 → **Settings → Secrets and variables → Actions → Repository secrets**（不是 Environment secrets），添加以下 Secrets：
 
 | 名称 | 值 | 说明 |
 |------|------|------|
 | `CLOUDFLARE_API_TOKEN` | 刚复制的 API Token | 必填，用于部署 Worker |
 | `SUB_TOKEN` | 自定义字符串 | 可选，设置后订阅地址需带此 token 才能访问 |
+| `KV_NAMESPACE_ID` | 上一步复制的 KV 命名空间 ID | 必填，CI 自动写入 wrangler.toml |
 
-### 第六步：推送触发部署
+### 第四步：推送触发部署
 
 ```bash
 git add .
-git commit -m "配置 KV 命名空间"
+git commit -m "配置 GitHub Secrets"
 git push origin main
 ```
 
-GitHub Actions 会自动部署到 Cloudflare Workers。
+GitHub Actions 会自动：
+1. 将 `KV_NAMESPACE_ID` 写入 `wrangler.toml`
+2. 将 `SUB_TOKEN` 作为 Worker Secret 注入
+3. 部署到 Cloudflare Workers
 
 ### 可选：配置 SUB_TOKEN
 
