@@ -1246,21 +1246,19 @@ const DEFAULT_HTML = `<!DOCTYPE html>
   // 刷新节点数（含健康检测）
   async function refreshNodeHealth() {
     const badge = document.getElementById('outputNodeCount');
-    badge.textContent = '⏳ 检测中…';
+    badge.textContent = '⏳ 获取中…';
     try {
-      // 触发健康检测
-      const result = await api('/nodes/health-check', { method: 'POST' });
-      const validCount = result.valid ? result.valid.length : 0;
-      badge.textContent = validCount + ' 个节点';
-      // 刷新订阅地址列表
-      renderOutputUrls(validCount > 0);
-    } catch (e) {
-      badge.textContent = '检测失败';
-      // 降级：只显示节点数
+      // 先触发健康检测（如果失败就降级为节点列表）
       try {
-        const data = await api('/nodes/list');
-        badge.textContent = (data.total || 0) + ' 个节点';
+        await api('/nodes/health-check', { method: 'POST' });
       } catch {}
+      // 获取节点列表
+      const data = await api('/nodes/list');
+      const total = data.total || 0;
+      badge.textContent = total + ' 个节点';
+      renderOutputUrls(total > 0);
+    } catch (e) {
+      badge.textContent = '获取失败';
     }
   }
 
