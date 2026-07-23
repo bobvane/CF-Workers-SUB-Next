@@ -20,6 +20,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           secrets: |
-            SUB_TOKEN
-        env:
-          SUB_TOKEN: ${{ secrets.SUB_TOKEN }}
+            SUB_TOKEN=${{ secrets.SUB_TOKEN }}
