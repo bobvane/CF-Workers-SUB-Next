@@ -870,7 +870,9 @@ const DEFAULT_HTML = `<!DOCTYPE html>
 
   function renderOutputUrls(total) {
     const baseUrl = window.location.origin + '/sub';
-    const token = ''; // 如果设置了 SUB_TOKEN 需要从配置获取
+    // 从当前 URL 中获取 token（全局 SUB_TOKEN 保护）
+    const urlParams = new URLSearchParams(window.location.search);
+    const token = urlParams.get('token') || '';
     
     const formats = [
       { key: 'auto', name: '自适应', desc: '自动返回 Clash YAML 格式', ext: 'yaml' },
