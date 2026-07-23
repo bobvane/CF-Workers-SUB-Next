@@ -162,11 +162,9 @@ async function handleApi(request, path, method, kv, url, env) {
       from: await kvGet(kv, 'link_replace:from') || '',
       to: await kvGet(kv, 'link_replace:to') || ''
     };
-    const yaml = await generateClashConfig(enabled, subs, linkReplace);
-    return new Response(yaml, {
-      status: 200,
-      headers: { 'Content-Type': 'text/yaml; charset=utf-8' }
-    });
+    // 使用 handleSubscription 逻辑生成预览
+    const url = new URL(request.url);
+    return handleSubscription(request, kv, url, env);
   }
 
   // ── 管理后台（仅管理员）──
@@ -250,6 +248,15 @@ async function handleSubscription(request, kv, url, env) {
   // 获取已启用的规则列表
   const rulesets = getRulesetList();
   const enabledRules = rulesets.filter(r => enabled.includes(r.id) || r.builtin);
+  
+  // 兼容不在预设列表中的规则（从额外规则集中查找或直接使用）
+  const extraRules = [];
+  for (const id of enabled) {
+    if (!rulesets.find(r => r.id === id || r.id.toLowerCase() === id.toLowerCase())) {
+      extraRules.push({ id, name: id, url: '', builtin: false });
+    }
+  }
+  const allEnabledRules = [...enabledRules, ...extraRules];
   const linkReplace = {
     from: await kvGet(kv, 'link_replace:from') || '',
     to: await kvGet(kv, 'link_replace:to') || ''
@@ -265,7 +272,7 @@ async function handleSubscription(request, kv, url, env) {
   const nodes = deduplicateNodes(allNodes);
 
   // 生成 rule-provider 引用列表
-  const rules = enabledRules.map(r => {
+  const rules = allEnabledRules.map(r => {
     let url = r.url;
     if (linkReplace.from && linkReplace.to) {
       url = url.replace(linkReplace.from, linkReplace.to);
