@@ -1,0 +1,46 @@
+/**
+ * 配置模型 / Session 模型 / 系统设置模型
+ * 06_DATA_MODEL.md §9-11
+ */
+
+export type ConfigFormat = 'mihomo' | 'singbox';
+
+export interface Config {
+  id: string;
+  format: ConfigFormat;
+  name: string;
+  subscriptionIds: string[];
+  createdAt: number;
+  updatedAt: number;
+  version: number;
+}
+
+export interface Session {
+  id: string;
+  createdAt: number;
+  expiresAt: number;
+}
+
+/**
+ * KV 键名常量
+ */
+export const KV_KEYS = {
+  /** 订阅键前缀: subscription:{id} */
+  subscription: (id: string) => `subscription:${id}`,
+  /** 订阅列表键 */
+  subscriptions: 'subscriptions',
+  /** 节点缓存键前缀: nodes:{subscriptionId} */
+  nodes: (subscriptionId: string) => `nodes:${subscriptionId}`,
+  /** 规则键前缀: rule:{id} */
+  rule: (id: string) => `rule:${id}`,
+  /** 规则列表键 */
+  rules: 'rules',
+  /** 配置键前缀: config:{id} */
+  config: (id: string) => `config:${id}`,
+  /** 会话键前缀: session:{id} */
+  session: (id: string) => `session:${id}`,
+  /** 系统设置键前缀: setting:{key} */
+  setting: (key: string) => `setting:${key}`,
+  /** 管理员密码哈希 */
+  adminPassword: 'admin:hash',
+} as const;

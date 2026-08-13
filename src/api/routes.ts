@@ -1,0 +1,248 @@
+/**
+ * API 路由
+ * TASK 2.4 - API Router
+ * 07_API_SPECIFICATION.md：所有端点 /api 前缀，统一响应格式
+ */
+
+import { Hono } from 'hono';
+import { Repositories } from '@/storage/kv';
+import { AuthService } from '@/services/auth.service';
+import {
+  createSessionCookie,
+  createClearCookie,
+  SESSION_COOKIE_NAME,
+  parseCookie,
+} from '@/services/auth.service';
+import { SubscriptionService } from '@/services/subscription.service';
+import { requireAuth, errorHandler, readBody, AppError, ERRORS, getToken } from './middleware';
+import { KV_KEYS } from '@/models/config';
+
+export interface AppDeps {
+  repos: Repositories;
+  auth: AuthService;
+  subscriptions: SubscriptionService;
+  adminPassword: string;
+  /** 订阅内容抓取函数（含 SSRF 防护） */
+  fetchRaw: (url: string) => Promise<string>;
+  /** 节点解析管线（parser 完成后注入） */
+  parseContent: (content: string, source: string) => Promise<unknown[]>;
+}
+
+export function createApp(deps: AppDeps): Hono {
+  const app = new Hono();
+  const { repos, auth, subscriptions, adminPassword } = deps;
+
+  // ============ 全局错误处理 ============
+  app.onError(errorHandler);
+
+  // ============ Health ============
+  app.get('/api/health', (c) => c.json({ status: 'ok' }));
+
+  // ============ Auth ============
+  app.post('/api/auth/login', async (c) => {
+    const body = await readBody<{ password?: string }>(c);
+    if (!body.password || typeof body.password !== 'string') {
+      throw ERRORS.INVALID_PARAMETER('password is required');
+    }
+
+    const token = await auth.login(body.password);
+    if (!token) {
+      return c.json(
+        { success: false, error: { code: 'INVALID_PASSWORD', message: 'Invalid password' } },
+        401
+      );
+    }
+
+    c.header('Set-Cookie', createSessionCookie(token));
+    return c.json({ success: true, data: { token } });
+  });
+
+  app.post('/api/auth/logout', async (c) => {
+    const token = getToken(c);
+    if (token) {
+      await auth.logout(token);
+    }
+    c.header('Set-Cookie', createClearCookie());
+    return c.json({ success: true });
+  });
+
+  app.get('/api/auth/session', async (c) => {
+    const token = getToken(c);
+    const authenticated = token ? await auth.validateSession(token) : false;
+    return c.json({ success: true, data: { authenticated } });
+  });
+
+  // ============ 受保护路由（需认证） ============
+  app.use('/api/subscriptions*', requireAuth(auth));
+  app.use('/api/nodes*', requireAuth(auth));
+  app.use('/api/rules*', requireAuth(auth));
+  app.use('/api/dashboard', requireAuth(auth));
+
+  // ============ Subscription API ============
+
+  // 获取订阅列表
+  app.get('/api/subscriptions', async (c) => {
+    const list = await subscriptions.list();
+    return c.json({
+      success: true,
+      data: list.map((s) => ({
+        id: s.id,
+        name: s.name,
+        status: s.status,
+        nodeCount: s.nodeCount ?? 0,
+        updatedAt: s.updatedAt,
+      })),
+    });
+  });
+
+  // 创建订阅
+  app.post('/api/subscriptions', async (c) => {
+    const body = await readBody<{ name?: string; url?: string }>(c);
+    if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
+      throw ERRORS.INVALID_PARAMETER('name is required');
+    }
+    if (!body.url || typeof body.url !== 'string') {
+      throw ERRORS.INVALID_PARAMETER('url is required');
+    }
+
+    const sub = await subscriptions.create(body.name.trim(), body.url.trim());
+    return c.json({ success: true, data: { id: sub.id } }, 201);
+  });
+
+  // 获取单个订阅
+  app.get('/api/subscriptions/:id', async (c) => {
+    const id = c.req.param('id');
+    const sub = await subscriptions.getById(id);
+    if (!sub) throw ERRORS.SUBSCRIPTION_NOT_FOUND();
+    return c.json({ success: true, data: { id: sub.id, name: sub.name, url: sub.url } });
+  });
+
+  // 删除订阅
+  app.delete('/api/subscriptions/:id', async (c) => {
+    const id = c.req.param('id');
+    const deleted = await subscriptions.delete(id);
+    if (!deleted) throw ERRORS.SUBSCRIPTION_NOT_FOUND();
+    return c.json({ success: true });
+  });
+
+  // 更新订阅（重新抓取解析）
+  app.post('/api/subscriptions/:id/update', async (c) => {
+    const id = c.req.param('id');
+    try {
+      const { nodeCount } = await subscriptions.update(id, deps.fetchRaw);
+      return c.json({ success: true, data: { nodeCount } });
+    } catch (err) {
+      if (err instanceof AppError) throw err;
+      throw ERRORS.FETCH_FAILED((err as Error).message);
+    }
+  });
+
+  // ============ Node API ============
+
+  // 获取节点列表（可选按订阅过滤）
+  app.get('/api/nodes', async (c) => {
+    const subscriptionId = c.req.query('subscriptionId');
+    if (subscriptionId) {
+      const nodes = await repos.nodes.getBySubscription(subscriptionId);
+      return c.json({
+        success: true,
+        data: nodes.map((n) => ({
+          name: n.name,
+          protocol: n.protocol,
+          server: n.server,
+          port: n.port,
+          tls: n.tls ?? false,
+        })),
+      });
+    }
+    const all = await repos.nodes.getAll();
+    return c.json({
+      success: true,
+      data: all.map((n) => ({
+        name: n.name,
+        protocol: n.protocol,
+        server: n.server,
+        port: n.port,
+        tls: n.tls ?? false,
+      })),
+    });
+  });
+
+  // ============ Rule API ============
+
+  // 获取规则列表
+  app.get('/api/rules', async (c) => {
+    const rules = await repos.rules.list();
+    return c.json({ success: true, data: rules });
+  });
+
+  // 创建规则
+  app.post('/api/rules', async (c) => {
+    const body = await readBody<{ name?: string; type?: string; pattern?: string }>(c);
+    if (!body.name || !body.type || !body.pattern) {
+      throw ERRORS.INVALID_PARAMETER('name, type, pattern are required');
+    }
+    if (!['include', 'exclude', 'replace'].includes(body.type)) {
+      throw ERRORS.INVALID_PARAMETER('type must be include|exclude|replace');
+    }
+    const rule = await repos.rules.create({
+      name: body.name,
+      type: body.type as 'include' | 'exclude' | 'replace',
+      pattern: body.pattern,
+    });
+    return c.json({ success: true, data: { id: rule.id } }, 201);
+  });
+
+  // 删除规则
+  app.delete('/api/rules/:id', async (c) => {
+    const id = c.req.param('id');
+    const deleted = await repos.rules.delete(id);
+    if (!deleted) throw ERRORS.NOT_FOUND('Rule not found');
+    return c.json({ success: true });
+  });
+
+  // ============ Dashboard API ============
+
+  app.get('/api/dashboard', async (c) => {
+    const subs = await subscriptions.list();
+    const nodes = await repos.nodes.getAll();
+    const lastUpdate = subs.reduce((max, s) => Math.max(max, s.updatedAt), 0);
+    return c.json({
+      success: true,
+      data: {
+        subscriptions: subs.length,
+        nodes: nodes.length,
+        lastUpdate: lastUpdate || null,
+        status: 'ok',
+      },
+    });
+  });
+
+  // ============ Settings ============
+
+  app.get('/api/settings', requireAuth(auth), async (c) => {
+    const appName = await repos.settings.get('app_name');
+    return c.json({
+      success: true,
+      data: {
+        app_name: appName ?? 'CF-Workers-SUB-Next',
+      },
+    });
+  });
+
+  app.put('/api/settings', requireAuth(auth), async (c) => {
+    const body = await readBody<{ app_name?: string }>(c);
+    if (body.app_name) {
+      await repos.settings.set('app_name', body.app_name);
+    }
+    return c.json({ success: true });
+  });
+
+  // ============ 根路径（前端由 static 服务，后续实现） ============
+
+  app.notFound((c) =>
+    c.json({ success: false, error: { code: 'NOT_FOUND', message: 'Not found' } }, 404)
+  );
+
+  return app;
+}

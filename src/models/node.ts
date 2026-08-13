@@ -1,0 +1,84 @@
+/**
+ * 节点模型 - 系统内部统一节点对象
+ * 06_DATA_MODEL.md §5
+ */
+
+export type NodeProtocol =
+  | 'vmess'
+  | 'vless'
+  | 'trojan'
+  | 'ss'
+  | 'hysteria2'
+  | 'tuic';
+
+export type TransportType = 'tcp' | 'ws' | 'grpc' | 'h2';
+
+export interface Transport {
+  type: TransportType;
+  path?: string;
+  host?: string;
+}
+
+export interface NodeMetadata {
+  country?: string;
+  region?: string;
+  source: string;
+  originalName: string;
+  tags: string[];
+}
+
+export interface Node {
+  id: string;
+  name: string;
+  protocol: NodeProtocol;
+  server: string;
+  port: number;
+  username?: string;
+  password?: string;
+  uuid?: string;
+  tls?: boolean;
+  transport?: Transport;
+  /** Reality 参数（VLESS） */
+  flow?: string;
+  pbk?: string;
+  sid?: string;
+  sni?: string;
+  /** Shadowsocks 插件 */
+  plugin?: string;
+  /** 是否允许不安全证书 */
+  allowInsecure?: boolean;
+  metadata: NodeMetadata;
+  version: number;
+}
+
+/**
+ * 创建节点的工厂函数
+ */
+export function createNode(partial: Partial<Node> & { name: string }): Node {
+  return {
+    id: partial.id ?? '',
+    name: partial.name,
+    protocol: partial.protocol ?? 'vmess',
+    server: partial.server ?? '',
+    port: partial.port ?? 443,
+    username: partial.username,
+    password: partial.password,
+    uuid: partial.uuid,
+    tls: partial.tls,
+    transport: partial.transport,
+    flow: partial.flow,
+    pbk: partial.pbk,
+    sid: partial.sid,
+    sni: partial.sni,
+    plugin: partial.plugin,
+    allowInsecure: partial.allowInsecure,
+    metadata: {
+      source: partial.metadata?.source ?? 'unknown',
+      originalName: partial.metadata?.originalName ?? partial.name,
+      tags: partial.metadata?.tags ?? [],
+      country: partial.metadata?.country,
+      region: partial.metadata?.region,
+    },
+    version: 1,
+  };
+}
