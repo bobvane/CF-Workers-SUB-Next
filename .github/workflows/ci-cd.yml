@@ -55,7 +55,7 @@ jobs:
 
       # 注入 KV 命名空间 ID（必须早于 deploy）
       - name: Update wrangler.toml with KV namespace ID
-        run: sed -i 's/id = ""/id = "${{ secrets.KV_NAMESPACE_ID }}"/' wrangler.toml
+        run: sed -i 's/id = "00000000-0000-0000-0000-000000000000"/id = "${{ secrets.KV_NAMESPACE_ID }}"/' wrangler.toml
 
       # 先部署 Worker（必须存在后才能设置 secret）
       - name: Deploy to Cloudflare Workers
