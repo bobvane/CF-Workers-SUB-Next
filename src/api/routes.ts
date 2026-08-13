@@ -221,17 +221,15 @@ export function createApp(deps: AppDeps): Hono {
 
   // ============ Output API ============
 
-  // 生成 Mihomo 配置
-  app.get('/api/output/mihomo', requireAuth(auth), async (c) => {
-    const result = await config.generateOutput('mihomo');
-    c.header('Content-Type', result.contentType);
-    c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
-    return c.body(result.content);
-  });
-
-  // 生成 Sing-box 配置
-  app.get('/api/output/singbox', requireAuth(auth), async (c) => {
-    const result = await config.generateOutput('singbox');
+  // 通用配置输出：/api/output/{format}（需登录）
+  // 支持: mihomo / singbox / v2ray / v2rayn / nekoray / shadowrocket / loon / surge / quantumultx
+  app.get('/api/output/:format', requireAuth(auth), async (c) => {
+    const format = c.req.param('format') ?? '';
+    const allowedFormats = ['mihomo', 'singbox', 'v2ray', 'v2rayn', 'nekoray', 'shadowrocket', 'loon', 'surge', 'quantumultx'];
+    if (!allowedFormats.includes(format)) {
+      throw ERRORS.INVALID_PARAMETER('Unsupported format');
+    }
+    const result = await config.generateOutput(format as Parameters<typeof config.generateOutput>[0]);
     c.header('Content-Type', result.contentType);
     c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
     return c.body(result.content);
@@ -239,30 +237,22 @@ export function createApp(deps: AppDeps): Hono {
 
   // ============ 订阅输出端点（无需登录，供客户端直接使用） ============
 
-  // /sub/mihomo/{token}
-  app.get('/sub/mihomo/:token', async (c) => {
+  // 通用订阅端点：/sub/{format}/{token}
+  // 支持: mihomo / singbox / v2ray / v2rayn / nekoray / shadowrocket / loon / surge / quantumultx
+  app.get('/sub/:format/:token', async (c) => {
     const token = c.req.param('token');
+    const format = c.req.param('format');
     const valid = await auth.validateSession(token);
     if (!valid) {
       return c.json({ success: false, error: { code: 'AUTH_REQUIRED', message: 'Invalid token' } }, 401);
     }
-    const result = await config.generateOutput('mihomo');
-    return new Response(result.content, {
-      headers: {
-        'Content-Type': result.contentType,
-        'Content-Disposition': `attachment; filename="${result.filename}"`,
-      },
-    });
-  });
 
-  // /sub/singbox/{token}
-  app.get('/sub/singbox/:token', async (c) => {
-    const token = c.req.param('token');
-    const valid = await auth.validateSession(token);
-    if (!valid) {
-      return c.json({ success: false, error: { code: 'AUTH_REQUIRED', message: 'Invalid token' } }, 401);
+    const allowedFormats = ['mihomo', 'singbox', 'v2ray', 'v2rayn', 'nekoray', 'shadowrocket', 'loon', 'surge', 'quantumultx'];
+    if (!allowedFormats.includes(format)) {
+      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'Unsupported format' } }, 400);
     }
-    const result = await config.generateOutput('singbox');
+
+    const result = await config.generateOutput(format as Parameters<typeof config.generateOutput>[0]);
     return new Response(result.content, {
       headers: {
         'Content-Type': result.contentType,

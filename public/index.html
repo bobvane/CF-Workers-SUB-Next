@@ -230,9 +230,20 @@ tr:hover { background: var(--bg3); }
   <div class="modal-content" style="max-width:800px">
     <div class="modal-header"><h3>📄 配置预览</h3><button class="modal-close" onclick="closeModal('configModal')">✕</button></div>
     <div class="modal-body">
-      <div style="margin-bottom:12px;display:flex;gap:8px">
-        <button class="btn btn-sm" onclick="previewConfig('mihomo')">Mihomo YAML</button>
-        <button class="btn btn-sm" onclick="previewConfig('singbox')">Sing-box JSON</button>
+      <div style="margin-bottom:12px">
+        <label style="font-size:13px;color:var(--text2)">选择格式：</label>
+        <select id="previewFormatSelect" onchange="previewSelect()" style="max-width:260px">
+          <option value="mihomo">🐱 Mihomo / Clash / Stash</option>
+          <option value="singbox">📦 Sing-box</option>
+          <option value="v2ray">📄 V2ray (Base64)</option>
+          <option value="v2rayn">📱 V2RayNG</option>
+          <option value="nekoray">🪐 NekoRay</option>
+          <option value="shadowrocket">🚀 Shadowrocket</option>
+          <option value="loon">🌙 Loon</option>
+          <option value="surge">⚡ Surge</option>
+          <option value="quantumultx">🍁 Quantumult X</option>
+        </select>
+        <button class="btn btn-primary btn-sm" onclick="previewSelect(true)" style="margin-left:8px">👉 加载</button>
       </div>
       <pre id="configPreview" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;overflow:auto;max-height:60vh;white-space:pre-wrap;word-break:break-all">选择格式查看预览</pre>
     </div>
@@ -466,11 +477,17 @@ function renderOutputUrls() {
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token') || '';
   const formats = [
-    { key: 'mihomo', name: '🐱 Mihomo', desc: 'Mihomo / Clash Meta / OpenClash' },
+    { key: 'mihomo', name: '🐱 Mihomo', desc: 'Mihomo / Clash Meta / OpenClash / Stash' },
     { key: 'singbox', name: '📦 Sing-box', desc: 'Sing-box 原生格式' },
+    { key: 'v2ray', name: '📄 V2ray', desc: 'V2ray 标准订阅 (Base64)' },
+    { key: 'v2rayn', name: '📱 V2RayNG', desc: 'V2RayNG Android' },
+    { key: 'nekoray', name: '🪐 NekoRay', desc: 'NekoRay / NekoBox' },
+    { key: 'shadowrocket', name: '🚀 Shadowrocket', desc: 'Shadowrocket iOS' },
+    { key: 'loon', name: '🌙 Loon', desc: 'Loon iOS' },
+    { key: 'surge', name: '⚡ Surge', desc: 'Surge iOS / Mac' },
+    { key: 'quantumultx', name: '🍁 Quantumult X', desc: 'Quantumult X iOS' },
   ];
   document.getElementById('outputLinks').innerHTML = formats.map(f => {
-    const params = `format=${f.key}${token ? '&token=' + encodeURIComponent(token) : ''}`;
     const url = `${baseUrl}/${f.key}/${token}`;
     return `<div class="sub-item" onclick="showConfigModal('${f.key}', '${f.name}')">
       <span class="name">${f.name}</span>
@@ -493,7 +510,16 @@ function copyUrl(url) {
 
 function showConfigModal(format, name) {
   showModal('configModal');
+  document.getElementById('previewFormatSelect').value = format;
   document.getElementById('configPreview').textContent = '加载中...';
+  previewConfig(format);
+}
+
+function previewSelect(force) {
+  const select = document.getElementById('previewFormatSelect');
+  const format = select.value;
+  // onchange 自动加载（点击行进入时也可能触发，force 仅语义化）
+  void force;
   previewConfig(format);
 }
 
@@ -509,25 +535,18 @@ async function previewConfig(format) {
   }
 }
 
-async function downloadMihomo() {
+async function downloadConfig(format, filename) {
   try {
-    const res = await fetch('/api/output/mihomo', { credentials: 'include' });
+    const res = await fetch(`/api/output/${format}`, { credentials: 'include' });
     const blob = await res.blob();
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mihomo.yaml'; a.click();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
     URL.revokeObjectURL(a.href);
     toast('下载完成');
   } catch { toast('下载失败', 'error'); }
 }
 
-async function downloadSingbox() {
-  try {
-    const res = await fetch('/api/output/singbox', { credentials: 'include' });
-    const blob = await res.blob();
-    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'config.json'; a.click();
-    URL.revokeObjectURL(a.href);
-    toast('下载完成');
-  } catch { toast('下载失败', 'error'); }
-}
+async function downloadMihomo() { downloadConfig('mihomo', 'mihomo.yaml'); }
+async function downloadSingbox() { downloadConfig('singbox', 'sing-box.json'); }
 
 // ============ Settings ============
 async function loadSettings() {
