@@ -14,6 +14,7 @@ import {
   parseCookie,
 } from '@/services/auth.service';
 import { SubscriptionService } from '@/services/subscription.service';
+import { ConfigService } from '@/services/config.service';
 import { requireAuth, errorHandler, readBody, AppError, ERRORS, getToken } from './middleware';
 import { KV_KEYS } from '@/models/config';
 
@@ -21,6 +22,7 @@ export interface AppDeps {
   repos: Repositories;
   auth: AuthService;
   subscriptions: SubscriptionService;
+  config: ConfigService;
   adminPassword: string;
   /** 订阅内容抓取函数（含 SSRF 防护） */
   fetchRaw: (url: string) => Promise<string>;
@@ -30,7 +32,7 @@ export interface AppDeps {
 
 export function createApp(deps: AppDeps): Hono {
   const app = new Hono();
-  const { repos, auth, subscriptions, adminPassword } = deps;
+  const { repos, auth, subscriptions, config } = deps;
 
   // ============ 全局错误处理 ============
   app.onError(errorHandler);
@@ -214,6 +216,58 @@ export function createApp(deps: AppDeps): Hono {
         nodes: nodes.length,
         lastUpdate: lastUpdate || null,
         status: 'ok',
+      },
+    });
+  });
+
+  // ============ Output API ============
+
+  // 生成 Mihomo 配置
+  app.get('/api/output/mihomo', requireAuth(auth), async (c) => {
+    const result = await config.generateOutput('mihomo');
+    c.header('Content-Type', result.contentType);
+    c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
+    return c.body(result.content);
+  });
+
+  // 生成 Sing-box 配置
+  app.get('/api/output/singbox', requireAuth(auth), async (c) => {
+    const result = await config.generateOutput('singbox');
+    c.header('Content-Type', result.contentType);
+    c.header('Content-Disposition', `attachment; filename="${result.filename}"`);
+    return c.body(result.content);
+  });
+
+  // ============ 订阅输出端点（无需登录，供客户端直接使用） ============
+
+  // /sub/mihomo/{token}
+  app.get('/sub/mihomo/:token', async (c) => {
+    const token = c.req.param('token');
+    const valid = await auth.validateSession(token);
+    if (!valid) {
+      return c.json({ success: false, error: { code: 'AUTH_REQUIRED', message: 'Invalid token' } }, 401);
+    }
+    const result = await config.generateOutput('mihomo');
+    return new Response(result.content, {
+      headers: {
+        'Content-Type': result.contentType,
+        'Content-Disposition': `attachment; filename="${result.filename}"`,
+      },
+    });
+  });
+
+  // /sub/singbox/{token}
+  app.get('/sub/singbox/:token', async (c) => {
+    const token = c.req.param('token');
+    const valid = await auth.validateSession(token);
+    if (!valid) {
+      return c.json({ success: false, error: { code: 'AUTH_REQUIRED', message: 'Invalid token' } }, 401);
+    }
+    const result = await config.generateOutput('singbox');
+    return new Response(result.content, {
+      headers: {
+        'Content-Type': result.contentType,
+        'Content-Disposition': `attachment; filename="${result.filename}"`,
       },
     });
   });

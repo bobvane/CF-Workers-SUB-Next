@@ -1,22 +1,23 @@
 /**
  * 订阅服务 - Subscription Service
  * TASK 3.x：订阅的创建、删除、更新、查询
- * 06_DATA_MODEL.md §4：Subscription 是主数据，Node 是派生数据
+ * 更新流程：Fetch → Decode → Parse → Normalize → Store（EPIC 3/4 接入）
  */
 
 import { Subscription } from '@/models/subscription';
 import { Node } from '@/models/node';
 import { Repositories } from '@/storage/kv';
+import {
+  parseSubscriptionContent,
+  deduplicateNodes,
+  applyRules,
+} from '@/parser';
 
 export interface SubscriptionService {
   list(): Promise<Subscription[]>;
   getById(id: string): Promise<Subscription | null>;
   create(name: string, url: string): Promise<Subscription>;
   delete(id: string): Promise<boolean>;
-  /**
-   * 更新订阅：重新抓取 → 解析 → 缓存节点
-   * 返回更新后的订阅与解析出的节点数
-   */
   update(id: string, fetcher: (url: string) => Promise<string>): Promise<{
     subscription: Subscription;
     nodes: Node[];
@@ -26,7 +27,8 @@ export interface SubscriptionService {
 
 export function createSubscriptionService(
   repos: Repositories,
-  fetchRawContent: (url: string) => Promise<string>
+  fetchRawContent: (url: string) => Promise<string>,
+  getRules: () => Promise<{ type: 'include' | 'exclude' | 'replace'; pattern: string; enabled?: boolean }[]>
 ): SubscriptionService {
   return {
     async list() {
@@ -51,32 +53,31 @@ export function createSubscriptionService(
         throw new Error('Subscription not found');
       }
 
-      // 标记 "正在更新"
-      await repos.subscriptions.update(id, { status: 'active' });
-
       try {
-        // 1. 抓取原始内容
+        // 1. 抓取原始内容（含 SSRF 防护）
         const raw = await fetcher(existing.url);
-        // 2. 解析节点（由外部 parser 管线注入；此处先占位空实现）
-        //    parser 完成后在此接入 DetectionPipeline
-        void raw;
-        const nodes: Node[] = [];
-        const nodeCount = nodes.length;
+        // 2. 解析 + 标准化
+        const parsed = parseSubscriptionContent(raw, id);
+        // 3. 去重
+        let nodes = deduplicateNodes(parsed.nodes);
+        // 4. 应用规则（关键字过滤）
+        const rules = await getRules();
+        nodes = applyRules(nodes, rules);
 
         const updated = await repos.subscriptions.update(id, {
           status: 'active',
           lastFetchAt: Date.now(),
-          nodeCount,
+          nodeCount: nodes.length,
           errorMessage: undefined,
         });
 
-        // 3. 缓存节点
+        // 5. 缓存节点
         await repos.nodes.setBySubscription(id, nodes);
 
         return {
           subscription: updated!,
           nodes,
-          nodeCount,
+          nodeCount: nodes.length,
         };
       } catch (err) {
         await repos.subscriptions.update(id, {
