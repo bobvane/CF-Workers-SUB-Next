@@ -11,6 +11,7 @@ import { parseVmess } from './vmess.parser';
 import { parseVless } from './vless.parser';
 import { parseTrojan } from './trojan.parser';
 import { parseShadowsocks } from './shadowsocks.parser';
+import { isClashYaml, parseClashYaml } from './clash';
 import { ParserResult } from './types';
 
 export interface ParseSummary {
@@ -29,7 +30,24 @@ export interface ParseSummary {
 export function parseSubscriptionContent(content: string, source: string): ParseSummary {
   // 1. 解码（Base64 自动识别）
   const decoded = decodeSubscriptionContent(content);
-  // 2. 分行
+
+  // 2. 检测是否为 Clash YAML 格式
+  if (isClashYaml(decoded)) {
+    const clashResult = parseClashYaml(decoded);
+    // 标记来源
+    for (const node of clashResult.nodes) {
+      node.metadata.source = source;
+    }
+    return {
+      total: clashResult.nodes.length + clashResult.errors.length,
+      success: clashResult.nodes.length,
+      failed: clashResult.errors.length,
+      nodes: clashResult.nodes,
+      errors: clashResult.errors,
+    };
+  }
+
+  // 3. 分行（标准链接格式）
   const lines = splitLines(decoded);
 
   const nodes: Node[] = [];
