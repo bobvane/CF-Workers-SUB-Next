@@ -29,19 +29,13 @@
 2. GitHub 账号
 3. Node.js 20+（本地开发用）
 
-### 第一步：Fork 仓库
+### 第一步：创建 KV 命名空间
 
-点击 GitHub 右上角 **Fork** 按钮。
+1. 打开 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **KV**
+2. 点击 **Create namespace**，名称填 `DATABASE`，创建
+3. 创建后页面会显示一个 **Namespace ID**（一串字母数字），**复制它**
 
-### 第二步：创建 KV 命名空间
-
-```bash
-wrangler kv namespace create DATABASE
-```
-
-复制输出的 **namespace ID**。
-
-### 第三步：配置 GitHub Secrets
+### 第二步：配置 GitHub Secrets
 
 进入仓库 `Settings → Secrets and variables → Actions → New repository secret`，添加：
 

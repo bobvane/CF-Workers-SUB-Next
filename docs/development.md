@@ -34,48 +34,41 @@ SESSION_SECRET=一段随机字符串
 
 ```bash
 npm run dev
-# 相当于 wrangler dev
+# 相当于 wrangler dev --local
 ```
 
-访问 `http://localhost:8788`，`/api/health` 应返回 `{"status":"ok"}`。
+访问 `http://localhost:8787`，`/api/health` 应返回 `{"status":"ok"}`。
 
 ### 4. 测试与构建
 
 ```bash
-npm test          # 运行 Vitest
-npm run build     # TypeScript 类型检查
+npm test          # 运行 Vitest（169 个测试）
+npm run build     # 构建前端内联 + TypeScript 类型检查
 npm run lint      # ESLint
 ```
 
 ---
 
-## 生产环境环境变量
+## 生产部署
+
+### Cloudflare KV 命名空间
+
+1. 打开 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **KV**
+2. 点击 **Create namespace**，名称填 `DATABASE`，创建
+3. 复制显示的 **Namespace ID**
+
+### 生产环境环境变量
 
 生产环境运行于 Cloudflare Workers，**不使用** `.dev.vars`，
-而是通过 Cloudflare Secrets 配置：
+而是通过 **GitHub Secrets** 配置（仓库 → Settings → Secrets and variables → Actions → New repository secret）：
 
-```bash
-# 需要先在 Cloudflare 上部署 Worker（见 README / CI 文档）
-wrangler secret put ADMIN_PASSWORD
-wrangler secret put SESSION_SECRET
-```
-
-| 变量 | 用途 | 必填 |
-|------|------|------|
+| Secret | 说明 | 必填 |
+|--------|------|------|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API Token（Workers R2 Edit + KV Edit 权限） | ✅ |
+| `KV_NAMESPACE_ID` | 上面创建的 KV 命名空间 ID | ✅ |
 | `ADMIN_PASSWORD` | 管理界面登录密码 | ✅ |
 | `SESSION_SECRET` | Session 签名/加密密钥 | ✅ |
 
-所有敏感信息存储于 Cloudflare Secrets，**绝不写入代码或 wrangler.toml**。
+配置完 Secrets 后，推送 `main` 分支触发 GitHub Actions 自动部署。
 
----
-
-## Cloudflare KV
-
-应用使用 KV 绑定 `DATABASE` 作为数据存储。
-
-本地开发 wrangler 会自动模拟 KV；生产环境需先创建命名空间并绑定：
-
-```bash
-wrangler kv namespace create DATABASE
-# 将输出的 id 填入 wrangler.toml 的 [[kv_namespaces]]
-```
+> 所有敏感信息存储于 Cloudflare Secrets，**绝不写入代码或 wrangler.toml**。
