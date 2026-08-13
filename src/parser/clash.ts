@@ -96,7 +96,7 @@ export function parseClashYaml(content: string): { nodes: Node[]; errors: { line
  */
 function clashProxyToNode(proxy: ClashProxy): Node | null {
   try {
-    const { type, server, name, port, uuid, password, cipher, tls, flow, sni, network } = proxy;
+    const { type, server, name, port, uuid, password, cipher, tls, flow, sni } = proxy;
     const serverPort = proxy.server_port || port;
 
     let transport: Transport | undefined;
