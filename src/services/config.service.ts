@@ -1,10 +1,10 @@
 /**
  * 配置输出服务
  * TASK 5.3 - Subscription Endpoint
- * 09_CONFIG_GENERATOR_SPEC.md §11：多格式订阅输出
+ * 支持：节点启用状态过滤（disabled_nodes 存储于 KV Settings）
  */
 
-import { Node } from '@/models/node';
+import { Node, nodeFingerprint } from '@/models/node';
 import { Repositories } from '@/storage/kv';
 import { generateMihomoConfig } from '@/generator/mihomo';
 import { generateSingboxConfig } from '@/generator/singbox';
@@ -14,17 +14,15 @@ import { generateQuantumultXConfig } from '@/generator/quantumultx';
 import { nodeToUrl } from '@/generator/node-to-url';
 
 export type OutputFormat =
-  // 完整配置类
-  | 'mihomo'      // Clash Meta / Mihomo / Stash（兼容）
-  | 'singbox'     // Sing-box
-  | 'surge'       // Surge
-  | 'quantumultx' // Quantumult X
-  // Base64 链接列表类
-  | 'v2ray'       // V2ray 标准订阅
-  | 'v2rayn'      // V2RayNG
-  | 'nekoray'     // NekoRay / NekoBox
-  | 'shadowrocket'// Shadowrocket
-  | 'loon';       // Loon
+  | 'mihomo'
+  | 'singbox'
+  | 'surge'
+  | 'quantumultx'
+  | 'v2ray'
+  | 'v2rayn'
+  | 'nekoray'
+  | 'shadowrocket'
+  | 'loon';
 
 export interface OutputResult {
   content: string;
@@ -36,6 +34,10 @@ export interface ConfigService {
   generate(format: OutputFormat): Promise<string>;
   generateOutput(format: OutputFormat): Promise<OutputResult>;
   getNodes(): Promise<Node[]>;
+  /** 获取禁用的节点指纹列表 */
+  getDisabledNodes(): Promise<string[]>;
+  /** 设置禁用的节点指纹列表 */
+  setDisabledNodes(fingerprints: string[]): Promise<void>;
 }
 
 const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string }> = {
@@ -50,14 +52,36 @@ const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string 
   loon: { contentType: 'text/plain; charset=utf-8', filename: 'loon.txt' },
 };
 
+const DISABLED_NODES_KEY = 'disabled_nodes';
+
 export function createConfigService(repos: Repositories): ConfigService {
   return {
     async getNodes(): Promise<Node[]> {
       return repos.nodes.getAll();
     },
 
+    async getDisabledNodes(): Promise<string[]> {
+      const raw = await repos.settings.get(DISABLED_NODES_KEY);
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    },
+
+    async setDisabledNodes(fingerprints: string[]): Promise<void> {
+      // 去重
+      const unique = [...new Set(fingerprints)];
+      await repos.settings.set(DISABLED_NODES_KEY, JSON.stringify(unique));
+    },
+
     async generate(format: OutputFormat): Promise<string> {
-      const nodes = await repos.nodes.getAll();
+      const all = await repos.nodes.getAll();
+      // 过滤禁用的节点
+      const disabled = new Set(await this.getDisabledNodes());
+      const nodes = all.filter((n) => !disabled.has(nodeFingerprint(n)));
       switch (format) {
         case 'mihomo':
           return generateMihomoConfig(nodes);
@@ -72,7 +96,6 @@ export function createConfigService(repos: Repositories): ConfigService {
         case 'nekoray':
         case 'shadowrocket':
         case 'loon':
-          // Base64 链接列表（各客户端通用）
           return generateBase64Config(nodes);
         default:
           return '';

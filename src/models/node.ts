@@ -82,3 +82,11 @@ export function createNode(partial: Partial<Node> & { name: string }): Node {
     version: 1,
   };
 }
+
+/**
+ * 节点指纹：server:port:protocol
+ * 用于节点禁用状态持久化（重抓订阅后状态不丢失）
+ */
+export function nodeFingerprint(node: Pick<Node, 'server' | 'port' | 'protocol'>): string {
+  return `${node.server}:${node.port}:${node.protocol}`.toLowerCase();
+}

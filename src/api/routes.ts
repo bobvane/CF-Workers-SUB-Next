@@ -15,6 +15,8 @@ import { SubscriptionService } from '@/services/subscription.service';
 import { ConfigService } from '@/services/config.service';
 import { requireAuth, errorHandler, readBody, AppError, ERRORS, getToken } from './middleware';
 import { rateLimit } from './rate-limit';
+import { nodeToLink } from '@/services/config.service';
+import { nodeFingerprint } from '@/models/node';
 
 export interface AppDeps {
   repos: Repositories;
@@ -143,30 +145,42 @@ export function createApp(deps: AppDeps): Hono {
   // 获取节点列表（可选按订阅过滤）
   app.get('/api/nodes', async (c) => {
     const subscriptionId = c.req.query('subscriptionId');
+    const disabled = new Set(await config.getDisabledNodes());
+    const mapper = (n: { name: string; protocol: string; server: string; port: number; tls?: boolean }) => ({
+      name: n.name,
+      protocol: n.protocol,
+      server: n.server,
+      port: n.port,
+      tls: n.tls ?? false,
+      link: nodeToLink(n as import('@/models/node').Node),
+      fingerprint: nodeFingerprint(n as import('@/models/node').Node),
+      enabled: !disabled.has(nodeFingerprint(n as import('@/models/node').Node)),
+    });
     if (subscriptionId) {
       const nodes = await repos.nodes.getBySubscription(subscriptionId);
       return c.json({
         success: true,
-        data: nodes.map((n) => ({
-          name: n.name,
-          protocol: n.protocol,
-          server: n.server,
-          port: n.port,
-          tls: n.tls ?? false,
-        })),
+        data: nodes.map(mapper),
       });
     }
     const all = await repos.nodes.getAll();
     return c.json({
       success: true,
-      data: all.map((n) => ({
-        name: n.name,
-        protocol: n.protocol,
-        server: n.server,
-        port: n.port,
-        tls: n.tls ?? false,
-      })),
+      data: all.map(mapper),
     });
+  });
+
+  // 设置节点启用状态（保存禁用列表）
+  app.put('/api/nodes/enabled', async (c) => {
+    const body = await readBody<{ enabled?: string[] }>(c);
+    const enabled = Array.isArray(body.enabled) ? body.enabled : [];
+    // 传入的是启用列表，反向存储为禁用列表
+    const all = await repos.nodes.getAll();
+    const allFingerprints = all.map((n) => nodeFingerprint(n));
+    const enabledSet = new Set(enabled);
+    const disabled = allFingerprints.filter((fp) => !enabledSet.has(fp));
+    await config.setDisabledNodes(disabled);
+    return c.json({ success: true, data: { disabledCount: disabled.length } });
   });
 
   // ============ Rule API ============
