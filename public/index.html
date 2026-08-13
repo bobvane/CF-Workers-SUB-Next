@@ -264,7 +264,7 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 
 <script>
 // ============ State ============
-let state = { subscriptions: [], nodes: [], currentPage: 'dashboard' };
+let state = { subscriptions: [], nodes: [], currentPage: 'dashboard', authenticated: false };
 
 // ============ Theme ============
 const themes = ['dark', 'light'];
@@ -308,12 +308,14 @@ async function checkSession() {
   try {
     const data = await api('/auth/session');
     if (data.data?.authenticated) {
+      state.authenticated = true;
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       loadDashboard();
       return true;
     }
   } catch {}
+  state.authenticated = false;
   document.getElementById('loginPage').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
   return false;
@@ -326,6 +328,7 @@ async function login() {
     await api('/auth/login', { method: 'POST', body: JSON.stringify({ password }) });
     document.getElementById('loginPassword').value = '';
     toast('登录成功');
+    state.authenticated = true;
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('app').style.display = 'block';
     loadDashboard();
@@ -336,6 +339,7 @@ async function login() {
 
 async function logout() {
   try { await api('/auth/logout', { method: 'POST' }); } catch {}
+  state.authenticated = false;
   document.getElementById('loginPage').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
 }
@@ -346,6 +350,8 @@ function switchPage(page) {
   document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.page === page));
   document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
   window.location.hash = page;
+  // 未登录时不加载任何数据（避免 401 toast）
+  if (!state.authenticated) return;
   if (page === 'dashboard') loadDashboard();
   if (page === 'subscribe') loadSubscriptions();
   if (page === 'nodes') loadNodes();
