@@ -6,8 +6,8 @@
 
 import { Node } from '@/models/node';
 import { Repositories } from '@/storage/kv';
-import { generateMihomoConfig, MihomoTemplate } from '@/generator/mihomo';
-import { generateSingboxConfig, SingboxTemplate } from '@/generator/singbox';
+import { generateMihomoConfig } from '@/generator/mihomo';
+import { generateSingboxConfig } from '@/generator/singbox';
 
 export type OutputFormat = 'mihomo' | 'singbox';
 

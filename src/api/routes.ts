@@ -10,14 +10,11 @@ import { AuthService } from '@/services/auth.service';
 import {
   createSessionCookie,
   createClearCookie,
-  SESSION_COOKIE_NAME,
-  parseCookie,
 } from '@/services/auth.service';
 import { SubscriptionService } from '@/services/subscription.service';
 import { ConfigService } from '@/services/config.service';
 import { requireAuth, errorHandler, readBody, AppError, ERRORS, getToken } from './middleware';
 import { rateLimit } from './rate-limit';
-import { KV_KEYS } from '@/models/config';
 
 export interface AppDeps {
   repos: Repositories;

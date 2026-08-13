@@ -23,6 +23,6 @@ export default [
     },
   },
   {
-    ignores: ['node_modules/**', 'dist/**', 'public/**', 'coverage/**'],
+    ignores: ['node_modules/**', 'dist/**', 'public/**', 'coverage/**', '.wrangler/**'],
   },
 ];

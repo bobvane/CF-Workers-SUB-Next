@@ -8,12 +8,11 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   MemoryKvAdapter,
   createRepositories,
-  KvSubscriptionRepository,
 } from '@/storage/kv';
 import { createSubscriptionService } from '@/services/subscription.service';
 import { createConfigService } from '@/services/config.service';
-import { generateMihomoConfig, validateMihomo } from '@/generator/mihomo';
-import { generateSingboxConfig, validateSingbox } from '@/generator/singbox';
+import { validateMihomo } from '@/generator/mihomo';
+import { validateSingbox } from '@/generator/singbox';
 
 const TEST_SUBSCRIPTION = [
   'ss://aes-256-gcm:pass1@jp1.example.com:8388#JP-1',

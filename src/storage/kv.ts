@@ -10,7 +10,7 @@ import {
 } from '@/models/subscription';
 import { Node } from '@/models/node';
 import { Rule, createRule } from '@/models/rule';
-import { Config, Session, KV_KEYS } from '@/models/config';
+import { Session, KV_KEYS } from '@/models/config';
 
 export interface KVStorage {
   // 通用 KV 操作
