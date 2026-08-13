@@ -201,7 +201,7 @@ tr:hover { background: var(--bg3); }
 </div>
 
 <!-- Login -->
-<div class="login-page" id="loginPage">
+<div class="login-page" id="loginPage" style="display:none">
   <div class="login-card">
     <h1>🔐 CF-Workers-SUB-Next</h1>
     <div class="form-group">
@@ -345,24 +345,28 @@ async function loadSubscriptions() {
   try {
     const data = await api('/subscriptions');
     state.subscriptions = data.data || [];
-    const tbody = document.getElementById('subTableBody');
-    if (state.subscriptions.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color:var(--text2);padding:24px">暂无订阅，点击右上角添加</td></tr>';
-      return;
-    }
-    tbody.innerHTML = state.subscriptions.map(s => `
-      <tr>
-        <td><strong>${escHtml(s.name)}</strong></td>
-        <td><span class="status-${s.status}">${s.status === 'active' ? '✅ 正常' : s.status === 'error' ? '❌ 错误' : '⏸ 停用'}</span></td>
-        <td>${s.nodeCount ?? 0}</td>
-        <td style="font-size:12px;color:var(--text2)">${s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '-'}</td>
-        <td>
-          <button class="btn btn-sm" onclick="updateSub('${s.id}')">🔄 更新</button>
-          <button class="btn btn-sm btn-danger" onclick="deleteSub('${s.id}')">🗑 删除</button>
-        </td>
-      </tr>
-    `).join('');
+    renderSubTable();
   } catch { toast('加载订阅失败', 'error'); }
+}
+
+function renderSubTable() {
+  const tbody = document.getElementById('subTableBody');
+  if (state.subscriptions.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color:var(--text2);padding:24px">暂无订阅，点击右上角添加</td></tr>';
+    return;
+  }
+  tbody.innerHTML = state.subscriptions.map(s => `
+    <tr>
+      <td><strong>${escHtml(s.name)}</strong></td>
+      <td><span class="status-${s.status}">${s.status === 'active' ? '✅ 正常' : s.status === 'error' ? '❌ 错误' : '⏸ 停用'}</span></td>
+      <td>${s.nodeCount ?? 0}</td>
+      <td style="font-size:12px;color:var(--text2)">${s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '-'}</td>
+      <td>
+        <button class="btn btn-sm" onclick="updateSub('${s.id}')">🔄 更新</button>
+        <button class="btn btn-sm btn-danger" onclick="deleteSub('${s.id}')">🗑 删除</button>
+      </td>
+    </tr>
+  `).join('');
 }
 
 function showAddSub() { showModal('addSubModal'); }
@@ -372,12 +376,22 @@ async function addSub() {
   const url = document.getElementById('subUrl').value.trim();
   if (!name || !url) { toast('请填写名称和 URL', 'error'); return; }
   try {
-    await api('/subscriptions', { method: 'POST', body: JSON.stringify({ name, url }) });
+    const data = await api('/subscriptions', { method: 'POST', body: JSON.stringify({ name, url }) });
     toast('添加成功');
     document.getElementById('subName').value = '';
     document.getElementById('subUrl').value = '';
     closeModal('addSubModal');
-    loadSubscriptions();
+    // 乐观更新：立即把新订阅插进列表（避免 KV 最终一致性的读取延迟）
+    state.subscriptions.unshift({
+      id: data.data.id,
+      name: name,
+      status: 'active',
+      nodeCount: 0,
+      updatedAt: Date.now(),
+    });
+    renderSubTable();
+    // 后台再拉一次，确保拿到服务器最新数据（含其他字段）
+    setTimeout(loadSubscriptions, 800);
   } catch (e) { toast('添加失败: ' + e.message, 'error'); }
 }
 
