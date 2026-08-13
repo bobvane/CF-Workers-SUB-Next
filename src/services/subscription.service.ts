@@ -2,6 +2,7 @@
  * 订阅服务 - Subscription Service
  * TASK 3.x：订阅的创建、删除、更新、查询
  * 更新流程：Fetch → Decode → Parse → Normalize → Store（EPIC 3/4 接入）
+ * 支持：订阅 URL 和直接节点链接（vless:// 等）
  */
 
 import { Subscription } from '@/models/subscription';
@@ -12,6 +13,15 @@ import {
   deduplicateNodes,
   applyRules,
 } from '@/parser';
+
+const NODE_LINK_PREFIXES = ['vmess://', 'vless://', 'trojan://', 'ss://', 'ssr://', 'hysteria2://', 'tuic://'];
+
+/**
+ * 判断是否为直接节点链接（非 HTTP 订阅 URL）
+ */
+export function isNodeLink(url: string): boolean {
+  return NODE_LINK_PREFIXES.some(prefix => url.trim().toLowerCase().startsWith(prefix));
+}
 
 export interface SubscriptionService {
   list(): Promise<Subscription[]>;
@@ -54,8 +64,12 @@ export function createSubscriptionService(
       }
 
       try {
-        // 1. 抓取原始内容（含 SSRF 防护）
-        const raw = await fetcher(existing.url);
+        // 1. 获取内容：如果是节点链接（vless:// 等），直接当作内容解析
+        //    否则通过 HTTP 抓取订阅
+        const raw = isNodeLink(existing.url)
+          ? existing.url  // 直接节点链接，本身即内容
+          : await fetcher(existing.url);
+
         // 2. 解析 + 标准化
         const parsed = parseSubscriptionContent(raw, id);
         // 3. 去重

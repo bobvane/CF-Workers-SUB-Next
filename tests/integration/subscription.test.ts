@@ -9,7 +9,7 @@ import {
   MemoryKvAdapter,
   createRepositories,
 } from '@/storage/kv';
-import { createSubscriptionService } from '@/services/subscription.service';
+import { createSubscriptionService, isNodeLink } from '@/services/subscription.service';
 import { createConfigService } from '@/services/config.service';
 import { validateMihomo } from '@/generator/mihomo';
 import { validateSingbox } from '@/generator/singbox';
@@ -114,5 +114,54 @@ describe('subscription pipeline integration', () => {
     await service.update(b.id, async () => 'ss://aes-256-gcm:p@n2.com:8388#N2');
     const all = await repos.nodes.getAll();
     expect(all.length).toBe(2);
+  });
+});
+
+describe('isNodeLink', () => {
+  it('should detect vless:// as node link', () => {
+    expect(isNodeLink('vless://uuid@server:443')).toBe(true);
+  });
+  it('should detect vmess:// as node link', () => {
+    expect(isNodeLink('vmess://base64stuff')).toBe(true);
+  });
+  it('should detect trojan:// as node link', () => {
+    expect(isNodeLink('trojan://pass@server:443')).toBe(true);
+  });
+  it('should detect ss:// as node link', () => {
+    expect(isNodeLink('ss://method:pass@server:8388')).toBe(true);
+  });
+  it('should return false for http URLs', () => {
+    expect(isNodeLink('https://example.com/sub')).toBe(false);
+    expect(isNodeLink('http://example.com/sub')).toBe(false);
+  });
+  it('should return false for random text', () => {
+    expect(isNodeLink('random text')).toBe(false);
+  });
+});
+
+describe('single node subscription (direct link)', () => {
+  let kv: MemoryKvAdapter;
+  let repos: ReturnType<typeof createRepositories>;
+  let service: ReturnType<typeof createSubscriptionService>;
+
+  beforeEach(() => {
+    kv = new MemoryKvAdapter();
+    repos = createRepositories(kv);
+    service = createSubscriptionService(repos, async () => '', async () => []);
+  });
+
+  it('should parse direct vless node as subscription', async () => {
+    const sub = await service.create(
+      'My VPS Node',
+      'vless://a10d67fa-d913-491a-a403-0fcf037c9a2e@mys.bobvane.top:443?encryption=none&flow=xtls-rprx-vision&security=reality&pbk=testpbk&sid=abc&sni=example.com&type=tcp#MyVPS'
+    );
+    // update 时，URL 是 vless:// 开头，当作内容直接解析
+    const result = await service.update(sub.id, async () => {
+      throw new Error('should not be called');
+    });
+    expect(result.nodeCount).toBe(1);
+    expect(result.nodes[0].protocol).toBe('vless');
+    expect(result.nodes[0].server).toBe('mys.bobvane.top');
+    expect(result.nodes[0].flow).toBe('xtls-rprx-vision');
   });
 });
