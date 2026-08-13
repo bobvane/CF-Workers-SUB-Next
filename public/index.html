@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CF-Workers-SUB-Next</title>
+<style>
+:root, [data-theme="light"] {
+  --bg: #ffffff; --bg2: #f6f8fa; --bg3: #eaeef2;
+  --border: #d0d7de; --text: #1f2328; --text2: #656d76;
+  --accent: #0969da; --accent2: #1f6feb; --green: #2da44e;
+  --red: #cf222e; --orange: #bf8700;
+}
+[data-theme="dark"] {
+  --bg: #0f1117; --bg2: #161b22; --bg3: #1c2128;
+  --border: #30363d; --text: #e1e4e8; --text2: #8b949e;
+  --accent: #58a6ff; --accent2: #1f6feb; --green: #3fb950;
+  --red: #f85149; --orange: #d29922;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: var(--bg); color: var(--text); line-height: 1.5; }
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+/* Layout */
+.app-header { background: var(--bg2); border-bottom: 1px solid var(--border); padding: 0 20px; height: 52px; display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 100; }
+.app-header .logo { font-weight: 600; font-size: 16px; }
+.app-header .logo span { color: var(--accent); }
+.app-header .actions { display: flex; gap: 12px; align-items: center; }
+/* Buttons */
+.btn { display: inline-flex; align-items: center; gap: 4px; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--bg2); color: var(--text); cursor: pointer; font-size: 13px; transition: all .15s; }
+.btn:hover { background: var(--bg3); }
+.btn-primary { background: var(--accent2); color: #fff; border-color: var(--accent2); }
+.btn-primary:hover { opacity: .85; }
+.btn-danger { color: var(--red); border-color: var(--red); }
+.btn-danger:hover { background: var(--red); color: #fff; }
+.btn-sm { padding: 3px 8px; font-size: 12px; }
+/* Nav */
+.nav-tabs { display: flex; background: var(--bg2); border-bottom: 1px solid var(--border); overflow-x: auto; }
+.nav-tab { padding: 10px 20px; cursor: pointer; color: var(--text2); border-bottom: 2px solid transparent; font-size: 14px; white-space: nowrap; }
+.nav-tab:hover { color: var(--text); background: var(--bg3); }
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 500; }
+/* Content */
+.page { display: none; padding: 20px; max-width: 960px; margin: 0 auto; }
+.page.active { display: block; }
+/* Cards */
+.card { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; margin-bottom: 16px; }
+.card-title { font-size: 14px; color: var(--text2); margin-bottom: 4px; }
+.card-value { font-size: 28px; font-weight: 600; }
+/* Stats grid */
+.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 24px; }
+/* Forms */
+input, select { padding: 8px 12px; border: 1px solid var(--border); border-radius: 6px; background: var(--bg); color: var(--text); font-size: 14px; width: 100%; }
+input:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(9,105,218,.15); }
+.form-group { margin-bottom: 12px; }
+.form-group label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 4px; }
+.form-row { display: flex; gap: 12px; align-items: flex-end; }
+.form-row .form-group { flex: 1; }
+/* Table */
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); font-size: 13px; }
+th { color: var(--text2); font-weight: 500; }
+tr:hover { background: var(--bg3); }
+/* Tags */
+.tag { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 11px; font-weight: 500; }
+.tag-vmess { background: #ddf4ff; color: #0969da; }
+.tag-vless { background: #dafbe1; color: #1a7f37; }
+.tag-trojan { background: #fff1e5; color: #bd561d; }
+.tag-ss { background: #f3e8ff; color: #8250df; }
+[data-theme="dark"] .tag-vmess { background: #0c2d6b; color: #79c0ff; }
+[data-theme="dark"] .tag-vless { background: #0b2e1a; color: #56d364; }
+[data-theme="dark"] .tag-trojan { background: #3d1f00; color: #ffa657; }
+[data-theme="dark"] .tag-ss { background: #2a0f57; color: #d2a8ff; }
+/* Status */
+.status-active { color: var(--green); }
+.status-error { color: var(--red); }
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 9999; align-items: center; justify-content: center; }
+.modal-overlay.show { display: flex; }
+.modal-content { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; width: 90%; max-width: 700px; max-height: 90vh; overflow: auto; }
+.modal-header { padding: 16px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.modal-header h3 { font-size: 16px; }
+.modal-body { padding: 20px; }
+.modal-close { cursor: pointer; font-size: 20px; color: var(--text2); background: none; border: none; }
+.modal-close:hover { color: var(--text); }
+/* Output links */
+.sub-item { display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; }
+.sub-item:hover { background: var(--bg3); }
+.sub-item .name { font-weight: 500; min-width: 100px; }
+.sub-item .desc { color: var(--text2); font-size: 12px; min-width: 140px; }
+.sub-item input { flex: 1; font-size: 12px; padding: 4px 8px; border: 1px solid var(--border); border-radius: 4px; background: var(--bg); color: var(--text); }
+/* Login */
+.login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; }
+.login-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 12px; padding: 32px; width: 100%; max-width: 360px; }
+.login-card h1 { text-align: center; margin-bottom: 24px; font-size: 20px; }
+/* Toast */
+.toast { position: fixed; bottom: 20px; right: 20px; z-index: 99999; padding: 12px 20px; border-radius: 8px; color: #fff; font-size: 13px; max-width: 360px; animation: fadeIn .3s; }
+.toast-success { background: #1a7f37; }
+.toast-error { background: #cf222e; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+/* Responsive */
+@media (max-width: 640px) {
+  .nav-tab { padding: 8px 12px; font-size: 13px; }
+  .page { padding: 12px; }
+  .stats-grid { grid-template-columns: 1fr 1fr; }
+  .sub-item { flex-wrap: wrap; }
+  .sub-item input { min-width: 100%; }
+  .form-row { flex-direction: column; }
+}
+/* Scroll to top */
+.scroll-top { position: fixed; bottom: 60px; right: 20px; z-index: 999; width: 40px; height: 40px; border-radius: 50%; background: var(--accent2); color: #fff; border: none; cursor: pointer; font-size: 18px; display: none; }
+.scroll-top.show { display: flex; align-items: center; justify-content: center; }
+/* Helpers */
+.text-center { text-align: center; }
+.mt-12 { margin-top: 12px; }
+.mb-12 { margin-bottom: 12px; }
+.gap-8 { gap: 8px; }
+.flex { display: flex; }
+.flex-wrap { flex-wrap: wrap; }
+.items-center { align-items: center; }
+</style>
+</head>
+<body>
+<div id="app" style="display:none">
+  <header class="app-header">
+    <div class="logo"><span>CF</span>-Workers-SUB-Next</div>
+    <div class="actions">
+      <button class="btn btn-sm" onclick="cycleTheme()" id="themeBtn">🌙</button>
+      <span id="userBadge" style="font-size:13px;color:var(--text2)">admin</span>
+      <button class="btn btn-sm" onclick="logout()">🚪 退出</button>
+    </div>
+  </header>
+  <nav class="nav-tabs" id="navTabs">
+    <div class="nav-tab active" data-page="dashboard" onclick="switchPage('dashboard')">📊 仪表盘</div>
+    <div class="nav-tab" data-page="subscribe" onclick="switchPage('subscribe')">📥 订阅管理</div>
+    <div class="nav-tab" data-page="nodes" onclick="switchPage('nodes')">🔗 节点列表</div>
+    <div class="nav-tab" data-page="output" onclick="switchPage('output')">📦 输出配置</div>
+    <div class="nav-tab" data-page="settings" onclick="switchPage('settings')">⚙️ 设置</div>
+  </nav>
+
+  <!-- Dashboard -->
+  <div class="page active" id="page-dashboard">
+    <h2 style="margin-bottom:16px">📊 仪表盘</h2>
+    <div class="stats-grid" id="statsGrid">
+      <div class="card"><div class="card-title">订阅数量</div><div class="card-value" id="statSubs">-</div></div>
+      <div class="card"><div class="card-title">节点总数</div><div class="card-value" id="statNodes">-</div></div>
+      <div class="card"><div class="card-title">最近更新</div><div class="card-value" style="font-size:14px" id="statUpdate">-</div></div>
+      <div class="card"><div class="card-title">系统状态</div><div class="card-value" style="font-size:20px" id="statStatus">✅ 正常</div></div>
+    </div>
+  </div>
+
+  <!-- Subscriptions -->
+  <div class="page" id="page-subscribe">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2>📥 订阅管理</h2>
+      <button class="btn btn-primary" onclick="showAddSub()">＋ 添加订阅</button>
+    </div>
+    <table id="subTable">
+      <thead><tr><th>名称</th><th>状态</th><th>节点数</th><th>更新时间</th><th>操作</th></tr></thead>
+      <tbody id="subTableBody"></tbody>
+    </table>
+  </div>
+
+  <!-- Nodes -->
+  <div class="page" id="page-nodes">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2>🔗 节点列表</h2>
+      <input style="width:auto;max-width:300px" placeholder="🔍 搜索节点名或地址..." id="nodeSearch" oninput="filterNodes()">
+    </div>
+    <table id="nodesTable">
+      <thead><tr><th>名称</th><th>协议</th><th>地址</th><th>端口</th><th>TLS</th></tr></thead>
+      <tbody id="nodesTableBody"></tbody>
+    </table>
+    <p class="text-center" id="nodesEmpty" style="color:var(--text2);padding:24px">暂无节点数据</p>
+  </div>
+
+  <!-- Output -->
+  <div class="page" id="page-output">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2>📦 输出配置</h2>
+      <span style="font-size:13px;color:var(--text2)" id="outputNodeCount">0 个节点</span>
+    </div>
+    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="downloadMihomo()">📥 下载 Mihomo YAML</button>
+      <button class="btn btn-primary" onclick="downloadSingbox()">📥 下载 Sing-box JSON</button>
+      <button class="btn" onclick="refreshNodeCount()">🔄 刷新节点数</button>
+    </div>
+    <div id="outputLinks"></div>
+  </div>
+
+  <!-- Settings -->
+  <div class="page" id="page-settings">
+    <h2 style="margin-bottom:16px">⚙️ 设置</h2>
+    <div class="card">
+      <div class="form-group">
+        <label>系统名称</label>
+        <input id="settingAppName" placeholder="CF-Workers-SUB-Next">
+      </div>
+      <button class="btn btn-primary mt-12" onclick="saveSettings()">💾 保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- Login -->
+<div class="login-page" id="loginPage">
+  <div class="login-card">
+    <h1>🔐 CF-Workers-SUB-Next</h1>
+    <div class="form-group">
+      <label>管理员密码</label>
+      <input type="password" id="loginPassword" placeholder="输入密码" onkeydown="if(event.key==='Enter')login()">
+    </div>
+    <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="login()">登录</button>
+    <p class="text-center mt-12" style="color:var(--text2);font-size:12px">首次登录使用 ADMIN_PASSWORD 环境变量设置的密码</p>
+  </div>
+</div>
+
+<!-- Add Subscription Modal -->
+<div class="modal-overlay" id="addSubModal">
+  <div class="modal-content">
+    <div class="modal-header"><h3>添加订阅</h3><button class="modal-close" onclick="closeModal('addSubModal')">✕</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>名称</label><input id="subName" placeholder="例如: My Airport"></div>
+      <div class="form-group"><label>订阅 URL</label><input id="subUrl" placeholder="https://example.com/sub"></div>
+      <button class="btn btn-primary" onclick="addSub()">➕ 添加</button>
+    </div>
+  </div>
+</div>
+
+<!-- Config Preview Modal -->
+<div class="modal-overlay" id="configModal">
+  <div class="modal-content" style="max-width:800px">
+    <div class="modal-header"><h3>📄 配置预览</h3><button class="modal-close" onclick="closeModal('configModal')">✕</button></div>
+    <div class="modal-body">
+      <div style="margin-bottom:12px;display:flex;gap:8px">
+        <button class="btn btn-sm" onclick="previewConfig('mihomo')">Mihomo YAML</button>
+        <button class="btn btn-sm" onclick="previewConfig('singbox')">Sing-box JSON</button>
+      </div>
+      <pre id="configPreview" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;overflow:auto;max-height:60vh;white-space:pre-wrap;word-break:break-all">选择格式查看预览</pre>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============ State ============
+let state = { subscriptions: [], nodes: [], currentPage: 'dashboard' };
+
+// ============ Theme ============
+const themes = ['dark', 'light'];
+let themeIdx = 0;
+function cycleTheme() {
+  themeIdx = (themeIdx + 1) % themes.length;
+  document.documentElement.dataset.theme = themes[themeIdx];
+  document.getElementById('themeBtn').textContent = themes[themeIdx] === 'dark' ? '☀️' : '🌙';
+}
+
+// ============ Toast ============
+function toast(msg, type = 'success') {
+  const el = document.createElement('div');
+  el.className = `toast toast-${type}`;
+  el.textContent = msg;
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 3000);
+}
+
+// ============ Modal ============
+function showModal(id) { document.getElementById(id).classList.add('show'); }
+function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+document.addEventListener('click', function(e) {
+  if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('show');
+});
+
+// ============ API ============
+async function api(path, options = {}) {
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token');
+  const sep = path.includes('?') ? '&' : '?';
+  const url = '/api' + path + (token ? `${sep}token=${token}` : '');
+  const res = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...options });
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error?.message || 'Request failed');
+  return data;
+}
+
+// ============ Auth ============
+async function checkSession() {
+  try {
+    const data = await api('/auth/session');
+    if (data.data?.authenticated) {
+      document.getElementById('loginPage').style.display = 'none';
+      document.getElementById('app').style.display = 'block';
+      loadDashboard();
+      return true;
+    }
+  } catch {}
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+  return false;
+}
+
+async function login() {
+  const password = document.getElementById('loginPassword').value;
+  if (!password) { toast('请输入密码', 'error'); return; }
+  try {
+    await api('/auth/login', { method: 'POST', body: JSON.stringify({ password }) });
+    document.getElementById('loginPassword').value = '';
+    toast('登录成功');
+    document.getElementById('loginPage').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    loadDashboard();
+  } catch (e) {
+    toast('密码错误: ' + e.message, 'error');
+  }
+}
+
+async function logout() {
+  try { await api('/auth/logout', { method: 'POST' }); } catch {}
+  document.getElementById('loginPage').style.display = 'flex';
+  document.getElementById('app').style.display = 'none';
+}
+
+// ============ Page Switching ============
+function switchPage(page) {
+  state.currentPage = page;
+  document.querySelectorAll('.nav-tab').forEach(t => t.classList.toggle('active', t.dataset.page === page));
+  document.querySelectorAll('.page').forEach(p => p.classList.toggle('active', p.id === 'page-' + page));
+  window.location.hash = page;
+  if (page === 'dashboard') loadDashboard();
+  if (page === 'subscribe') loadSubscriptions();
+  if (page === 'nodes') loadNodes();
+  if (page === 'output') loadOutput();
+  if (page === 'settings') loadSettings();
+}
+
+// ============ Dashboard ============
+async function loadDashboard() {
+  try {
+    const data = await api('/dashboard');
+    document.getElementById('statSubs').textContent = data.data.subscriptions;
+    document.getElementById('statNodes').textContent = data.data.nodes;
+    document.getElementById('statUpdate').textContent = data.data.lastUpdate ? new Date(data.data.lastUpdate).toLocaleString() : '暂无';
+  } catch { toast('加载仪表盘失败', 'error'); }
+}
+
+// ============ Subscriptions ============
+async function loadSubscriptions() {
+  try {
+    const data = await api('/subscriptions');
+    state.subscriptions = data.data || [];
+    const tbody = document.getElementById('subTableBody');
+    if (state.subscriptions.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color:var(--text2);padding:24px">暂无订阅，点击右上角添加</td></tr>';
+      return;
+    }
+    tbody.innerHTML = state.subscriptions.map(s => `
+      <tr>
+        <td><strong>${escHtml(s.name)}</strong></td>
+        <td><span class="status-${s.status}">${s.status === 'active' ? '✅ 正常' : s.status === 'error' ? '❌ 错误' : '⏸ 停用'}</span></td>
+        <td>${s.nodeCount ?? 0}</td>
+        <td style="font-size:12px;color:var(--text2)">${s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '-'}</td>
+        <td>
+          <button class="btn btn-sm" onclick="updateSub('${s.id}')">🔄 更新</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteSub('${s.id}')">🗑 删除</button>
+        </td>
+      </tr>
+    `).join('');
+  } catch { toast('加载订阅失败', 'error'); }
+}
+
+function showAddSub() { showModal('addSubModal'); }
+
+async function addSub() {
+  const name = document.getElementById('subName').value.trim();
+  const url = document.getElementById('subUrl').value.trim();
+  if (!name || !url) { toast('请填写名称和 URL', 'error'); return; }
+  try {
+    await api('/subscriptions', { method: 'POST', body: JSON.stringify({ name, url }) });
+    toast('添加成功');
+    document.getElementById('subName').value = '';
+    document.getElementById('subUrl').value = '';
+    closeModal('addSubModal');
+    loadSubscriptions();
+  } catch (e) { toast('添加失败: ' + e.message, 'error'); }
+}
+
+async function updateSub(id) {
+  try {
+    await api('/subscriptions/' + id + '/update', { method: 'POST' });
+    toast('更新成功');
+    loadSubscriptions();
+  } catch (e) { toast('更新失败: ' + e.message, 'error'); }
+}
+
+async function deleteSub(id) {
+  if (!confirm('确定删除此订阅？')) return;
+  try {
+    await api('/subscriptions/' + id, { method: 'DELETE' });
+    toast('删除成功');
+    loadSubscriptions();
+  } catch (e) { toast('删除失败: ' + e.message, 'error'); }
+}
+
+// ============ Nodes ============
+async function loadNodes() {
+  try {
+    const data = await api('/nodes');
+    state.nodes = data.data || [];
+    renderNodes();
+  } catch { toast('加载节点失败', 'error'); }
+}
+
+function renderNodes() {
+  const tbody = document.getElementById('nodesTableBody');
+  const empty = document.getElementById('nodesEmpty');
+  const search = document.getElementById('nodeSearch').value.toLowerCase();
+  let filtered = state.nodes;
+  if (search) filtered = filtered.filter(n => (n.name + ' ' + n.server).toLowerCase().includes(search));
+  if (filtered.length === 0) {
+    tbody.innerHTML = '';
+    empty.style.display = 'block';
+    return;
+  }
+  empty.style.display = 'none';
+  tbody.innerHTML = filtered.map(n => {
+    const tagClass = 'tag-' + (n.protocol === 'vmess' ? 'vmess' : n.protocol === 'vless' ? 'vless' : n.protocol === 'trojan' ? 'trojan' : 'ss');
+    return `<tr>
+      <td>${escHtml(n.name)}</td>
+      <td><span class="tag ${tagClass}">${n.protocol}</span></td>
+      <td style="font-size:12px">${escHtml(n.server)}</td>
+      <td>${n.port}</td>
+      <td>${n.tls ? '✅' : '❌'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function filterNodes() { renderNodes(); }
+
+// ============ Output ============
+function loadOutput() {
+  refreshNodeCount();
+  renderOutputUrls();
+}
+
+async function refreshNodeCount() {
+  try {
+    const data = await api('/nodes');
+    const count = (data.data || []).length;
+    document.getElementById('outputNodeCount').textContent = count + ' 个节点';
+  } catch { toast('刷新节点数失败', 'error'); }
+}
+
+function renderOutputUrls() {
+  const baseUrl = window.location.origin + '/sub';
+  const urlParams = new URLSearchParams(window.location.search);
+  const token = urlParams.get('token') || '';
+  const formats = [
+    { key: 'mihomo', name: '🐱 Mihomo', desc: 'Mihomo / Clash Meta / OpenClash' },
+    { key: 'singbox', name: '📦 Sing-box', desc: 'Sing-box 原生格式' },
+  ];
+  document.getElementById('outputLinks').innerHTML = formats.map(f => {
+    const params = `format=${f.key}${token ? '&token=' + encodeURIComponent(token) : ''}`;
+    const url = `${baseUrl}/${f.key}/${token}`;
+    return `<div class="sub-item" onclick="showConfigModal('${f.key}', '${f.name}')">
+      <span class="name">${f.name}</span>
+      <span class="desc">${f.desc}</span>
+      <input value="${url}" readonly onclick="event.stopPropagation();this.select()">
+      <button class="btn btn-sm" onclick="event.stopPropagation();copyUrl('${url}')">📋 复制</button>
+    </div>`;
+  }).join('');
+}
+
+function copyUrl(url) {
+  navigator.clipboard.writeText(url).then(() => toast('已复制')).catch(() => {
+    // fallback
+    const i = document.createElement('input');
+    i.value = url; document.body.appendChild(i); i.select();
+    document.execCommand('copy'); i.remove();
+    toast('已复制');
+  });
+}
+
+function showConfigModal(format, name) {
+  showModal('configModal');
+  document.getElementById('configPreview').textContent = '加载中...';
+  previewConfig(format);
+}
+
+async function previewConfig(format) {
+  document.getElementById('configPreview').textContent = '加载中...';
+  try {
+    const res = await fetch(`/api/output/${format}`, { credentials: 'include' });
+    if (!res.ok) throw new Error('加载失败');
+    const text = await res.text();
+    document.getElementById('configPreview').textContent = text;
+  } catch (e) {
+    document.getElementById('configPreview').textContent = '加载失败: ' + e.message;
+  }
+}
+
+async function downloadMihomo() {
+  try {
+    const res = await fetch('/api/output/mihomo', { credentials: 'include' });
+    const blob = await res.blob();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'mihomo.yaml'; a.click();
+    URL.revokeObjectURL(a.href);
+    toast('下载完成');
+  } catch { toast('下载失败', 'error'); }
+}
+
+async function downloadSingbox() {
+  try {
+    const res = await fetch('/api/output/singbox', { credentials: 'include' });
+    const blob = await res.blob();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'config.json'; a.click();
+    URL.revokeObjectURL(a.href);
+    toast('下载完成');
+  } catch { toast('下载失败', 'error'); }
+}
+
+// ============ Settings ============
+async function loadSettings() {
+  try {
+    const data = await api('/settings');
+    document.getElementById('settingAppName').value = data.data?.app_name || '';
+  } catch {}
+}
+
+async function saveSettings() {
+  const appName = document.getElementById('settingAppName').value.trim();
+  try {
+    await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName }) });
+    toast('设置已保存');
+  } catch (e) { toast('保存失败: ' + e.message, 'error'); }
+}
+
+// ============ Utils ============
+function escHtml(s) { return String(s).replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
+
+// ============ Init ============
+window.addEventListener('DOMContentLoaded', async () => {
+  // 从 hash 恢复页面
+  const savedPage = window.location.hash.replace('#', '') || 'dashboard';
+  if (['dashboard','subscribe','nodes','output','settings'].includes(savedPage)) {
+    state.currentPage = savedPage;
+  }
+  await checkSession();
+  switchPage(state.currentPage);
+});
+
+window.addEventListener('hashchange', () => {
+  const page = window.location.hash.replace('#', '') || 'dashboard';
+  if (['dashboard','subscribe','nodes','output','settings'].includes(page)) {
+    switchPage(page);
+  }
+});
+</script>
+</body>
+</html>

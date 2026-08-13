@@ -5,8 +5,9 @@
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev",
-    "build": "tsc --noEmit",
+    "dev": "wrangler dev --local",
+    "build:html": "node scripts/inline-html.js",
+    "build": "npm run build:html && tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "deploy": "npm run build && wrangler deploy",
     "test": "vitest run",
