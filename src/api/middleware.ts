@@ -36,7 +36,8 @@ export const ERRORS = {
  * 从请求中提取 session token（Cookie 优先，其次查询参数）
  */
 function getToken(c: Context): string | null {
-  const cookieToken = parseCookie(c.req.header('cookie'), SESSION_COOKIE_NAME);
+  const cookieHeader = c.req.header('cookie') ?? null;
+  const cookieToken = parseCookie(cookieHeader, SESSION_COOKIE_NAME);
   if (cookieToken) return cookieToken;
   const queryToken = c.req.query('token') ?? null;
   return queryToken;
