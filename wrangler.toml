@@ -1,0 +1,12 @@
+name = "cf-workers-sub-next"
+main = "src/index.ts"
+compatibility_date = "2026-01-01"
+compatibility_flags = ["nodejs_compat"]
+
+# KV 命名空间（部署时由 CI 从 GitHub Secrets 注入实际 id）
+# [[kv_namespaces]]
+# binding = "DATABASE"
+# id = ""
+
+# 无需敏感信息，全部通过 Cloudflare Secrets 配置
+# ADMIN_PASSWORD, SESSION_SECRET 由 `wrangler secret put` 设置

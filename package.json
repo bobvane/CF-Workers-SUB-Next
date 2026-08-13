@@ -1,0 +1,42 @@
+{
+  "name": "cf-workers-sub-next",
+  "version": "0.1.0",
+  "description": "CF-Workers-SUB-Next V2 - Cloudflare Native 订阅管理与配置生成平台",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "wrangler dev",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "deploy": "npm run build && wrangler deploy",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "lint": "eslint . --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\" \"tests/**/*.ts\""
+  },
+  "dependencies": {
+    "hono": "^4",
+    "zod": "^3"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5",
+    "@types/node": "^22",
+    "@vitest/coverage-v8": "^2",
+    "typescript": "^5",
+    "vitest": "^2",
+    "yaml": "^2",
+    "@typescript-eslint/eslint-plugin": "^8",
+    "@typescript-eslint/parser": "^8",
+    "eslint": "^9",
+    "prettier": "^3",
+    "wrangler": "^4"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "allowScripts": {
+    "workerd@1.20260811.1": true,
+    "esbuild@0.21.5": true,
+    "esbuild@0.28.1": true
+  }
+}
