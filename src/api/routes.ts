@@ -16,6 +16,7 @@ import {
 import { SubscriptionService } from '@/services/subscription.service';
 import { ConfigService } from '@/services/config.service';
 import { requireAuth, errorHandler, readBody, AppError, ERRORS, getToken } from './middleware';
+import { rateLimit } from './rate-limit';
 import { KV_KEYS } from '@/models/config';
 
 export interface AppDeps {
@@ -41,7 +42,8 @@ export function createApp(deps: AppDeps): Hono {
   app.get('/api/health', (c) => c.json({ status: 'ok' }));
 
   // ============ Auth ============
-  app.post('/api/auth/login', async (c) => {
+  // 登录接口限流：防暴力破解（10 次/分钟/IP）
+  app.post('/api/auth/login', rateLimit({ windowSeconds: 60, maxRequests: 10 }), async (c) => {
     const body = await readBody<{ password?: string }>(c);
     if (!body.password || typeof body.password !== 'string') {
       throw ERRORS.INVALID_PARAMETER('password is required');
