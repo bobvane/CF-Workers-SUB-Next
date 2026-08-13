@@ -1,0 +1,79 @@
+name: CI/CD
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: Test & Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Type check
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+  deploy:
+    name: Deploy to Cloudflare Workers
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Type check
+        run: npm run build
+
+      - name: Run tests
+        run: npm test
+
+      # 注入 KV 命名空间 ID（必须早于 deploy）
+      - name: Update wrangler.toml with KV namespace ID
+        run: sed -i 's/id = ""/id = "${{ secrets.KV_NAMESPACE_ID }}"/' wrangler.toml
+
+      # 先部署 Worker（必须存在后才能设置 secret）
+      - name: Deploy to Cloudflare Workers
+        run: npx wrangler deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+
+      # 设置 Worker Secrets（可选，通过 env 传递避免 if 使用 secrets 上下文）
+      - name: Set ADMIN_PASSWORD secret
+        if: env.ADMIN_PASSWORD != '' && env.ADMIN_PASSWORD != 'none'
+        run: printf '%s' "${ADMIN_PASSWORD}" | npx wrangler secret put ADMIN_PASSWORD
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ADMIN_PASSWORD: ${{ secrets.ADMIN_PASSWORD || '' }}
+
+      - name: Set SESSION_SECRET secret
+        if: env.SESSION_SECRET != '' && env.SESSION_SECRET != 'none'
+        run: printf '%s' "${SESSION_SECRET}" | npx wrangler secret put SESSION_SECRET
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          SESSION_SECRET: ${{ secrets.SESSION_SECRET || '' }}
