@@ -496,6 +496,8 @@ function copyNodeLink(fingerprint) {
 
 function toggleSelectAll(cb) {
   document.querySelectorAll('#nodesTableBody input[type="checkbox"][data-fp]').forEach(c => { c.checked = cb.checked; });
+  // 同步 state.nodes 的 enabled
+  state.nodes.forEach(n => { n.enabled = cb.checked; });
   saveNodeEnabled();
 }
 
@@ -504,6 +506,12 @@ function updateNodeEnabled(cb) {
   const all = document.querySelectorAll('#nodesTableBody input[type="checkbox"][data-fp]');
   const allChecked = [...all].every(c => c.checked);
   document.getElementById('nodeSelectAll').checked = allChecked;
+  // 同步 state.nodes 的 enabled（立即反映到输出节点数）
+  const fp = cb.dataset.fp;
+  if (fp) {
+    const node = state.nodes.find(n => n.fingerprint === fp);
+    if (node) node.enabled = cb.checked;
+  }
   saveNodeEnabled();
 }
 
@@ -532,8 +540,12 @@ function loadOutput() {
 async function refreshNodeCount() {
   try {
     const data = await api('/nodes');
-    const count = (data.data || []).length;
-    document.getElementById('outputNodeCount').textContent = count + ' 个节点';
+    state.nodes = data.data || [];
+    const total = state.nodes.length;
+    const enabled = state.nodes.filter(n => n.enabled !== false).length;
+    document.getElementById('outputNodeCount').textContent = `${enabled} 个节点（共 ${total}）`;
+    // 同步节点页勾选状态（如果已加载）
+    if (state.currentPage === 'nodes') renderNodes();
   } catch { toast('刷新节点数失败', 'error'); }
 }
 
