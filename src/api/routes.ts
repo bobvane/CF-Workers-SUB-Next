@@ -251,12 +251,34 @@ export function createApp(deps: AppDeps): Hono {
 
   // ============ 订阅输出端点（无需登录，供客户端直接使用） ============
 
+  // 获取持久订阅访问密钥（前端用它拼订阅链接）
+  // 存 KV：首次生成，长期有效；不随 session 过期
+  app.get('/api/sub-key', requireAuth(auth), async (c) => {
+    let key = await repos.settings.get('sub_key');
+    if (!key) {
+      key = crypto.randomUUID();
+      await repos.settings.set('sub_key', key);
+    }
+    return c.json({ success: true, data: { key } });
+  });
+
+  // 校验订阅访问令牌：
+  // 1. 命中的是持久订阅 key（sub_key，推荐，客户端长期可用）
+  // 2. 兼容旧版：命中的是 session token（仅浏览器会话内有效）
+  async function validateSubToken(token: string): Promise<boolean> {
+    if (!token) return false;
+    const subKey = await repos.settings.get('sub_key');
+    if (subKey && token === subKey) return true;
+    // 兼容旧版 session token
+    return auth.validateSession(token);
+  }
+
   // 通用订阅端点：/sub/{format}/{token}
   // 支持: mihomo / singbox / v2ray / v2rayn / nekoray / shadowrocket / loon / surge / quantumultx
   app.get('/sub/:format/:token', async (c) => {
-    const token = c.req.param('token');
-    const format = c.req.param('format');
-    const valid = await auth.validateSession(token);
+    const token = c.req.param('token') ?? '';
+    const format = c.req.param('format') ?? '';
+    const valid = await validateSubToken(token);
     if (!valid) {
       return c.json({ success: false, error: { code: 'AUTH_REQUIRED', message: 'Invalid token' } }, 401);
     }

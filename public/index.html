@@ -551,8 +551,6 @@ async function refreshNodeCount() {
 
 function renderOutputUrls() {
   const baseUrl = window.location.origin + '/sub';
-  const urlParams = new URLSearchParams(window.location.search);
-  const token = urlParams.get('token') || '';
   const formats = [
     { key: 'mihomo', name: '🐱 Mihomo', desc: 'Mihomo / Clash Meta / OpenClash / Stash' },
     { key: 'singbox', name: '📦 Sing-box', desc: 'Sing-box 原生格式' },
@@ -565,14 +563,39 @@ function renderOutputUrls() {
     { key: 'quantumultx', name: '🍁 Quantumult X', desc: 'Quantumult X iOS' },
   ];
   document.getElementById('outputLinks').innerHTML = formats.map(f => {
-    const url = `${baseUrl}/${f.key}/${token}`;
+    const url = `${baseUrl}/${f.key}/{key}`;
     return `<div class="sub-item" onclick="showConfigModal('${f.key}', '${f.name}')">
       <span class="name">${f.name}</span>
       <span class="desc">${f.desc}</span>
       <input value="${url}" readonly onclick="event.stopPropagation();this.select()">
-      <button class="btn btn-sm" onclick="event.stopPropagation();copyUrl('${url}')">📋 复制</button>
+      <button class="btn btn-sm" onclick="event.stopPropagation();copyFormatUrl('${f.key}')">📋 复制</button>
     </div>`;
   }).join('');
+  // 异步获取订阅 key 后替换占位符
+  loadSubKey();
+}
+
+let subKey = '';
+async function loadSubKey() {
+  try {
+    const data = await api('/sub-key');
+    subKey = data.data?.key || '';
+    document.querySelectorAll('#outputLinks input').forEach(input => {
+      input.value = input.value.replace('{key}', subKey);
+    });
+  } catch { /* 静默：未登录或失败保持占位 */ }
+}
+
+function copyFormatUrl(format) {
+  const url = `${window.location.origin}/sub/${format}/${subKey}`;
+  navigator.clipboard.writeText(url)
+    .then(() => toast('已复制订阅链接'))
+    .catch(() => {
+      const i = document.createElement('input');
+      i.value = url; document.body.appendChild(i); i.select();
+      document.execCommand('copy'); i.remove();
+      toast('已复制订阅链接');
+    });
 }
 
 function copyUrl(url) {
