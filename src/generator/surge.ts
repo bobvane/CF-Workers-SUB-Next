@@ -5,6 +5,7 @@
  */
 
 import { Node } from '@/models/node';
+import { makeUniqueNames } from './mihomo';
 
 /**
  * 将 Node 转换为 Surge proxy section 配置
@@ -66,13 +67,14 @@ export function nodeToSurgeProxy(node: Node): string {
  * 生成 Surge 配置
  */
 export function generateSurgeConfig(nodes: Node[]): string {
+  const uniqueNodes = makeUniqueNames(nodes);
   const lines: string[] = [];
 
   // [Proxy] 段
   lines.push('[Proxy]');
   lines.push('Direct = direct');
   lines.push('REJECT = reject');
-  for (const node of nodes) {
+  for (const node of uniqueNodes) {
     const proxy = nodeToSurgeProxy(node);
     if (proxy) lines.push(proxy);
   }
@@ -80,7 +82,7 @@ export function generateSurgeConfig(nodes: Node[]): string {
 
   // [Proxy Group] 段
   lines.push('[Proxy Group]');
-  const nodeNames = nodes.map((n) => n.name).join(', ');
+  const nodeNames = uniqueNodes.map((n) => n.name).join(', ');
   lines.push(`PROXY = select, ${nodeNames || 'Direct'}`);
   lines.push('');
 

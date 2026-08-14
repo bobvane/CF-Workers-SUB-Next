@@ -5,6 +5,7 @@
  */
 
 import { Node } from '@/models/node';
+import { makeUniqueNames } from './mihomo';
 
 export interface SingboxTemplate {
   logLevel?: string;
@@ -121,6 +122,7 @@ export function generateSingboxConfig(
   nodes: Node[],
   template: SingboxTemplate = DEFAULT_SINGBOX_TEMPLATE
 ): string {
+  const uniqueNodes = makeUniqueNames(nodes);
   const outbounds: Record<string, unknown>[] = [
     {
       type: 'dns',
@@ -134,17 +136,17 @@ export function generateSingboxConfig(
       type: 'block',
       tag: 'block',
     },
-    ...nodes.map(nodeToSingboxOutbound),
+    ...uniqueNodes.map(nodeToSingboxOutbound),
     {
       type: 'selector',
       tag: 'proxy',
-      outbounds: ['auto', ...nodes.map((n) => n.name)],
-      default: nodes.length > 0 ? nodes[0].name : 'direct',
+      outbounds: ['auto', ...uniqueNodes.map((n) => n.name)],
+      default: uniqueNodes.length > 0 ? uniqueNodes[0].name : 'direct',
     },
     {
       type: 'urltest',
       tag: 'auto',
-      outbounds: nodes.map((n) => n.name),
+      outbounds: uniqueNodes.map((n) => n.name),
     },
   ];
 

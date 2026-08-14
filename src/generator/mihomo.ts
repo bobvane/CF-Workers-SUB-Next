@@ -7,6 +7,19 @@
 import { Node } from '@/models/node';
 import { generateYaml, parseYaml } from './yaml-serializer';
 
+/**
+ * 节点名去重：同名节点追加数字后缀
+ */
+export function makeUniqueNames(nodes: Node[]): Node[] {
+  const seen = new Map<string, number>();
+  return nodes.map((n) => {
+    const count = seen.get(n.name) ?? 0;
+    seen.set(n.name, count + 1);
+    if (count === 0) return n;
+    return { ...n, name: `${n.name}-${count}` };
+  });
+}
+
 export interface MihomoTemplate {
   mixedPort?: number;
   allowLan?: boolean;
@@ -134,8 +147,9 @@ export function generateMihomoConfig(
   nodes: Node[],
   template: MihomoTemplate = DEFAULT_MIHOMO_TEMPLATE
 ): string {
-  const proxies = nodes.map(nodeToMihomoProxy);
-  const nodeNames = nodes.map((n) => n.name);
+  const uniqueNodes = makeUniqueNames(nodes);
+  const proxies = uniqueNodes.map(nodeToMihomoProxy);
+  const nodeNames = uniqueNodes.map((n) => n.name);
   const groups = generateProxyGroups(nodeNames);
 
   const config: Record<string, unknown> = {

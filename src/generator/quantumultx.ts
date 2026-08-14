@@ -5,6 +5,7 @@
  */
 
 import { Node } from '@/models/node';
+import { makeUniqueNames } from './mihomo';
 
 /**
  * 将 Node 转换为 Quantumult X server_local 行
@@ -63,11 +64,12 @@ export function nodeToQXServer(node: Node): string {
  * 生成 Quantumult X 配置
  */
 export function generateQuantumultXConfig(nodes: Node[]): string {
+  const uniqueNodes = makeUniqueNames(nodes);
   const lines: string[] = [];
 
   lines.push('; Quantumult X 订阅配置');
   lines.push('[server_local]');
-  for (const node of nodes) {
+  for (const node of uniqueNodes) {
     const server = nodeToQXServer(node);
     if (server) lines.push(server);
   }
@@ -78,7 +80,7 @@ export function generateQuantumultXConfig(nodes: Node[]): string {
   lines.push('');
 
   lines.push('[policy]');
-  lines.push('static=Proxy, DIRECT, ' + (nodes.map((n) => n.name).join(', ') || 'DIRECT'));
+  lines.push('static=Proxy, DIRECT, ' + (uniqueNodes.map((n) => n.name).join(', ') || 'DIRECT'));
 
   return lines.join('\n');
 }
