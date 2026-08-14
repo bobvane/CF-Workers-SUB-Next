@@ -25,6 +25,10 @@ export interface NodeMetadata {
   source: string;
   originalName: string;
   tags: string[];
+  /** TLS 指纹（Reality 用，如 chrome/firefox/safari） */
+  fingerprint?: string;
+  /** 保留链接中的其他参数（如 spx） */
+  extra?: Record<string, string>;
 }
 
 export interface Node {

@@ -19,6 +19,7 @@ interface ClashProxy {
   flow?: string;
   sni?: string;
   'skip-cert-verify'?: boolean;
+  'client-fingerprint'?: string;
   network?: string;
   'ws-opts'?: {
     path?: string;
@@ -28,6 +29,10 @@ interface ClashProxy {
     'grpc-service-name'?: string;
   };
   realityOpts?: {
+    'public-key'?: string;
+    'short-id'?: string;
+  };
+  'reality-opts'?: {
     'public-key'?: string;
     'short-id'?: string;
   };
@@ -105,6 +110,7 @@ function clashProxyToNode(proxy: ClashProxy): Node | null {
       case 'vless': {
         if (!uuid) return null;
         transport = parseClashTransport(proxy);
+        const realityOpts = proxy['reality-opts'] ?? proxy.realityOpts;
         return createNode({
           name,
           protocol: 'vless',
@@ -114,8 +120,16 @@ function clashProxyToNode(proxy: ClashProxy): Node | null {
           tls: tls ?? false,
           flow,
           sni,
+          allowInsecure: proxy['skip-cert-verify'] ?? false,
+          pbk: realityOpts?.['public-key'],
+          sid: realityOpts?.['short-id'],
           transport,
-          metadata: { source: 'clash', originalName: name, tags: [] },
+          metadata: {
+            source: 'clash',
+            originalName: name,
+            tags: [],
+            fingerprint: proxy['client-fingerprint'],
+          },
         });
       }
 

@@ -71,6 +71,7 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
       if (node.tls) base.tls = true;
       if (node.flow) base.flow = node.flow;
       if (node.sni) base['servername'] = node.sni;
+      if (node.allowInsecure) base['skip-cert-verify'] = true;
       if (node.transport?.type === 'ws') {
         base.network = 'ws';
         base['ws-opts'] = {
@@ -84,7 +85,19 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
           grpcServiceName: node.transport.path?.replace(/^\//, '') || '',
         };
       }
-      if (node.pbk) base.realityOpts = { publicKey: node.pbk, shortId: node.sid };
+      // Reality：字段名用连字符 reality-opts，加 client-fingerprint 做 TLS 指纹伪装
+      if (node.pbk) {
+        const realityOpts: Record<string, string> = {
+          'public-key': node.pbk,
+          'short-id': node.sid ?? '',
+        };
+        // spx 是 Reality 的扩展协议参数
+        if (node.metadata?.extra?.spx) {
+          realityOpts.spx = node.metadata.extra.spx;
+        }
+        base['reality-opts'] = realityOpts;
+        base['client-fingerprint'] = node.metadata?.fingerprint ?? 'chrome';
+      }
       break;
 
     case 'trojan':

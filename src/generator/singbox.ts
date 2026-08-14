@@ -68,6 +68,7 @@ export function nodeToSingboxOutbound(node: Node): Record<string, unknown> {
         outbound.tls = {
           enabled: true,
           server_name: node.sni ?? node.server,
+          utls: node.metadata?.fingerprint ? { enabled: true, fingerprint: node.metadata.fingerprint } : undefined,
           reality: node.pbk
             ? { enabled: true, public_key: node.pbk, short_id: node.sid ?? '' }
             : undefined,

@@ -72,6 +72,9 @@ export function parseVless(input: string): ParserResult {
         source: 'unknown',
         originalName: name || `${server}:${port}`,
         tags: [],
+        // Reality 参数：TLS 指纹 + spx
+        fingerprint: params.get('fp') ?? undefined,
+        extra: spxParams(params),
       },
     });
 
@@ -79,6 +82,17 @@ export function parseVless(input: string): ParserResult {
   } catch {
     return makeError('PARSE_FAILED', 'VLESS parse failed');
   }
+}
+
+/**
+ * 提取保留的 Reality 扩展参数（如 spx）
+ */
+function spxParams(params: URLSearchParams): Record<string, string> | undefined {
+  const spx = params.get('spx');
+  if (spx) {
+    return { spx };
+  }
+  return undefined;
 }
 
 /**
