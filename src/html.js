@@ -269,6 +269,18 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
   </div>
 </div>
 
+<!-- QR 码 Modal -->
+<div class="modal-overlay" id="qrModal" style="display:none">
+  <div class="modal-content" style="max-width:380px;text-align:center">
+    <div class="modal-header"><h3>📱 扫码订阅</h3><button class="modal-close" onclick="closeModal('qrModal')">✕</button></div>
+    <div class="modal-body">
+      <div id="qrContainer" style="display:inline-block;background:#fff;padding:16px;border-radius:12px;margin:8px 0"></div>
+      <p id="qrFormatName" style="margin:8px 0 4px;font-weight:600"></p>
+      <p style="font-size:12px;color:var(--text2)">用代理客户端扫描此码导入订阅</p>
+    </div>
+  </div>
+</div>
+
 <script>
 // ============ State ============
 let state = { subscriptions: [], nodes: [], currentPage: 'dashboard', authenticated: false };
@@ -572,7 +584,10 @@ function renderOutputUrls() {
       <span class="name">\${f.name}</span>
       <span class="desc">\${f.desc}</span>
       <input value="\${url}" readonly onclick="event.stopPropagation();this.select()">
-      <button class="btn btn-sm" onclick="event.stopPropagation();copyFormatUrl('\${f.key}')">📋 复制</button>
+      <span class="sub-actions">
+        <button class="btn btn-sm" onclick="event.stopPropagation();showQrModal('\${f.key}', '\${f.name}')">📱 二维码</button>
+        <button class="btn btn-sm" onclick="event.stopPropagation();copyFormatUrl('\${f.key}')">📋 复制</button>
+      </span>
     </div>\`;
   }).join('');
   // 异步获取订阅 key 后替换占位符
@@ -600,6 +615,15 @@ function copyFormatUrl(format) {
       document.execCommand('copy'); i.remove();
       toast('已复制订阅链接');
     });
+}
+
+// ============ 二维码 ============
+function showQrModal(format, name) {
+  const url = encodeURIComponent(\`\${window.location.origin}/sub/\${format}/\${subKey}\`);
+  if (!subKey) { toast('尚未获取订阅密钥，请刷新重试', 'error'); return; }
+  document.getElementById('qrContainer').innerHTML = \`<img src="https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=\${url}" alt="QR码" style="border-radius:8px">\`;
+  document.getElementById('qrFormatName').textContent = name + ' 订阅';
+  showModal('qrModal');
 }
 
 function copyUrl(url) {
