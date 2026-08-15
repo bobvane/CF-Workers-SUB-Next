@@ -1,0 +1,72 @@
+/**
+ * 集成测试 - 仪表盘 API
+ */
+import { describe, it, expect, beforeEach } from 'vitest';
+import { MemoryKvAdapter, createRepositories } from '@/storage/kv';
+import { createApp } from '@/api/routes';
+import { createAuthService, createPasswordHash } from '@/services/auth.service';
+import { createSubscriptionService } from '@/services/subscription.service';
+import { createConfigService } from '@/services/config.service';
+import { Node } from '@/models/node';
+
+interface ResData { success: boolean; data?: Record<string, unknown>; }
+
+async function loginToken(app: ReturnType<typeof createApp>): Promise<string> {
+  const res = await app.request('/api/auth/login', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ password: 'test-pass' }),
+  });
+  return ((await res.json()) as ResData).data!.token as string;
+}
+
+function makeNode(id: string, name: string, protocol: Node['protocol'], server: string): Node {
+  return { id, name, protocol, server, port: 443, metadata: { source: 'test', originalName: name, tags: [] }, version: 1 };
+}
+
+describe('Dashboard API', () => {
+  let app: ReturnType<typeof createApp>;
+  let headers: Record<string, string>;
+
+  beforeEach(async () => {
+    const kv = new MemoryKvAdapter();
+    const repos = createRepositories(kv);
+    const { hash, salt } = await createPasswordHash('test-pass');
+    await kv.put('admin:hash', JSON.stringify({ hash, salt }));
+    const auth = createAuthService(repos.sessions, async () => ({ hash, salt }));
+    // 注入 1 个订阅 + 2 个节点（vmess + trojan）
+    await repos.subscriptions.create({ name: 'test', url: 'https://example.com/sub' });
+    await repos.nodes.setBySubscription('test', [
+      makeNode('n1', 'HK-01', 'vmess', '1.2.3.4'),
+      makeNode('n2', 'US-01', 'trojan', '5.6.7.8'),
+    ]);
+    app = createApp({
+      repos,
+      auth,
+      subscriptions: createSubscriptionService(repos, async () => '', async () => []),
+      config: createConfigService(repos),
+      adminPassword: 'test-pass',
+      fetchRaw: async () => '',
+      parseContent: async () => [],
+    });
+    const token = await loginToken(app);
+    headers = { Cookie: `sub_session=${token}` };
+  });
+
+  it('GET /api/dashboard 返回完整统计字段', async () => {
+    const res = await app.request('/api/dashboard', { headers });
+    expect(res.status).toBe(200);
+    const json = (await res.json()) as { success: boolean; data: {
+      subscriptions: number; nodes: number; enabledNodes: number; disabledNodes: number;
+      protoCount: Record<string, number>; lastUpdate: number | null; status: string;
+    } };
+    expect(json.success).toBe(true);
+    expect(json.data.subscriptions).toBe(1);
+    expect(json.data.nodes).toBe(2);
+    expect(json.data.enabledNodes).toBe(2);
+    expect(json.data.disabledNodes).toBe(0);
+    expect(json.data.protoCount.vmess).toBe(1);
+    expect(json.data.protoCount.trojan).toBe(1);
+    expect(json.data.status).toBe('ok');
+  });
+});

@@ -261,11 +261,19 @@ export function createApp(deps: AppDeps): Hono {
     const subs = await subscriptions.list();
     const nodes = await repos.nodes.getAll();
     const lastUpdate = subs.reduce((max, s) => Math.max(max, s.updatedAt), 0);
+    const disabled = await config.getDisabledNodes();
+    const enabledNodes = nodes.filter(n => !disabled.includes(nodeFingerprint(n)));
+    // 按协议统计
+    const protoCount: Record<string, number> = {};
+    nodes.forEach(n => { const p = n.protocol || 'unknown'; protoCount[p] = (protoCount[p] || 0) + 1; });
     return c.json({
       success: true,
       data: {
         subscriptions: subs.length,
         nodes: nodes.length,
+        enabledNodes: enabledNodes.length,
+        disabledNodes: disabled.length,
+        protoCount,
         lastUpdate: lastUpdate || null,
         status: 'ok',
       },

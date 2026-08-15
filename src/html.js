@@ -188,8 +188,10 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
     <div class="stats-grid" id="statsGrid">
       <div class="card"><div class="card-title">订阅数量</div><div class="card-value" id="statSubs">-</div></div>
       <div class="card"><div class="card-title">节点总数</div><div class="card-value" id="statNodes">-</div></div>
+      <div class="card"><div class="card-title">已启用节点</div><div class="card-value" id="statEnabled">-</div></div>
+      <div class="card"><div class="card-title">已禁用节点</div><div class="card-value" id="statDisabled">-</div></div>
+      <div class="card"><div class="card-title">协议分布</div><div class="card-value" style="font-size:13px" id="statProto">-</div></div>
       <div class="card"><div class="card-title">最近更新</div><div class="card-value" style="font-size:14px" id="statUpdate">-</div></div>
-      <div class="card"><div class="card-title">系统状态</div><div class="card-value" style="font-size:20px" id="statStatus">✅ 正常</div></div>
     </div>
   </div>
 
@@ -612,6 +614,16 @@ async function loadDashboard() {
     const data = await api('/dashboard');
     document.getElementById('statSubs').textContent = data.data.subscriptions;
     document.getElementById('statNodes').textContent = data.data.nodes;
+    document.getElementById('statEnabled').textContent = data.data.enabledNodes ?? '-';
+    document.getElementById('statDisabled').textContent = data.data.disabledNodes ?? '-';
+    // 协议分布
+    const proto = data.data.protoCount || {};
+    const protoNames = { vmess:'VMess', vless:'VLESS', trojan:'Trojan', shadowsocks:'SS', ss:'SS' };
+    const protoStr = Object.entries(proto)
+      .map(([k,v]) => (protoNames[k] || k) + ': ' + v)
+      .join(' · ');
+    document.getElementById('statProto').textContent = protoStr || '-';
+    // 最近更新时间
     document.getElementById('statUpdate').textContent = data.data.lastUpdate ? new Date(data.data.lastUpdate).toLocaleString() : '暂无';
   } catch { toast('加载仪表盘失败', 'error'); }
 }
