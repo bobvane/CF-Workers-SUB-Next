@@ -17,6 +17,7 @@ import { requireAuth, errorHandler, readBody, AppError, ERRORS, getToken } from 
 import { rateLimit } from './rate-limit';
 import { nodeToLink } from '@/services/config.service';
 import { nodeFingerprint } from '@/models/node';
+import { APP_META, isNewerVersion } from '@/meta';
 
 export interface AppDeps {
   repos: Repositories;
@@ -39,6 +40,44 @@ export function createApp(deps: AppDeps): Hono {
 
   // ============ Health ============
   app.get('/api/health', (c) => c.json({ status: 'ok' }));
+
+  // ============ Meta（项目信息，公开） ============
+  app.get('/api/meta', (c) => c.json({ success: true, data: { meta: APP_META } }));
+
+  // 升级检测：查 GitHub releases 最新版本（服务端代理，避免前端 CORS/限流）
+  app.get('/api/meta/check-upgrade', async (c) => {
+    const GITHUB_REPO = 'bobvane/CF-Workers-SUB-Next';
+    try {
+      const res = await fetch(
+        `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
+        { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'cf-workers-sub-next' } }
+      );
+      if (!res.ok) {
+        return c.json({
+          success: true,
+          data: { current: APP_META.version, latest: APP_META.version, hasUpdate: false, checked: true },
+        });
+      }
+      const release = (await res.json()) as { tag_name?: string; html_url?: string };
+      const latest = (release.tag_name || APP_META.version).replace(/^v/, '');
+      const hasUpdate = isNewerVersion(latest, APP_META.version);
+      return c.json({
+        success: true,
+        data: {
+          current: APP_META.version,
+          latest,
+          hasUpdate,
+          releaseUrl: release.html_url || APP_META.repo,
+          checked: true,
+        },
+      });
+    } catch {
+      return c.json({
+        success: true,
+        data: { current: APP_META.version, latest: APP_META.version, hasUpdate: false, checked: false },
+      });
+    }
+  });
 
   // ============ Auth ============
   // 登录接口限流：防暴力破解（10 次/分钟/IP）

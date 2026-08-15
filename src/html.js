@@ -107,6 +107,16 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; }
 .login-card { background: var(--bg2); border: 1px solid var(--border); border-radius: 24px; padding: 40px 36px; width: 100%; max-width: 380px; box-shadow: var(--shadow); animation: fadeUp .4s ease; }
 .login-card h1 { text-align: center; margin-bottom: 28px; font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+/* 品牌信息页脚 / 应用全局页脚 */
+.login-footer { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 22px; font-size: 12px; color: var(--text2); }
+.login-footer a, .app-footer a { color: var(--accent, #0071e3); text-decoration: none; }
+.login-footer a:hover, .app-footer a:hover { text-decoration: underline; }
+.dot { opacity: 0.4; }
+.app-footer { border-top: 1px solid var(--border); margin-top: 32px; padding: 16px 4px; font-size: 12px; color: var(--text2); }
+/* 升级检测提示 */
+.upgrade-banner { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #fff8e1; color: #b45309; }
+.upgrade-banner a { color: #b45309; text-decoration: none; }
+.upgrade-banner a:hover { text-decoration: underline; }
 /* Toast */
 .toast { position: fixed; bottom: 24px; right: 24px; z-index: 99999; padding: 12px 20px; border-radius: 14px; color: #fff; font-size: 13px; font-weight: 500; max-width: 360px; animation: fadeIn .3s; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
 .toast-success { background: #1d9159; }
@@ -291,6 +301,17 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
       </div>
     </div>
   </div>
+
+  <!-- 全局页脚（项目信息 + 升级检测） -->
+  <footer class="app-footer">
+    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+      <span>🔐 CF-Workers-SUB-Next <span class="dot">·</span> v<span id="appVersion">-</span></span>
+      <span class="dot">·</span>
+      <a href="https://github.com/bobvane/CF-Workers-SUB-Next" target="_blank" rel="noopener">GitHub</a>
+      <span class="dot">·</span>
+      <span id="upgradeStatus"></span>
+    </div>
+  </footer>
 </div>
 
 <!-- Login -->
@@ -303,6 +324,14 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="login()">登录</button>
     <p class="text-center mt-12" style="color:var(--text2);font-size:12px">首次登录使用 ADMIN_PASSWORD 环境变量设置的密码</p>
+    <!-- 项目品牌信息 -->
+    <div class="login-footer">
+      <a href="https://github.com/bobvane/CF-Workers-SUB-Next" target="_blank" rel="noopener">⭐ GitHub</a>
+      <span class="dot">·</span>
+      <span>v<span id="loginVersion">-</span></span>
+      <span class="dot">·</span>
+      <span>by Bob Vane</span>
+    </div>
   </div>
 </div>
 
@@ -979,13 +1008,38 @@ async function confirmAddRule() {
 // ============ Utils ============
 function escHtml(s) { return String(s).replace(/[&<>"']/g, function(m) { return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]; }); }
 
+// ============ 项目信息 + 升级检测 ============
+let metaLoaded = false;
+async function loadMeta() {
+  if (metaLoaded) return;
+  metaLoaded = true;
+  try {
+    const metaRes = await api('/meta');
+    const meta = metaRes.data?.meta || {};
+    const ver = meta.version || '-';
+    document.getElementById('appVersion').textContent = ver;
+    document.getElementById('loginVersion').textContent = ver;
+  } catch { /* 版本信息加载失败静默 */ }
+
+  // 升级检测（静默，不阻塞页面）
+  try {
+    const upRes = await api('/meta/check-upgrade');
+    const up = upRes.data || {};
+    const el = document.getElementById('upgradeStatus');
+    if (up.hasUpdate && up.latest) {
+      el.innerHTML = '<span class="upgrade-banner">🆕 发现新版本 <a href="' + escHtml(up.releaseUrl || '') + '" target="_blank" rel="noopener">v' + escHtml(up.latest) + '</a></span>';
+    }
+  } catch { /* 升级检测失败忽略 */ }
+}
+
 // ============ Init ============
 window.addEventListener('DOMContentLoaded', async () => {
   // 从 hash 恢复页面
   const savedPage = window.location.hash.replace('#', '') || 'dashboard';
-  if (['dashboard','subscribe','nodes','output','settings'].includes(savedPage)) {
+  if (['dashboard','subscribe','nodes','rules','output','settings'].includes(savedPage)) {
     state.currentPage = savedPage;
   }
+  loadMeta();
   await checkSession();
   switchPage(state.currentPage);
 });
