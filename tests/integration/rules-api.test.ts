@@ -11,9 +11,21 @@ import { createConfigService } from '@/services/config.service';
 
 const TEST_CONTENT = ['ss://aes-256-gcm:pass1@jp1.example.com:8388#JP-1'].join('\n');
 
+interface RuleItem {
+  id: string;
+  label: string;
+  tag: string;
+  target: string;
+}
+interface RuleGroupRes {
+  key: string;
+  name: string;
+  icon: string;
+  items: RuleItem[];
+}
 interface ResData {
   success: boolean;
-  data?: any;
+  data?: Record<string, unknown>;
   error?: { code: string; message: string };
 }
 
@@ -24,7 +36,7 @@ async function loginToken(app: ReturnType<typeof createApp>): Promise<string> {
     body: JSON.stringify({ password: 'test-pass' }),
   });
   const json = (await res.json()) as ResData;
-  return json.data.token;
+  return (json.data as { token: string }).token;
 }
 
 describe('Rules API', () => {
@@ -59,15 +71,16 @@ describe('Rules API', () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as ResData;
     expect(json.success).toBe(true);
-    const groups = json.data.groups as any[];
-    expect(Array.isArray(groups)).toBe(true);
-    expect(groups.length).toBeGreaterThanOrEqual(9);
-    for (const g of groups) {
+    const groups = json.data as unknown as { groups: RuleGroupRes[] };
+    const groupList = groups.groups;
+    expect(Array.isArray(groupList)).toBe(true);
+    expect(groupList.length).toBeGreaterThanOrEqual(9);
+    for (const g of groupList) {
       expect(g.key).toBeTruthy();
       expect(g.icon).toBeTruthy();
       expect(g.items.length).toBeGreaterThan(0);
     }
-    const names = groups.map((g) => g.key);
+    const names = groupList.map((g) => g.key);
     for (const k of ['safe', 'crypto', 'ai', 'stream', 'social', 'game', 'cloud', 'dev', 'china', 'other']) {
       expect(names).toContain(k);
     }
@@ -83,15 +96,42 @@ describe('Rules API', () => {
     expect(res.status).toBe(200);
     const json = (await res.json()) as ResData;
     expect(json.success).toBe(true);
-    expect(json.data.meta.total).toBeGreaterThan(1000);
-    expect(json.data.catalog.length).toBeGreaterThan(1000);
+    const data = json.data as unknown as { meta: { total: number }; catalog: RuleItem[] };
+    expect(data.meta.total).toBeGreaterThan(1000);
+    expect(data.catalog.length).toBeGreaterThan(1000);
   });
 
   it('GET /api/rules/catalog?q= 支持搜索', async () => {
     const res = await app.request('/api/rules/catalog?q=netflix', { headers: baseHeaders });
     const json = (await res.json()) as ResData;
     expect(json.success).toBe(true);
-    expect(json.data.catalog.length).toBeGreaterThan(0);
-    expect((json.data.catalog[0].id as string).toUpperCase()).toContain('NETFLIX');
+    const data = json.data as unknown as { catalog: RuleItem[] };
+    expect(data.catalog.length).toBeGreaterThan(0);
+    expect(data.catalog[0].id.toUpperCase()).toContain('NETFLIX');
+  });
+
+  it('PUT/GET /api/rules/selection 保存并读回勾选的规则', async () => {
+    // 保存选择
+    const put = await app.request('/api/rules/selection', {
+      method: 'PUT',
+      headers: { ...baseHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: ['NETFLIX', 'OPENAI', 'CATEGORY-ADS-ALL'] }),
+    });
+    expect(put.status).toBe(200);
+    // 读回
+    const get = await app.request('/api/rules/selection', { headers: baseHeaders });
+    const json = (await get.json()) as ResData;
+    expect(json.success).toBe(true);
+    const ids = (json.data as unknown as { ids: string[] }).ids;
+    expect(ids).toEqual(['NETFLIX', 'OPENAI', 'CATEGORY-ADS-ALL']);
+  });
+
+  it('PUT /api/rules/selection 无效参数返回 400', async () => {
+    const res = await app.request('/api/rules/selection', {
+      method: 'PUT',
+      headers: { ...baseHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ids: 'not-array' }),
+    });
+    expect(res.status).toBe(400);
   });
 });

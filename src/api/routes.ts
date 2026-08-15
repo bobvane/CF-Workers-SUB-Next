@@ -320,6 +320,22 @@ export function createApp(deps: AppDeps): Hono {
     return c.json({ success: true, data: { meta: METACUBEX_CATALOG.meta, catalog: catalog.slice(0, limit) } });
   });
 
+  // 获取用户勾选的规则 id 列表
+  app.get('/api/rules/selection', async (c) => {
+    const ids = await config.getSelectedRuleIds();
+    return c.json({ success: true, data: { ids } });
+  });
+
+  // 保存用户勾选的规则 id 列表
+  app.put('/api/rules/selection', async (c) => {
+    const body = await readBody<{ ids?: string[] }>(c);
+    if (!Array.isArray(body.ids)) {
+      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'ids 必须为数组' } }, 400);
+    }
+    await config.setSelectedRuleIds(body.ids);
+    return c.json({ success: true, data: { ids: body.ids } });
+  });
+
   // ============ Settings ============
 
   app.get('/api/settings', requireAuth(auth), async (c) => {

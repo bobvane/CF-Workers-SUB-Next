@@ -6,6 +6,8 @@
 
 import { Node } from '@/models/node';
 import { generateYaml, parseYaml } from './yaml-serializer';
+import { MetaCubeXRule } from '@/data/metacubex-rules';
+import { buildRuleProviders, buildRules } from './rule-providers';
 
 /**
  * 节点名去重：同名节点追加数字后缀
@@ -155,10 +157,12 @@ export function generateProxyGroups(nodeNames: string[]): Record<string, unknown
 
 /**
  * 生成 Mihomo YAML 配置
+ * @param selectedRules 用户勾选的 MetaCubeX 分流规则（用于生成 rule-providers + rules）
  */
 export function generateMihomoConfig(
   nodes: Node[],
-  template: MihomoTemplate = DEFAULT_MIHOMO_TEMPLATE
+  template: MihomoTemplate = DEFAULT_MIHOMO_TEMPLATE,
+  selectedRules: MetaCubeXRule[] = []
 ): string {
   const uniqueNodes = makeUniqueNames(nodes);
   const proxies = uniqueNodes.map(nodeToMihomoProxy);
@@ -177,6 +181,12 @@ export function generateMihomoConfig(
 
   if (template.externalController) {
     config['external-controller'] = template.externalController;
+  }
+
+  // 分流规则：用户勾选了规则才生成 rule-providers + 有序 rules
+  if (selectedRules.length > 0) {
+    config['rule-providers'] = buildRuleProviders(selectedRules);
+    config.rules = buildRules(selectedRules);
   }
 
   return generateYaml(config);

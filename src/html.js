@@ -426,7 +426,7 @@ function initRuleState() {
   ruleSelected = {};
   ruleExpanded = {};
   RULE_GROUPS.forEach(g => {
-    g.items.forEach(it => { ruleSelected[it.id] = true; });  // 默认全选
+    g.items.forEach(it => { ruleSelected[it.id] = false; });  // 默认不勾选（由后端保存的选择决定）
     ruleExpanded[g.key] = false;  // 默认折叠
   });
 }
@@ -472,6 +472,7 @@ function onRuleGroupChange(cb) {
   const checked = cb.checked;
   RULE_GROUPS[gi].items.forEach(it => { ruleSelected[it.id] = checked; });
   renderRulesTree();
+  saveRuleSelection();
 }
 
 function onRuleItemChange(cb) {
@@ -479,6 +480,7 @@ function onRuleItemChange(cb) {
   const id = cb.dataset.id;
   ruleSelected[id] = cb.checked;
   renderRulesTree();
+  saveRuleSelection();
 }
 
 function updateRulesCount() {
@@ -486,9 +488,20 @@ function updateRulesCount() {
   document.getElementById('rulesCount').textContent = total;
 }
 
+// 把当前勾选的规则 id 保存到后端
+function saveRuleSelection() {
+  const ids = RULE_GROUPS.flatMap(g => g.items).filter(it => ruleSelected[it.id]).map(it => it.id);
+  fetch('/api/rules/selection', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ids }),
+  }).then(r => r.json()).then(() => {}).catch(() => toast('规则保存失败', 'error'));
+}
+
 function selectAllRules(check) {
   RULE_GROUPS.forEach(g => g.items.forEach(it => { ruleSelected[it.id] = check; }));
   renderRulesTree();
+  saveRuleSelection();
 }
 
 function resetRulesExpanded() {
@@ -497,16 +510,22 @@ function resetRulesExpanded() {
 }
 
 function loadRules() {
-  // 首次加载时从后端拉取规则大类，同时显示加载状态
+  // 首次加载时从后端拉取规则大类 + 已保存的选择，同时显示加载状态
   const container = document.getElementById('rulesTree');
   if (RULE_GROUPS.length === 0) {
     container.innerHTML = '<div class="rules-loading">⏳ 正在加载规则…</div>';
-    fetch('/api/rules/groups')
-      .then(r => r.json())
-      .then(res => {
-        if (res.success && res.data && res.data.groups) {
-          RULE_GROUPS = res.data.groups;
+    Promise.all([
+      fetch('/api/rules/groups').then(r => r.json()),
+      fetch('/api/rules/selection').then(r => r.json()),
+    ])
+      .then(([groupsRes, selRes]) => {
+        if (groupsRes.success && groupsRes.data && groupsRes.data.groups) {
+          RULE_GROUPS = groupsRes.data.groups;
           initRuleState();
+          // 应用已保存的选择
+          if (selRes.success && selRes.data && Array.isArray(selRes.data.ids)) {
+            selRes.data.ids.forEach(id => { if (id in ruleSelected) ruleSelected[id] = true; });
+          }
           renderRulesTree();
         } else {
           container.innerHTML = '<div class="rules-loading" style="color:var(--red)">❌ 规则数据加载失败</div>';

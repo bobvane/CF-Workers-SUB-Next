@@ -36,7 +36,10 @@ export interface CatalogEntry {
   type: 'aggregate' | 'site' | 'tld';
 }
 
-export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog: CatalogEntry[] } = catalogRaw as any;
+export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog: CatalogEntry[] } = catalogRaw as unknown as {
+  meta: Record<string, string | number>;
+  catalog: CatalogEntry[];
+};
 
 /** 预定义 9 大常规分组 */
 export const RULE_GROUPS: RuleGroup[] = [

@@ -12,6 +12,7 @@ import { generateBase64Config } from '@/generator/base64-generator';
 import { generateSurgeConfig } from '@/generator/surge';
 import { generateQuantumultXConfig } from '@/generator/quantumultx';
 import { nodeToUrl } from '@/generator/node-to-url';
+import { MetaCubeXRule, RULE_GROUPS } from '@/data/metacubex-rules';
 
 export type OutputFormat =
   | 'mihomo'
@@ -38,6 +39,12 @@ export interface ConfigService {
   getDisabledNodes(): Promise<string[]>;
   /** 设置禁用的节点指纹列表 */
   setDisabledNodes(fingerprints: string[]): Promise<void>;
+  /** 获取用户勾选的规则 id 列表 */
+  getSelectedRuleIds(): Promise<string[]>;
+  /** 设置用户勾选的规则 id 列表 */
+  setSelectedRuleIds(ids: string[]): Promise<void>;
+  /** 获取用户勾选的完整规则对象列表（由 id 解析自 RULE_GROUPS） */
+  getSelectedRules(): Promise<MetaCubeXRule[]>;
 }
 
 const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string }> = {
@@ -53,6 +60,10 @@ const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string 
 };
 
 const DISABLED_NODES_KEY = 'disabled_nodes';
+const SELECTED_RULES_KEY = 'selected_rules';
+
+/** 所有预定义规则平铺，供 id → 规则对象解析 */
+const ALL_RULES: MetaCubeXRule[] = RULE_GROUPS.flatMap((g) => g.items);
 
 export function createConfigService(repos: Repositories): ConfigService {
   return {
@@ -77,6 +88,29 @@ export function createConfigService(repos: Repositories): ConfigService {
       await repos.settings.set(DISABLED_NODES_KEY, JSON.stringify(unique));
     },
 
+    async getSelectedRuleIds(): Promise<string[]> {
+      const raw = await repos.settings.get(SELECTED_RULES_KEY);
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    },
+
+    async setSelectedRuleIds(ids: string[]): Promise<void> {
+      const unique = [...new Set(ids)];
+      await repos.settings.set(SELECTED_RULES_KEY, JSON.stringify(unique));
+    },
+
+    async getSelectedRules(): Promise<MetaCubeXRule[]> {
+      const ids = await this.getSelectedRuleIds();
+      return ids
+        .map((id) => ALL_RULES.find((r) => r.id === id))
+        .filter((r): r is MetaCubeXRule => r !== undefined);
+    },
+
     async generate(format: OutputFormat): Promise<string> {
       const all = await repos.nodes.getAll();
       // 过滤禁用的节点
@@ -84,7 +118,7 @@ export function createConfigService(repos: Repositories): ConfigService {
       const nodes = all.filter((n) => !disabled.has(nodeFingerprint(n)));
       switch (format) {
         case 'mihomo':
-          return generateMihomoConfig(nodes);
+          return generateMihomoConfig(nodes, undefined, await this.getSelectedRules());
         case 'singbox':
           return generateSingboxConfig(nodes);
         case 'surge':
