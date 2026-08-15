@@ -837,10 +837,28 @@ async function loadSubKey() {
   try {
     const data = await api('/sub-key');
     subKey = data.data?.key || '';
+    if (subKey) {
+      document.querySelectorAll('#outputLinks input').forEach(input => {
+        input.value = input.value.replace('{key}', subKey);
+      });
+    } else {
+      document.querySelectorAll('#outputLinks input').forEach(input => {
+        input.value = input.value.replace('{key}', '');
+      });
+    }
+  } catch (e) {
+    // 认证过期或网络异常：保持占位符并提示
     document.querySelectorAll('#outputLinks input').forEach(input => {
-      input.value = input.value.replace('{key}', subKey);
+      input.value = input.value.replace('{key}', '');
     });
-  } catch { /* 静默：未登录或失败保持占位 */ }
+    const container = document.querySelector('#outputLinks');
+    if (container) {
+      const el = document.createElement('div');
+      el.style.cssText = 'color:var(--red);font-size:12px;margin-top:8px;padding:8px;background:var(--bg);border-radius:10px';
+      el.textContent = '⚠️ 无法获取订阅链接，请重新登录';
+      container.appendChild(el);
+    }
+  }
 }
 
 function copyFormatUrl(format) {
