@@ -111,6 +111,23 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 .toast { position: fixed; bottom: 24px; right: 24px; z-index: 99999; padding: 12px 20px; border-radius: 14px; color: #fff; font-size: 13px; font-weight: 500; max-width: 360px; animation: fadeIn .3s; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
 .toast-success { background: #1d9159; }
 .toast-error { background: #ff3b30; }
+/* 分流规则树 */
+.rules-group { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.rules-group-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; user-select: none; transition: background .2s; }
+.rules-group-head:hover { background: rgba(0,0,0,0.03); }
+[data-theme="dark"] .rules-group-head:hover { background: rgba(255,255,255,0.04); }
+.rules-arrow { display: inline-flex; transition: transform .25s ease; color: var(--text2); font-size: 12px; width: 14px; justify-content: center; }
+.rules-group-head.open .rules-arrow { transform: rotate(90deg); }
+.rules-group-title { font-weight: 600; font-size: 15px; flex: 1; }
+.rules-group-count { font-size: 12px; color: var(--text2); background: rgba(0,0,0,0.05); padding: 2px 10px; border-radius: 999px; }
+[data-theme="dark"] .rules-group-count { background: rgba(255,255,255,0.1); }
+.rules-items { display: none; padding: 4px 16px 14px 40px; flex-wrap: wrap; gap: 4px 0; }
+.rules-group-head.open + .rules-items { display: flex; }
+.rules-item { display: inline-flex; align-items: center; gap: 6px; min-width: 160px; padding: 5px 12px 5px 8px; margin: 2px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.rules-item:hover { background: rgba(0,0,0,0.04); }
+[data-theme="dark"] .rules-item:hover { background: rgba(255,255,255,0.06); }
+.rules-item input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+.rules-group-head input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; width: 16px; height: 16px; }
 /* Responsive */
 @media (max-width: 640px) {
   .nav-tab { padding: 7px 12px; font-size: 13px; }
@@ -150,6 +167,7 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
     <div class="nav-tab" data-page="subscribe" onclick="switchPage('subscribe')">📥 订阅管理</div>
     <div class="nav-tab" data-page="nodes" onclick="switchPage('nodes')">🔗 节点列表</div>
     <div class="nav-tab" data-page="output" onclick="switchPage('output')">📦 输出配置</div>
+    <div class="nav-tab" data-page="rules" onclick="switchPage('rules')">🌐 分流规则</div>
     <div class="nav-tab" data-page="settings" onclick="switchPage('settings')">⚙️ 设置</div>
   </nav>
 
@@ -204,6 +222,23 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
       <button class="btn" onclick="refreshNodeCount()">🔄 刷新节点数</button>
     </div>
     <div id="outputLinks"></div>
+  </div>
+
+  <!-- Rules -->
+  <div class="page" id="page-rules">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+      <h2>🌐 分流规则</h2>
+      <span style="font-size:13px;color:var(--text2)">已选 <b id="rulesCount" style="color:var(--accent)">0</b> 条规则</span>
+    </div>
+    <div class="card" style="padding:12px 16px;font-size:13px;color:var(--text2)">
+      💡 勾选 MetaCubeX 规则集，生成订阅时自动写入对应分流规则。点击大类标题展开子项，可直接勾选整个大类，也可单独勾选其中几项。
+    </div>
+    <div id="rulesTree"></div>
+    <div style="margin-top:12px;display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="selectAllRules(true)">✅ 全选</button>
+      <button class="btn" onclick="selectAllRules(false)">⬜ 全不选</button>
+      <button class="btn" onclick="resetRulesExpanded()">🔽 全部展开</button>
+    </div>
   </div>
 
   <!-- Settings -->
@@ -375,7 +410,182 @@ function switchPage(page) {
   if (page === 'subscribe') loadSubscriptions();
   if (page === 'nodes') loadNodes();
   if (page === 'output') loadOutput();
+  if (page === 'rules') loadRules();
   if (page === 'settings') loadSettings();
+}
+
+// ============ 分流规则（纯前端，暂无后端逻辑） ============
+const RULE_GROUPS = [
+  { key: 'safe', name: '🛡️ 安全与隐私', items: [
+    { id: 'category-ads-all', label: '广告拦截', tag: 'geosite', target: 'REJECT' },
+    { id: 'private', label: '私有地址', tag: 'geosite', target: 'DIRECT' },
+    { id: 'cn', label: '中国直连域名', tag: 'geosite', target: 'DIRECT' },
+  ]},
+  { key: 'ai', name: '🤖 AI 服务', items: [
+    { id: 'openai', label: 'OpenAI / ChatGPT', tag: 'geosite', target: 'PROXY' },
+    { id: 'claude', label: 'Claude (Anthropic)', tag: 'geosite', target: 'PROXY' },
+    { id: 'google-gemini', label: 'Gemini', tag: 'geosite', target: 'PROXY' },
+    { id: 'perplexity', label: 'Perplexity', tag: 'geosite', target: 'PROXY' },
+    { id: 'github-copilot', label: 'GitHub Copilot', tag: 'geosite', target: 'PROXY' },
+  ]},
+  { key: 'stream', name: '🎬 流媒体', items: [
+    { id: 'netflix', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
+    { id: 'youtube', label: 'YouTube', tag: 'geosite', target: 'PROXY' },
+    { id: 'disney', label: 'Disney+', tag: 'geosite', target: 'PROXY' },
+    { id: 'hbo', label: 'HBO Max', tag: 'geosite', target: 'PROXY' },
+    { id: 'primevideo', label: 'Amazon Prime', tag: 'geosite', target: 'PROXY' },
+    { id: 'tiktok', label: 'TikTok', tag: 'geosite', target: 'PROXY' },
+    { id: 'spotify', label: 'Spotify', tag: 'geosite', target: 'PROXY' },
+    { id: 'twitch', label: 'Twitch', tag: 'geosite', target: 'PROXY' },
+    { id: 'bilibili', label: '哔哩哔哩', tag: 'geosite', target: 'DIRECT' },
+    { id: 'iqiyi', label: '爱奇艺', tag: 'geosite', target: 'DIRECT' },
+    { id: 'youku', label: '优酷', tag: 'geosite', target: 'DIRECT' },
+    { id: 'tencentvideo', label: '腾讯视频', tag: 'geosite', target: 'DIRECT' },
+  ]},
+  { key: 'social', name: '📱 社交', items: [
+    { id: 'telegram', label: 'Telegram', tag: 'geosite', target: 'PROXY' },
+    { id: 'discord', label: 'Discord', tag: 'geosite', target: 'PROXY' },
+    { id: 'twitter', label: 'X / Twitter', tag: 'geosite', target: 'PROXY' },
+    { id: 'facebook', label: 'Facebook', tag: 'geosite', target: 'PROXY' },
+    { id: 'instagram', label: 'Instagram', tag: 'geosite', target: 'PROXY' },
+    { id: 'reddit', label: 'Reddit', tag: 'geosite', target: 'PROXY' },
+    { id: 'whatsapp', label: 'WhatsApp', tag: 'geosite', target: 'PROXY' },
+    { id: 'signal', label: 'Signal', tag: 'geosite', target: 'PROXY' },
+  ]},
+  { key: 'game', name: '🎮 游戏平台', items: [
+    { id: 'steam', label: 'Steam', tag: 'geosite', target: 'PROXY' },
+    { id: 'epicgames', label: 'Epic Games', tag: 'geosite', target: 'PROXY' },
+    { id: 'blizzard', label: '暴雪战网', tag: 'geosite', target: 'PROXY' },
+    { id: 'nintendo', label: '任天堂', tag: 'geosite', target: 'PROXY' },
+    { id: 'rockstar', label: 'R星', tag: 'geosite', target: 'PROXY' },
+    { id: 'origin', label: 'Origin/EA', tag: 'geosite', target: 'PROXY' },
+    { id: 'ubisoft', label: '育碧', tag: 'geosite', target: 'PROXY' },
+    { id: 'playstation', label: 'PlayStation', tag: 'geosite', target: 'PROXY' },
+    { id: 'xbox', label: 'Xbox', tag: 'geosite', target: 'PROXY' },
+  ]},
+  { key: 'cloud', name: '☁️ 云服务', items: [
+    { id: 'cloudflare', label: 'Cloudflare', tag: 'geosite', target: 'DIRECT' },
+    { id: 'microsoft', label: 'Microsoft', tag: 'geosite', target: 'PROXY' },
+    { id: 'google', label: 'Google', tag: 'geosite', target: 'PROXY' },
+    { id: 'amazon', label: 'Amazon/AWS', tag: 'geosite', target: 'PROXY' },
+    { id: 'digitalocean', label: 'DigitalOcean', tag: 'geosite', target: 'PROXY' },
+    { id: 'oracle', label: 'Oracle', tag: 'geosite', target: 'PROXY' },
+    { id: 'vercel', label: 'Vercel', tag: 'geosite', target: 'PROXY' },
+    { id: 'heroku', label: 'Heroku', tag: 'geosite', target: 'PROXY' },
+    { id: 'docker', label: 'Docker', tag: 'geosite', target: 'PROXY' },
+  ]},
+  { key: 'dev', name: '💻 开发工具', items: [
+    { id: 'github', label: 'GitHub', tag: 'geosite', target: 'PROXY' },
+    { id: 'gitlab', label: 'GitLab', tag: 'geosite', target: 'PROXY' },
+    { id: 'npm', label: 'npm', tag: 'geosite', target: 'PROXY' },
+    { id: 'pypi', label: 'PyPI', tag: 'geosite', target: 'PROXY' },
+    { id: 'stackoverflow', label: 'StackOverflow', tag: 'geosite', target: 'PROXY' },
+    { id: 'notion', label: 'Notion', tag: 'geosite', target: 'PROXY' },
+    { id: 'figma', label: 'Figma', tag: 'geosite', target: 'PROXY' },
+    { id: 'canva', label: 'Canva', tag: 'geosite', target: 'PROXY' },
+    { id: 'medium', label: 'Medium', tag: 'geosite', target: 'PROXY' },
+    { id: 'jsdelivr', label: 'jsDelivr', tag: 'geosite', target: 'DIRECT' },
+  ]},
+  { key: 'china', name: '🇨🇳 中国内地常用', items: [
+    { id: 'baidu', label: '百度', tag: 'geosite', target: 'DIRECT' },
+    { id: 'alibaba', label: '阿里巴巴', tag: 'geosite', target: 'DIRECT' },
+    { id: 'tencent', label: '腾讯', tag: 'geosite', target: 'DIRECT' },
+    { id: 'wechat', label: '微信', tag: 'geosite', target: 'DIRECT' },
+    { id: 'alipay', label: '支付宝', tag: 'geosite', target: 'DIRECT' },
+    { id: 'taobao', label: '淘宝', tag: 'geosite', target: 'DIRECT' },
+    { id: 'jd', label: '京东', tag: 'geosite', target: 'DIRECT' },
+    { id: 'xiaomi', label: '小米', tag: 'geosite', target: 'DIRECT' },
+  ]},
+  { key: 'other', name: '👑 其他常用', items: [
+    { id: 'adobe', label: 'Adobe', tag: 'geosite', target: 'PROXY' },
+    { id: 'apple', label: 'Apple', tag: 'geosite', target: 'DIRECT' },
+    { id: 'zoom', label: 'Zoom', tag: 'geosite', target: 'DIRECT' },
+    { id: 'slack', label: 'Slack', tag: 'geosite', target: 'PROXY' },
+    { id: 'speedtest', label: 'Speedtest', tag: 'geosite', target: 'DIRECT' },
+    { id: 'fastly', label: 'Fastly', tag: 'geosite', target: 'DIRECT' },
+  ]},
+];
+// 每个规则默认勾选状态（1 全部选中，0 未选）
+let ruleSelected = {};
+let ruleExpanded = {};
+
+function initRuleState() {
+  ruleSelected = {};
+  ruleExpanded = {};
+  RULE_GROUPS.forEach(g => {
+    g.items.forEach(it => { ruleSelected[it.id] = true; });  // 默认全选
+    ruleExpanded[g.key] = false;  // 默认折叠
+  });
+}
+
+function renderRulesTree() {
+  const container = document.getElementById('rulesTree');
+  container.innerHTML = RULE_GROUPS.map((g, gi) => {
+    const allChecked = g.items.every(it => ruleSelected[it.id]);
+    const checkedCount = g.items.filter(it => ruleSelected[it.id]).length;
+    const cls = ruleExpanded[g.key] ? 'open' : '';
+    // 大类 checkbox：全选时打勾，部分选时半选（CSS 用 indeterminate）
+    const itemsHTML = g.items.map(it => \`
+      <label class="rules-item">
+        <input type="checkbox" data-rule-check data-g="\${gi}" data-id="\${it.id}" \${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
+        <span>\${it.label} <span style="color:var(--text2);font-size:11px">\${it.tag}:\${it.id}</span></span>
+      </label>\`).join('');
+    return \`
+      <div class="rules-group">
+        <div class="rules-group-head \${cls}" data-g="\${gi}" onclick="toggleRuleGroup(\${gi})">
+          <span class="rules-arrow">▶</span>
+          <input type="checkbox" data-group-check data-g="\${gi}" \${allChecked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="onRuleGroupChange(this)">
+          <span class="rules-group-title">\${g.name}</span>
+          <span class="rules-group-count">\${checkedCount} / \${g.items.length}</span>
+        </div>
+        <div class="rules-items">\${itemsHTML}</div>
+      </div>\`;
+  }).join('');
+  // 设置半选状态
+  RULE_GROUPS.forEach((g, gi) => {
+    const cb = document.querySelector(\`.rules-group-head[data-g="\${gi}"] input[data-group-check]\`);
+    if (cb) cb.indeterminate = g.items.some(it => ruleSelected[it.id]) && !g.items.every(it => ruleSelected[it.id]);
+  });
+  updateRulesCount();
+}
+
+function toggleRuleGroup(gi) {
+  ruleExpanded[RULE_GROUPS[gi].key] = !ruleExpanded[RULE_GROUPS[gi].key];
+  renderRulesTree();
+}
+
+function onRuleGroupChange(cb) {
+  const gi = +cb.dataset.g;
+  const checked = cb.checked;
+  RULE_GROUPS[gi].items.forEach(it => { ruleSelected[it.id] = checked; });
+  renderRulesTree();
+}
+
+function onRuleItemChange(cb) {
+  const gi = +cb.dataset.g;
+  const id = cb.dataset.id;
+  ruleSelected[id] = cb.checked;
+  renderRulesTree();
+}
+
+function updateRulesCount() {
+  const total = Object.values(ruleSelected).filter(Boolean).length;
+  document.getElementById('rulesCount').textContent = total;
+}
+
+function selectAllRules(check) {
+  RULE_GROUPS.forEach(g => g.items.forEach(it => { ruleSelected[it.id] = check; }));
+  renderRulesTree();
+}
+
+function resetRulesExpanded() {
+  RULE_GROUPS.forEach(g => { ruleExpanded[g.key] = true; });
+  renderRulesTree();
+}
+
+function loadRules() {
+  if (Object.keys(ruleSelected).length === 0) initRuleState();
+  renderRulesTree();
 }
 
 // ============ Dashboard ============
