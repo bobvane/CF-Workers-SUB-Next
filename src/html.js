@@ -270,7 +270,7 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 </div>
 
 <!-- QR 码 Modal -->
-<div class="modal-overlay" id="qrModal" style="display:none">
+<div class="modal-overlay" id="qrModal">
   <div class="modal-content" style="max-width:380px;text-align:center">
     <div class="modal-header"><h3>📱 扫码订阅</h3><button class="modal-close" onclick="closeModal('qrModal')">✕</button></div>
     <div class="modal-body">
