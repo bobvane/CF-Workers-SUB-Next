@@ -76,9 +76,9 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   // ============ 受保护路由（需认证） ============
-  app.use('/api/subscriptions*', requireAuth(auth));
-  app.use('/api/nodes*', requireAuth(auth));
-  app.use('/api/rules*', requireAuth(auth));
+  app.use('/api/subscriptions/*', requireAuth(auth));
+  app.use('/api/nodes/*', requireAuth(auth));
+  app.use('/api/rules/*', requireAuth(auth));
   app.use('/api/dashboard', requireAuth(auth));
 
   // ============ Subscription API ============
@@ -295,6 +295,29 @@ export function createApp(deps: AppDeps): Hono {
         'Content-Disposition': `attachment; filename="${result.filename}"`,
       },
     });
+  });
+
+  // ============ Rules API (分流规则) ============
+
+  // 获取预定义规则大类（前端规则页的数据源）
+  app.get('/api/rules/groups', async (c) => {
+    const { RULE_GROUPS } = await import('@/data/metacubex-rules');
+    return c.json({ success: true, data: { groups: RULE_GROUPS } });
+  });
+
+  // 获取 MetaCubeX 全量分类目录（供扫描/搜索/添加，含 1546 个分类）
+  app.get('/api/rules/catalog', async (c) => {
+    const { METACUBEX_CATALOG } = await import('@/data/metacubex-rules');
+    const q = (c.req.query('q') || '').trim().toLowerCase();
+    const limit = Math.min(Number(c.req.query('limit') || 5000), 5000);
+    let catalog = METACUBEX_CATALOG.catalog;
+    if (q) {
+      catalog = catalog.filter(
+        (e: { id: string; label: string }) =>
+          e.id.toLowerCase().includes(q) || e.label.toLowerCase().includes(q)
+      );
+    }
+    return c.json({ success: true, data: { meta: METACUBEX_CATALOG.meta, catalog: catalog.slice(0, limit) } });
   });
 
   // ============ Settings ============

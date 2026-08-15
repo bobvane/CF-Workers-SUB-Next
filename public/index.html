@@ -109,6 +109,7 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 .toast-error { background: #ff3b30; }
 /* 分流规则树 */
 .rules-group { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px; margin-bottom: 10px; box-shadow: var(--shadow); overflow: hidden; }
+.rules-loading { padding: 40px 20px; text-align: center; color: var(--text2); }
 .rules-group-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; cursor: pointer; user-select: none; transition: background .2s; }
 .rules-group-head:hover { background: rgba(0,0,0,0.03); }
 [data-theme="dark"] .rules-group-head:hover { background: rgba(255,255,255,0.04); }
@@ -162,8 +163,8 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
     <div class="nav-tab active" data-page="dashboard" onclick="switchPage('dashboard')">📊 仪表盘</div>
     <div class="nav-tab" data-page="subscribe" onclick="switchPage('subscribe')">📥 订阅管理</div>
     <div class="nav-tab" data-page="nodes" onclick="switchPage('nodes')">🔗 节点列表</div>
-    <div class="nav-tab" data-page="output" onclick="switchPage('output')">📦 输出配置</div>
     <div class="nav-tab" data-page="rules" onclick="switchPage('rules')">🌐 分流规则</div>
+    <div class="nav-tab" data-page="output" onclick="switchPage('output')">📦 输出配置</div>
     <div class="nav-tab" data-page="settings" onclick="switchPage('settings')">⚙️ 设置</div>
   </nav>
 
@@ -206,20 +207,6 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
     <p class="text-center" id="nodesEmpty" style="color:var(--text2);padding:24px">暂无节点数据</p>
   </div>
 
-  <!-- Output -->
-  <div class="page" id="page-output">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h2>📦 输出配置</h2>
-      <span style="font-size:13px;color:var(--text2)" id="outputNodeCount">0 个节点</span>
-    </div>
-    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="downloadMihomo()">📥 下载 Mihomo YAML</button>
-      <button class="btn btn-primary" onclick="downloadSingbox()">📥 下载 Sing-box JSON</button>
-      <button class="btn" onclick="refreshNodeCount()">🔄 刷新节点数</button>
-    </div>
-    <div id="outputLinks"></div>
-  </div>
-
   <!-- Rules -->
   <div class="page" id="page-rules">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
@@ -235,6 +222,20 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
       <button class="btn" onclick="selectAllRules(false)">⬜ 全不选</button>
       <button class="btn" onclick="resetRulesExpanded()">🔽 全部展开</button>
     </div>
+  </div>
+
+  <!-- Output -->
+  <div class="page" id="page-output">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+      <h2>📦 输出配置</h2>
+      <span style="font-size:13px;color:var(--text2)" id="outputNodeCount">0 个节点</span>
+    </div>
+    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn btn-primary" onclick="downloadMihomo()">📥 下载 Mihomo YAML</button>
+      <button class="btn btn-primary" onclick="downloadSingbox()">📥 下载 Sing-box JSON</button>
+      <button class="btn" onclick="refreshNodeCount()">🔄 刷新节点数</button>
+    </div>
+    <div id="outputLinks"></div>
   </div>
 
   <!-- Settings -->
@@ -410,97 +411,9 @@ function switchPage(page) {
   if (page === 'settings') loadSettings();
 }
 
-// ============ 分流规则（纯前端，暂无后端逻辑） ============
-const RULE_GROUPS = [
-  { key: 'safe', name: '🛡️ 安全与隐私', items: [
-    { id: 'category-ads-all', label: '广告拦截', tag: 'geosite', target: 'REJECT' },
-    { id: 'private', label: '私有地址', tag: 'geosite', target: 'DIRECT' },
-    { id: 'cn', label: '中国直连域名', tag: 'geosite', target: 'DIRECT' },
-  ]},
-  { key: 'ai', name: '🤖 AI 服务', items: [
-    { id: 'openai', label: 'OpenAI / ChatGPT', tag: 'geosite', target: 'PROXY' },
-    { id: 'claude', label: 'Claude (Anthropic)', tag: 'geosite', target: 'PROXY' },
-    { id: 'google-gemini', label: 'Gemini', tag: 'geosite', target: 'PROXY' },
-    { id: 'perplexity', label: 'Perplexity', tag: 'geosite', target: 'PROXY' },
-    { id: 'github-copilot', label: 'GitHub Copilot', tag: 'geosite', target: 'PROXY' },
-  ]},
-  { key: 'stream', name: '🎬 流媒体', items: [
-    { id: 'netflix', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
-    { id: 'youtube', label: 'YouTube', tag: 'geosite', target: 'PROXY' },
-    { id: 'disney', label: 'Disney+', tag: 'geosite', target: 'PROXY' },
-    { id: 'hbo', label: 'HBO Max', tag: 'geosite', target: 'PROXY' },
-    { id: 'primevideo', label: 'Amazon Prime', tag: 'geosite', target: 'PROXY' },
-    { id: 'tiktok', label: 'TikTok', tag: 'geosite', target: 'PROXY' },
-    { id: 'spotify', label: 'Spotify', tag: 'geosite', target: 'PROXY' },
-    { id: 'twitch', label: 'Twitch', tag: 'geosite', target: 'PROXY' },
-    { id: 'bilibili', label: '哔哩哔哩', tag: 'geosite', target: 'DIRECT' },
-    { id: 'iqiyi', label: '爱奇艺', tag: 'geosite', target: 'DIRECT' },
-    { id: 'youku', label: '优酷', tag: 'geosite', target: 'DIRECT' },
-    { id: 'tencentvideo', label: '腾讯视频', tag: 'geosite', target: 'DIRECT' },
-  ]},
-  { key: 'social', name: '📱 社交', items: [
-    { id: 'telegram', label: 'Telegram', tag: 'geosite', target: 'PROXY' },
-    { id: 'discord', label: 'Discord', tag: 'geosite', target: 'PROXY' },
-    { id: 'twitter', label: 'X / Twitter', tag: 'geosite', target: 'PROXY' },
-    { id: 'facebook', label: 'Facebook', tag: 'geosite', target: 'PROXY' },
-    { id: 'instagram', label: 'Instagram', tag: 'geosite', target: 'PROXY' },
-    { id: 'reddit', label: 'Reddit', tag: 'geosite', target: 'PROXY' },
-    { id: 'whatsapp', label: 'WhatsApp', tag: 'geosite', target: 'PROXY' },
-    { id: 'signal', label: 'Signal', tag: 'geosite', target: 'PROXY' },
-  ]},
-  { key: 'game', name: '🎮 游戏平台', items: [
-    { id: 'steam', label: 'Steam', tag: 'geosite', target: 'PROXY' },
-    { id: 'epicgames', label: 'Epic Games', tag: 'geosite', target: 'PROXY' },
-    { id: 'blizzard', label: '暴雪战网', tag: 'geosite', target: 'PROXY' },
-    { id: 'nintendo', label: '任天堂', tag: 'geosite', target: 'PROXY' },
-    { id: 'rockstar', label: 'R星', tag: 'geosite', target: 'PROXY' },
-    { id: 'origin', label: 'Origin/EA', tag: 'geosite', target: 'PROXY' },
-    { id: 'ubisoft', label: '育碧', tag: 'geosite', target: 'PROXY' },
-    { id: 'playstation', label: 'PlayStation', tag: 'geosite', target: 'PROXY' },
-    { id: 'xbox', label: 'Xbox', tag: 'geosite', target: 'PROXY' },
-  ]},
-  { key: 'cloud', name: '☁️ 云服务', items: [
-    { id: 'cloudflare', label: 'Cloudflare', tag: 'geosite', target: 'DIRECT' },
-    { id: 'microsoft', label: 'Microsoft', tag: 'geosite', target: 'PROXY' },
-    { id: 'google', label: 'Google', tag: 'geosite', target: 'PROXY' },
-    { id: 'amazon', label: 'Amazon/AWS', tag: 'geosite', target: 'PROXY' },
-    { id: 'digitalocean', label: 'DigitalOcean', tag: 'geosite', target: 'PROXY' },
-    { id: 'oracle', label: 'Oracle', tag: 'geosite', target: 'PROXY' },
-    { id: 'vercel', label: 'Vercel', tag: 'geosite', target: 'PROXY' },
-    { id: 'heroku', label: 'Heroku', tag: 'geosite', target: 'PROXY' },
-    { id: 'docker', label: 'Docker', tag: 'geosite', target: 'PROXY' },
-  ]},
-  { key: 'dev', name: '💻 开发工具', items: [
-    { id: 'github', label: 'GitHub', tag: 'geosite', target: 'PROXY' },
-    { id: 'gitlab', label: 'GitLab', tag: 'geosite', target: 'PROXY' },
-    { id: 'npm', label: 'npm', tag: 'geosite', target: 'PROXY' },
-    { id: 'pypi', label: 'PyPI', tag: 'geosite', target: 'PROXY' },
-    { id: 'stackoverflow', label: 'StackOverflow', tag: 'geosite', target: 'PROXY' },
-    { id: 'notion', label: 'Notion', tag: 'geosite', target: 'PROXY' },
-    { id: 'figma', label: 'Figma', tag: 'geosite', target: 'PROXY' },
-    { id: 'canva', label: 'Canva', tag: 'geosite', target: 'PROXY' },
-    { id: 'medium', label: 'Medium', tag: 'geosite', target: 'PROXY' },
-    { id: 'jsdelivr', label: 'jsDelivr', tag: 'geosite', target: 'DIRECT' },
-  ]},
-  { key: 'china', name: '🇨🇳 中国内地常用', items: [
-    { id: 'baidu', label: '百度', tag: 'geosite', target: 'DIRECT' },
-    { id: 'alibaba', label: '阿里巴巴', tag: 'geosite', target: 'DIRECT' },
-    { id: 'tencent', label: '腾讯', tag: 'geosite', target: 'DIRECT' },
-    { id: 'wechat', label: '微信', tag: 'geosite', target: 'DIRECT' },
-    { id: 'alipay', label: '支付宝', tag: 'geosite', target: 'DIRECT' },
-    { id: 'taobao', label: '淘宝', tag: 'geosite', target: 'DIRECT' },
-    { id: 'jd', label: '京东', tag: 'geosite', target: 'DIRECT' },
-    { id: 'xiaomi', label: '小米', tag: 'geosite', target: 'DIRECT' },
-  ]},
-  { key: 'other', name: '👑 其他常用', items: [
-    { id: 'adobe', label: 'Adobe', tag: 'geosite', target: 'PROXY' },
-    { id: 'apple', label: 'Apple', tag: 'geosite', target: 'DIRECT' },
-    { id: 'zoom', label: 'Zoom', tag: 'geosite', target: 'DIRECT' },
-    { id: 'slack', label: 'Slack', tag: 'geosite', target: 'PROXY' },
-    { id: 'speedtest', label: 'Speedtest', tag: 'geosite', target: 'DIRECT' },
-    { id: 'fastly', label: 'Fastly', tag: 'geosite', target: 'DIRECT' },
-  ]},
-];
+// ============ 分流规则 ============
+// 规则大类数据由后端 /api/rules/groups 提供（来源：src/data/metacubex-rules.ts）
+let RULE_GROUPS = [];
 // 每个规则默认勾选状态（1 全部选中，0 未选）
 let ruleSelected = {};
 let ruleExpanded = {};
@@ -531,7 +444,7 @@ function renderRulesTree() {
         <div class="rules-group-head ${cls}" data-g="${gi}" onclick="toggleRuleGroup(${gi})">
           <span class="rules-arrow">▶</span>
           <input type="checkbox" data-group-check data-g="${gi}" ${allChecked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="onRuleGroupChange(this)">
-          <span class="rules-group-title">${g.name}</span>
+          <span class="rules-group-title">${g.icon || ''} ${g.name}</span>
           <span class="rules-group-count">${checkedCount} / ${g.items.length}</span>
         </div>
         <div class="rules-items">${itemsHTML}</div>
@@ -580,8 +493,27 @@ function resetRulesExpanded() {
 }
 
 function loadRules() {
-  if (Object.keys(ruleSelected).length === 0) initRuleState();
-  renderRulesTree();
+  // 首次加载时从后端拉取规则大类，同时显示加载状态
+  const container = document.getElementById('rulesTree');
+  if (RULE_GROUPS.length === 0) {
+    container.innerHTML = '<div class="rules-loading">⏳ 正在加载规则…</div>';
+    fetch('/api/rules/groups')
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.data && res.data.groups) {
+          RULE_GROUPS = res.data.groups;
+          initRuleState();
+          renderRulesTree();
+        } else {
+          container.innerHTML = '<div class="rules-loading" style="color:var(--red)">❌ 规则数据加载失败</div>';
+        }
+      })
+      .catch(() => {
+        container.innerHTML = '<div class="rules-loading" style="color:var(--red)">❌ 规则数据加载失败</div>';
+      });
+  } else {
+    renderRulesTree();
+  }
 }
 
 // ============ Dashboard ============

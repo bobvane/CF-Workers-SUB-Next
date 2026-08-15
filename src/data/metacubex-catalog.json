@@ -1,0 +1,7740 @@
+{
+ "meta": {
+  "source": "MetaCubeX/meta-rules-dat geosite.dat",
+  "total": 1546,
+  "fetched_at": "2026-08-15",
+  "note": "完整分类清单，前 1546 个；CATEGORY 为聚合类"
+ },
+ "catalog": [
+  {
+   "id": "BRAVEUX",
+   "label": "Braveux",
+   "type": "site"
+  },
+  {
+   "id": "LIANJIA",
+   "label": "Lianjia",
+   "type": "site"
+  },
+  {
+   "id": "SHOPIFY",
+   "label": "Shopify",
+   "type": "site"
+  },
+  {
+   "id": "STARWORLD",
+   "label": "Starworld",
+   "type": "site"
+  },
+  {
+   "id": "TRELLO",
+   "label": "Trello",
+   "type": "site"
+  },
+  {
+   "id": "VANISH",
+   "label": "Vanish",
+   "type": "site"
+  },
+  {
+   "id": "BESTCHANGE",
+   "label": "Bestchange",
+   "type": "site"
+  },
+  {
+   "id": "COLLABORA",
+   "label": "Collabora",
+   "type": "site"
+  },
+  {
+   "id": "EPICBROWSER",
+   "label": "Epicbrowser",
+   "type": "site"
+  },
+  {
+   "id": "GOPROXY",
+   "label": "Goproxy",
+   "type": "site"
+  },
+  {
+   "id": "UPAI",
+   "label": "Upai",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-AI-CN",
+   "label": "Category Ai Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-PT",
+   "label": "Category Pt",
+   "type": "aggregate"
+  },
+  {
+   "id": "CHINAUNICOM",
+   "label": "Chinaunicom",
+   "type": "site"
+  },
+  {
+   "id": "LIVEJOURNAL",
+   "label": "Livejournal",
+   "type": "site"
+  },
+  {
+   "id": "UBUNTU",
+   "label": "Ubuntu",
+   "type": "site"
+  },
+  {
+   "id": "WEBTYPE",
+   "label": "Webtype",
+   "type": "site"
+  },
+  {
+   "id": "ZTE",
+   "label": "Zte",
+   "type": "site"
+  },
+  {
+   "id": "APIPOST",
+   "label": "Apipost",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-BANK-JP",
+   "label": "Category Bank Jp",
+   "type": "aggregate"
+  },
+  {
+   "id": "ENVYBOX",
+   "label": "Envybox",
+   "type": "site"
+  },
+  {
+   "id": "FZDM",
+   "label": "Fzdm",
+   "type": "site"
+  },
+  {
+   "id": "NOW",
+   "label": "Now",
+   "type": "site"
+  },
+  {
+   "id": "THETIMES",
+   "label": "Thetimes",
+   "type": "site"
+  },
+  {
+   "id": "GITHUB-COPILOT",
+   "label": "Github Copilot",
+   "type": "site"
+  },
+  {
+   "id": "PCCW",
+   "label": "Pccw",
+   "type": "site"
+  },
+  {
+   "id": "WARGAMING",
+   "label": "Wargaming",
+   "type": "site"
+  },
+  {
+   "id": "BUSHIROAD",
+   "label": "Bushiroad",
+   "type": "site"
+  },
+  {
+   "id": "CHATWHORES",
+   "label": "Chatwhores",
+   "type": "site"
+  },
+  {
+   "id": "MUDVOD",
+   "label": "Mudvod",
+   "type": "site"
+  },
+  {
+   "id": "AVITO",
+   "label": "Avito",
+   "type": "site"
+  },
+  {
+   "id": "GANNETT",
+   "label": "Gannett",
+   "type": "site"
+  },
+  {
+   "id": "GRACG",
+   "label": "Gracg",
+   "type": "site"
+  },
+  {
+   "id": "JUTONGBAO",
+   "label": "Jutongbao",
+   "type": "site"
+  },
+  {
+   "id": "7TV",
+   "label": "7Tv",
+   "type": "site"
+  },
+  {
+   "id": "ATLASSIAN",
+   "label": "Atlassian",
+   "type": "site"
+  },
+  {
+   "id": "PASTEBIN",
+   "label": "Pastebin",
+   "type": "site"
+  },
+  {
+   "id": "WINK",
+   "label": "Wink",
+   "type": "site"
+  },
+  {
+   "id": "APKPURE",
+   "label": "Apkpure",
+   "type": "site"
+  },
+  {
+   "id": "NYTIMES",
+   "label": "Nytimes",
+   "type": "site"
+  },
+  {
+   "id": "SINA",
+   "label": "Sina",
+   "type": "site"
+  },
+  {
+   "id": "BLUEPOCH-GAMES",
+   "label": "Bluepoch Games",
+   "type": "site"
+  },
+  {
+   "id": "DRIBBBLE",
+   "label": "Dribbble",
+   "type": "site"
+  },
+  {
+   "id": "INFOWARS",
+   "label": "Infowars",
+   "type": "site"
+  },
+  {
+   "id": "KKTV",
+   "label": "Kktv",
+   "type": "site"
+  },
+  {
+   "id": "ROSSIYASEGODNYA",
+   "label": "Rossiyasegodnya",
+   "type": "site"
+  },
+  {
+   "id": "TAPTAP",
+   "label": "Taptap",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-EMBY",
+   "label": "Category Emby",
+   "type": "aggregate"
+  },
+  {
+   "id": "GODADDY",
+   "label": "Godaddy",
+   "type": "site"
+  },
+  {
+   "id": "MOMO",
+   "label": "Momo",
+   "type": "site"
+  },
+  {
+   "id": "PINGGY",
+   "label": "Pinggy",
+   "type": "site"
+  },
+  {
+   "id": "QINGTINGFM",
+   "label": "Qingtingfm",
+   "type": "site"
+  },
+  {
+   "id": "VAPTCHA",
+   "label": "Vaptcha",
+   "type": "site"
+  },
+  {
+   "id": "VMWARE",
+   "label": "Vmware",
+   "type": "site"
+  },
+  {
+   "id": "DELL",
+   "label": "Dell",
+   "type": "site"
+  },
+  {
+   "id": "MOBILE01",
+   "label": "Mobile01",
+   "type": "site"
+  },
+  {
+   "id": "MOVEFREE",
+   "label": "Movefree",
+   "type": "site"
+  },
+  {
+   "id": "ORIGIN",
+   "label": "Origin",
+   "type": "site"
+  },
+  {
+   "id": "SWISSSIGN",
+   "label": "Swisssign",
+   "type": "site"
+  },
+  {
+   "id": "UBISOFT",
+   "label": "Ubisoft",
+   "type": "site"
+  },
+  {
+   "id": "CAPITALONLINE",
+   "label": "Capitalonline",
+   "type": "site"
+  },
+  {
+   "id": "MINISO",
+   "label": "Miniso",
+   "type": "site"
+  },
+  {
+   "id": "OVERCLOCKERS-RU",
+   "label": "Overclockers Ru",
+   "type": "site"
+  },
+  {
+   "id": "SOUNDCLOUD",
+   "label": "Soundcloud",
+   "type": "site"
+  },
+  {
+   "id": "THEPORNDUDE",
+   "label": "Theporndude",
+   "type": "site"
+  },
+  {
+   "id": "UDACITY",
+   "label": "Udacity",
+   "type": "site"
+  },
+  {
+   "id": "ZHANGTAO",
+   "label": "Zhangtao",
+   "type": "site"
+  },
+  {
+   "id": "BITLY",
+   "label": "Bitly",
+   "type": "site"
+  },
+  {
+   "id": "MEITU",
+   "label": "Meitu",
+   "type": "site"
+  },
+  {
+   "id": "UNEXT",
+   "label": "Unext",
+   "type": "site"
+  },
+  {
+   "id": "WORDPRESS",
+   "label": "Wordpress",
+   "type": "site"
+  },
+  {
+   "id": "ALPHABET",
+   "label": "Alphabet",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-EDUCATION-IR",
+   "label": "Category Education Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "CHINABROADNET",
+   "label": "Chinabroadnet",
+   "type": "site"
+  },
+  {
+   "id": "DEVIANTART",
+   "label": "Deviantart",
+   "type": "site"
+  },
+  {
+   "id": "GFW",
+   "label": "Gfw",
+   "type": "site"
+  },
+  {
+   "id": "MEGA",
+   "label": "Mega",
+   "type": "site"
+  },
+  {
+   "id": "ASKDIANDIAN",
+   "label": "Askdiandian",
+   "type": "site"
+  },
+  {
+   "id": "CHINATELECOM",
+   "label": "Chinatelecom",
+   "type": "site"
+  },
+  {
+   "id": "DNSPOD",
+   "label": "Dnspod",
+   "type": "site"
+  },
+  {
+   "id": "FIREFOX",
+   "label": "Firefox",
+   "type": "site"
+  },
+  {
+   "id": "HAVEIBEENPWNED",
+   "label": "Haveibeenpwned",
+   "type": "site"
+  },
+  {
+   "id": "INSHOT",
+   "label": "Inshot",
+   "type": "site"
+  },
+  {
+   "id": "MEADJOHNSON",
+   "label": "Meadjohnson",
+   "type": "site"
+  },
+  {
+   "id": "YOUJIZZ",
+   "label": "Youjizz",
+   "type": "site"
+  },
+  {
+   "id": "BUYPASS",
+   "label": "Buypass",
+   "type": "site"
+  },
+  {
+   "id": "CHINANEWS",
+   "label": "Chinanews",
+   "type": "site"
+  },
+  {
+   "id": "CHINAZ",
+   "label": "Chinaz",
+   "type": "site"
+  },
+  {
+   "id": "CIWEIMAO",
+   "label": "Ciweimao",
+   "type": "site"
+  },
+  {
+   "id": "PIXNET",
+   "label": "Pixnet",
+   "type": "site"
+  },
+  {
+   "id": "SOURCEFORGE",
+   "label": "Sourceforge",
+   "type": "site"
+  },
+  {
+   "id": "STRAITSX",
+   "label": "Straitsx",
+   "type": "site"
+  },
+  {
+   "id": "USERSDRIVE",
+   "label": "Usersdrive",
+   "type": "site"
+  },
+  {
+   "id": "54647",
+   "label": "54647",
+   "type": "site"
+  },
+  {
+   "id": "ADOBE-ACTIVATION",
+   "label": "Adobe Activation",
+   "type": "site"
+  },
+  {
+   "id": "CAINIAO",
+   "label": "Cainiao",
+   "type": "site"
+  },
+  {
+   "id": "KERNEL",
+   "label": "Kernel",
+   "type": "site"
+  },
+  {
+   "id": "UNIONPAY",
+   "label": "Unionpay",
+   "type": "site"
+  },
+  {
+   "id": "APPLE-MUSIC",
+   "label": "Apple Music",
+   "type": "site"
+  },
+  {
+   "id": "ITIGER",
+   "label": "Itiger",
+   "type": "site"
+  },
+  {
+   "id": "MINDGEEK-PORN",
+   "label": "Mindgeek Porn",
+   "type": "site"
+  },
+  {
+   "id": "TENCENT",
+   "label": "Tencent",
+   "type": "site"
+  },
+  {
+   "id": "TIKTOK",
+   "label": "Tiktok",
+   "type": "site"
+  },
+  {
+   "id": "TMTPOST",
+   "label": "Tmtpost",
+   "type": "site"
+  },
+  {
+   "id": "VK",
+   "label": "Vk",
+   "type": "site"
+  },
+  {
+   "id": "HAMIVIDEO",
+   "label": "Hamivideo",
+   "type": "site"
+  },
+  {
+   "id": "IEEE",
+   "label": "Ieee",
+   "type": "site"
+  },
+  {
+   "id": "MYTVSUPER",
+   "label": "Mytvsuper",
+   "type": "site"
+  },
+  {
+   "id": "SANKEI",
+   "label": "Sankei",
+   "type": "site"
+  },
+  {
+   "id": "STEAMINVENTORYHELPER",
+   "label": "Steaminventoryhelper",
+   "type": "site"
+  },
+  {
+   "id": "SUBSCENE",
+   "label": "Subscene",
+   "type": "site"
+  },
+  {
+   "id": "TOKYO-TOSHOKAN",
+   "label": "Tokyo Toshokan",
+   "type": "site"
+  },
+  {
+   "id": "WIKIDOT",
+   "label": "Wikidot",
+   "type": "site"
+  },
+  {
+   "id": "CNBETA",
+   "label": "Cnbeta",
+   "type": "site"
+  },
+  {
+   "id": "FACEBOOK-DEV",
+   "label": "Facebook Dev",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLE-PLAY",
+   "label": "Google Play",
+   "type": "site"
+  },
+  {
+   "id": "GROWINGIO",
+   "label": "Growingio",
+   "type": "site"
+  },
+  {
+   "id": "HUBBLEPHONE",
+   "label": "Hubblephone",
+   "type": "site"
+  },
+  {
+   "id": "LINGUEE",
+   "label": "Linguee",
+   "type": "site"
+  },
+  {
+   "id": "LKCOFFEE",
+   "label": "Lkcoffee",
+   "type": "site"
+  },
+  {
+   "id": "XNXX",
+   "label": "Xnxx",
+   "type": "site"
+  },
+  {
+   "id": "CASIMAGES",
+   "label": "Casimages",
+   "type": "site"
+  },
+  {
+   "id": "MANORAMA",
+   "label": "Manorama",
+   "type": "site"
+  },
+  {
+   "id": "PTT",
+   "label": "Ptt",
+   "type": "site"
+  },
+  {
+   "id": "VANCL",
+   "label": "Vancl",
+   "type": "site"
+  },
+  {
+   "id": "WISH",
+   "label": "Wish",
+   "type": "site"
+  },
+  {
+   "id": "XINGRZ",
+   "label": "Xingrz",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-GAME-ACCELERATOR-CN",
+   "label": "Category Game Accelerator Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "FACEBOOK",
+   "label": "Facebook",
+   "type": "site"
+  },
+  {
+   "id": "PGYER",
+   "label": "Pgyer",
+   "type": "site"
+  },
+  {
+   "id": "SSRCLOUD",
+   "label": "Ssrcloud",
+   "type": "site"
+  },
+  {
+   "id": "SVP",
+   "label": "Svp",
+   "type": "site"
+  },
+  {
+   "id": "Z3X-TEAM",
+   "label": "Z3X Team",
+   "type": "site"
+  },
+  {
+   "id": "ASAHI",
+   "label": "Asahi",
+   "type": "site"
+  },
+  {
+   "id": "ATTWATCHTV",
+   "label": "Attwatchtv",
+   "type": "site"
+  },
+  {
+   "id": "GROUP-IB",
+   "label": "Group Ib",
+   "type": "site"
+  },
+  {
+   "id": "INTEL-DEV",
+   "label": "Intel Dev",
+   "type": "site"
+  },
+  {
+   "id": "NEURALINK",
+   "label": "Neuralink",
+   "type": "site"
+  },
+  {
+   "id": "PURIKONEJP",
+   "label": "Purikonejp",
+   "type": "site"
+  },
+  {
+   "id": "RSSHUB-3RD",
+   "label": "Rsshub 3Rd",
+   "type": "site"
+  },
+  {
+   "id": "TAIHE",
+   "label": "Taihe",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-BANK-RU",
+   "label": "Category Bank Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "CLOUDCONVERT",
+   "label": "Cloudconvert",
+   "type": "site"
+  },
+  {
+   "id": "HKETGROUP",
+   "label": "Hketgroup",
+   "type": "site"
+  },
+  {
+   "id": "MANHUAREN",
+   "label": "Manhuaren",
+   "type": "site"
+  },
+  {
+   "id": "PINTEREST",
+   "label": "Pinterest",
+   "type": "site"
+  },
+  {
+   "id": "TLD-!CN",
+   "label": "Tld !Cn",
+   "type": "tld"
+  },
+  {
+   "id": "4PDA",
+   "label": "4Pda",
+   "type": "site"
+  },
+  {
+   "id": "BETTEREXPLAINED",
+   "label": "Betterexplained",
+   "type": "site"
+  },
+  {
+   "id": "CLOUDNS",
+   "label": "Cloudns",
+   "type": "site"
+  },
+  {
+   "id": "GGSEL",
+   "label": "Ggsel",
+   "type": "site"
+  },
+  {
+   "id": "KUAISHOU",
+   "label": "Kuaishou",
+   "type": "site"
+  },
+  {
+   "id": "POLYU",
+   "label": "Polyu",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-TM",
+   "label": "Category Tm",
+   "type": "aggregate"
+  },
+  {
+   "id": "GLYPHS",
+   "label": "Glyphs",
+   "type": "site"
+  },
+  {
+   "id": "ACTALIS",
+   "label": "Actalis",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-AI-CHAT-!CN",
+   "label": "Category Ai Chat !Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-SCHOLAR-!CN",
+   "label": "Category Scholar !Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "N3RO",
+   "label": "N3Ro",
+   "type": "site"
+  },
+  {
+   "id": "FLICKR",
+   "label": "Flickr",
+   "type": "site"
+  },
+  {
+   "id": "NUDEVISTA",
+   "label": "Nudevista",
+   "type": "site"
+  },
+  {
+   "id": "OGURY",
+   "label": "Ogury",
+   "type": "site"
+  },
+  {
+   "id": "RSSHUB",
+   "label": "Rsshub",
+   "type": "site"
+  },
+  {
+   "id": "SOFTBANK",
+   "label": "Softbank",
+   "type": "site"
+  },
+  {
+   "id": "XIAOHONGSHU",
+   "label": "Xiaohongshu",
+   "type": "site"
+  },
+  {
+   "id": "CUINC",
+   "label": "Cuinc",
+   "type": "site"
+  },
+  {
+   "id": "GIFFGAFF",
+   "label": "Giffgaff",
+   "type": "site"
+  },
+  {
+   "id": "GUOKR",
+   "label": "Guokr",
+   "type": "site"
+  },
+  {
+   "id": "NEWSMAX",
+   "label": "Newsmax",
+   "type": "site"
+  },
+  {
+   "id": "NODEJS",
+   "label": "Nodejs",
+   "type": "site"
+  },
+  {
+   "id": "POLYV",
+   "label": "Polyv",
+   "type": "site"
+  },
+  {
+   "id": "STATICFILE",
+   "label": "Staticfile",
+   "type": "site"
+  },
+  {
+   "id": "XUNLEI",
+   "label": "Xunlei",
+   "type": "site"
+  },
+  {
+   "id": "AFDIAN",
+   "label": "Afdian",
+   "type": "site"
+  },
+  {
+   "id": "ANTHROPIC",
+   "label": "Anthropic",
+   "type": "site"
+  },
+  {
+   "id": "HOTSTAR",
+   "label": "Hotstar",
+   "type": "site"
+  },
+  {
+   "id": "SLING",
+   "label": "Sling",
+   "type": "site"
+  },
+  {
+   "id": "TWCA",
+   "label": "Twca",
+   "type": "site"
+  },
+  {
+   "id": "UU-CHAT",
+   "label": "Uu Chat",
+   "type": "site"
+  },
+  {
+   "id": "NIKKE",
+   "label": "Nikke",
+   "type": "site"
+  },
+  {
+   "id": "TVER",
+   "label": "Tver",
+   "type": "site"
+  },
+  {
+   "id": "VOLMOE",
+   "label": "Volmoe",
+   "type": "site"
+  },
+  {
+   "id": "ZTO-EXPRESS",
+   "label": "Zto Express",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-IPFS",
+   "label": "Category Ipfs",
+   "type": "aggregate"
+  },
+  {
+   "id": "FONBET",
+   "label": "Fonbet",
+   "type": "site"
+  },
+  {
+   "id": "FONTS",
+   "label": "Fonts",
+   "type": "site"
+  },
+  {
+   "id": "NETFLAV",
+   "label": "Netflav",
+   "type": "site"
+  },
+  {
+   "id": "OPENX",
+   "label": "Openx",
+   "type": "site"
+  },
+  {
+   "id": "PINGSX",
+   "label": "Pingsx",
+   "type": "site"
+  },
+  {
+   "id": "SEGMENTFAULT",
+   "label": "Segmentfault",
+   "type": "site"
+  },
+  {
+   "id": "TERABOX",
+   "label": "Terabox",
+   "type": "site"
+  },
+  {
+   "id": "BILIBILI-CDN",
+   "label": "Bilibili Cdn",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-NETWORK-SECURITY-CN",
+   "label": "Category Network Security Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CDN77",
+   "label": "Cdn77",
+   "type": "site"
+  },
+  {
+   "id": "HUAWEI",
+   "label": "Huawei",
+   "type": "site"
+  },
+  {
+   "id": "JTEXPRESS",
+   "label": "Jtexpress",
+   "type": "site"
+  },
+  {
+   "id": "LARK-GLOBAL",
+   "label": "Lark Global",
+   "type": "site"
+  },
+  {
+   "id": "PROJECTSEKAI",
+   "label": "Projectsekai",
+   "type": "site"
+  },
+  {
+   "id": "9TO5",
+   "label": "9To5",
+   "type": "site"
+  },
+  {
+   "id": "ANNAS-ARCHIVE",
+   "label": "Annas Archive",
+   "type": "site"
+  },
+  {
+   "id": "FARONICS",
+   "label": "Faronics",
+   "type": "site"
+  },
+  {
+   "id": "ISHUMEI",
+   "label": "Ishumei",
+   "type": "site"
+  },
+  {
+   "id": "JIBENCAOZUO",
+   "label": "Jibencaozuo",
+   "type": "site"
+  },
+  {
+   "id": "MARVEL",
+   "label": "Marvel",
+   "type": "site"
+  },
+  {
+   "id": "MASTERCLASS",
+   "label": "Masterclass",
+   "type": "site"
+  },
+  {
+   "id": "MISSAV",
+   "label": "Missav",
+   "type": "site"
+  },
+  {
+   "id": "HKBU",
+   "label": "Hkbu",
+   "type": "site"
+  },
+  {
+   "id": "JUEJIN",
+   "label": "Juejin",
+   "type": "site"
+  },
+  {
+   "id": "PUBG",
+   "label": "Pubg",
+   "type": "site"
+  },
+  {
+   "id": "RUTEN",
+   "label": "Ruten",
+   "type": "site"
+  },
+  {
+   "id": "SETAPP",
+   "label": "Setapp",
+   "type": "site"
+  },
+  {
+   "id": "TONEC",
+   "label": "Tonec",
+   "type": "site"
+  },
+  {
+   "id": "XIMALAYA",
+   "label": "Ximalaya",
+   "type": "site"
+  },
+  {
+   "id": "CLUBHOUSE",
+   "label": "Clubhouse",
+   "type": "site"
+  },
+  {
+   "id": "COMSSONE",
+   "label": "Comssone",
+   "type": "site"
+  },
+  {
+   "id": "HPE",
+   "label": "Hpe",
+   "type": "site"
+  },
+  {
+   "id": "CNBLOGS",
+   "label": "Cnblogs",
+   "type": "site"
+  },
+  {
+   "id": "DEBIAN",
+   "label": "Debian",
+   "type": "site"
+  },
+  {
+   "id": "TRUSTWAVE",
+   "label": "Trustwave",
+   "type": "site"
+  },
+  {
+   "id": "DOUYIN",
+   "label": "Douyin",
+   "type": "site"
+  },
+  {
+   "id": "HAINANAIRLINES",
+   "label": "Hainanairlines",
+   "type": "site"
+  },
+  {
+   "id": "SCALEFLEX",
+   "label": "Scaleflex",
+   "type": "site"
+  },
+  {
+   "id": "SCENESOURCE",
+   "label": "Scenesource",
+   "type": "site"
+  },
+  {
+   "id": "DCARD",
+   "label": "Dcard",
+   "type": "site"
+  },
+  {
+   "id": "ELEVENLABS",
+   "label": "Elevenlabs",
+   "type": "site"
+  },
+  {
+   "id": "CLOUDCONE",
+   "label": "Cloudcone",
+   "type": "site"
+  },
+  {
+   "id": "THELINUXFOUNDATION",
+   "label": "Thelinuxfoundation",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-GAMES-CN",
+   "label": "Category Games Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "COMODO",
+   "label": "Comodo",
+   "type": "site"
+  },
+  {
+   "id": "CSDN",
+   "label": "Csdn",
+   "type": "site"
+  },
+  {
+   "id": "LANTERN",
+   "label": "Lantern",
+   "type": "site"
+  },
+  {
+   "id": "SIGNAL",
+   "label": "Signal",
+   "type": "site"
+  },
+  {
+   "id": "SKILLSHARE",
+   "label": "Skillshare",
+   "type": "site"
+  },
+  {
+   "id": "ALIYUN",
+   "label": "Aliyun",
+   "type": "site"
+  },
+  {
+   "id": "KINDLE",
+   "label": "Kindle",
+   "type": "site"
+  },
+  {
+   "id": "LAUNCHPAD",
+   "label": "Launchpad",
+   "type": "site"
+  },
+  {
+   "id": "WIN-SPY",
+   "label": "Win Spy",
+   "type": "site"
+  },
+  {
+   "id": "APPLE-DEV",
+   "label": "Apple Dev",
+   "type": "site"
+  },
+  {
+   "id": "CITIZENLAB",
+   "label": "Citizenlab",
+   "type": "site"
+  },
+  {
+   "id": "REALTYPE",
+   "label": "Realtype",
+   "type": "site"
+  },
+  {
+   "id": "TWITTER",
+   "label": "Twitter",
+   "type": "site"
+  },
+  {
+   "id": "ADDTHIS",
+   "label": "Addthis",
+   "type": "site"
+  },
+  {
+   "id": "ALIYUN-DRIVE",
+   "label": "Aliyun Drive",
+   "type": "site"
+  },
+  {
+   "id": "COSTCO",
+   "label": "Costco",
+   "type": "site"
+  },
+  {
+   "id": "MYOFFICE-RU",
+   "label": "Myoffice Ru",
+   "type": "site"
+  },
+  {
+   "id": "NGINX",
+   "label": "Nginx",
+   "type": "site"
+  },
+  {
+   "id": "MEITUAN",
+   "label": "Meituan",
+   "type": "site"
+  },
+  {
+   "id": "MYFONTS",
+   "label": "Myfonts",
+   "type": "site"
+  },
+  {
+   "id": "TEAMBITION",
+   "label": "Teambition",
+   "type": "site"
+  },
+  {
+   "id": "VULTR",
+   "label": "Vultr",
+   "type": "site"
+  },
+  {
+   "id": "ZAOBAO",
+   "label": "Zaobao",
+   "type": "site"
+  },
+  {
+   "id": "BESTORE",
+   "label": "Bestore",
+   "type": "site"
+  },
+  {
+   "id": "BOSLIFE",
+   "label": "Boslife",
+   "type": "site"
+  },
+  {
+   "id": "GITEE",
+   "label": "Gitee",
+   "type": "site"
+  },
+  {
+   "id": "OPENJSFOUNDATION",
+   "label": "Openjsfoundation",
+   "type": "site"
+  },
+  {
+   "id": "POSTIMAGES",
+   "label": "Postimages",
+   "type": "site"
+  },
+  {
+   "id": "RB",
+   "label": "Rb",
+   "type": "site"
+  },
+  {
+   "id": "SHUQI",
+   "label": "Shuqi",
+   "type": "site"
+  },
+  {
+   "id": "THREADS",
+   "label": "Threads",
+   "type": "site"
+  },
+  {
+   "id": "CAMWHORES",
+   "label": "Camwhores",
+   "type": "site"
+  },
+  {
+   "id": "DIGITALOCEAN",
+   "label": "Digitalocean",
+   "type": "site"
+  },
+  {
+   "id": "DUITANG",
+   "label": "Duitang",
+   "type": "site"
+  },
+  {
+   "id": "SCI",
+   "label": "Sci",
+   "type": "site"
+  },
+  {
+   "id": "STEAM",
+   "label": "Steam",
+   "type": "site"
+  },
+  {
+   "id": "WANGSU",
+   "label": "Wangsu",
+   "type": "site"
+  },
+  {
+   "id": "WIKIMEDIA",
+   "label": "Wikimedia",
+   "type": "site"
+  },
+  {
+   "id": "BALTAMATICA",
+   "label": "Baltamatica",
+   "type": "site"
+  },
+  {
+   "id": "CIAN",
+   "label": "Cian",
+   "type": "site"
+  },
+  {
+   "id": "TAIKANG",
+   "label": "Taikang",
+   "type": "site"
+  },
+  {
+   "id": "TALKATONE",
+   "label": "Talkatone",
+   "type": "site"
+  },
+  {
+   "id": "TENDCLOUD",
+   "label": "Tendcloud",
+   "type": "site"
+  },
+  {
+   "id": "VILAVPN",
+   "label": "Vilavpn",
+   "type": "site"
+  },
+  {
+   "id": "WENSHUSHU",
+   "label": "Wenshushu",
+   "type": "site"
+  },
+  {
+   "id": "WIKIHOW",
+   "label": "Wikihow",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-MEDIA-RU-BLOCKED",
+   "label": "Category Media Ru Blocked",
+   "type": "aggregate"
+  },
+  {
+   "id": "FONTEXPLORER",
+   "label": "Fontexplorer",
+   "type": "site"
+  },
+  {
+   "id": "PIXHOST",
+   "label": "Pixhost",
+   "type": "site"
+  },
+  {
+   "id": "ZENDESK",
+   "label": "Zendesk",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-OUTSOURCE-CN",
+   "label": "Category Outsource Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-TECH-IR",
+   "label": "Category Tech Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "CBS",
+   "label": "Cbs",
+   "type": "site"
+  },
+  {
+   "id": "FONTSINUSE",
+   "label": "Fontsinuse",
+   "type": "site"
+  },
+  {
+   "id": "PYTHON",
+   "label": "Python",
+   "type": "site"
+  },
+  {
+   "id": "WEBEX",
+   "label": "Webex",
+   "type": "site"
+  },
+  {
+   "id": "BING",
+   "label": "Bing",
+   "type": "site"
+  },
+  {
+   "id": "CK101",
+   "label": "Ck101",
+   "type": "site"
+  },
+  {
+   "id": "ITUNES",
+   "label": "Itunes",
+   "type": "site"
+  },
+  {
+   "id": "OPENWEATHER",
+   "label": "Openweather",
+   "type": "site"
+  },
+  {
+   "id": "SEHUATANG",
+   "label": "Sehuatang",
+   "type": "site"
+  },
+  {
+   "id": "UCOZ",
+   "label": "Ucoz",
+   "type": "site"
+  },
+  {
+   "id": "XHAMSTER",
+   "label": "Xhamster",
+   "type": "site"
+  },
+  {
+   "id": "DANDANPLAY",
+   "label": "Dandanplay",
+   "type": "site"
+  },
+  {
+   "id": "FALUNGONG",
+   "label": "Falungong",
+   "type": "site"
+  },
+  {
+   "id": "MUBI",
+   "label": "Mubi",
+   "type": "site"
+  },
+  {
+   "id": "YUNFANJIASU",
+   "label": "Yunfanjiasu",
+   "type": "site"
+  },
+  {
+   "id": "AAMGAME",
+   "label": "Aamgame",
+   "type": "site"
+  },
+  {
+   "id": "BOC",
+   "label": "Boc",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-FINANCE",
+   "label": "Category Finance",
+   "type": "aggregate"
+  },
+  {
+   "id": "CCTV",
+   "label": "Cctv",
+   "type": "site"
+  },
+  {
+   "id": "DIGITALPLAYGROUND",
+   "label": "Digitalplayground",
+   "type": "site"
+  },
+  {
+   "id": "PLAYSTATION",
+   "label": "Playstation",
+   "type": "site"
+  },
+  {
+   "id": "BLIZZARD",
+   "label": "Blizzard",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-TECH-MEDIA-RU",
+   "label": "Category Tech Media Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "DEMONOID",
+   "label": "Demonoid",
+   "type": "site"
+  },
+  {
+   "id": "GIGABYTE",
+   "label": "Gigabyte",
+   "type": "site"
+  },
+  {
+   "id": "GOODREADS",
+   "label": "Goodreads",
+   "type": "site"
+  },
+  {
+   "id": "MYDIRTYHOBBY",
+   "label": "Mydirtyhobby",
+   "type": "site"
+  },
+  {
+   "id": "SLIDESHARE",
+   "label": "Slideshare",
+   "type": "site"
+  },
+  {
+   "id": "ASOBO",
+   "label": "Asobo",
+   "type": "site"
+  },
+  {
+   "id": "BLURAMS",
+   "label": "Blurams",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ECOMMERCE",
+   "label": "Category Ecommerce",
+   "type": "aggregate"
+  },
+  {
+   "id": "GROQ",
+   "label": "Groq",
+   "type": "site"
+  },
+  {
+   "id": "MIHOYO",
+   "label": "Mihoyo",
+   "type": "site"
+  },
+  {
+   "id": "NICEGRAM",
+   "label": "Nicegram",
+   "type": "site"
+  },
+  {
+   "id": "READTHEDOCS",
+   "label": "Readthedocs",
+   "type": "site"
+  },
+  {
+   "id": "TEX",
+   "label": "Tex",
+   "type": "site"
+  },
+  {
+   "id": "BITAUTO",
+   "label": "Bitauto",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-EDUCATION-RU",
+   "label": "Category Education Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-HTTPDNS-CN",
+   "label": "Category Httpdns Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "MYRADIO",
+   "label": "Myradio",
+   "type": "site"
+  },
+  {
+   "id": "SHANBAY",
+   "label": "Shanbay",
+   "type": "site"
+  },
+  {
+   "id": "TINYURL",
+   "label": "Tinyurl",
+   "type": "site"
+  },
+  {
+   "id": "YOKAVERSE",
+   "label": "Yokaverse",
+   "type": "site"
+  },
+  {
+   "id": "YOUZAN",
+   "label": "Youzan",
+   "type": "site"
+  },
+  {
+   "id": "CITIC",
+   "label": "Citic",
+   "type": "site"
+  },
+  {
+   "id": "KOOLEARN",
+   "label": "Koolearn",
+   "type": "site"
+  },
+  {
+   "id": "MEGAFON",
+   "label": "Megafon",
+   "type": "site"
+  },
+  {
+   "id": "MINDGEEK",
+   "label": "Mindgeek",
+   "type": "site"
+  },
+  {
+   "id": "RUTUBE",
+   "label": "Rutube",
+   "type": "site"
+  },
+  {
+   "id": "STACKEXCHANGE",
+   "label": "Stackexchange",
+   "type": "site"
+  },
+  {
+   "id": "ADBLOCK",
+   "label": "Adblock",
+   "type": "site"
+  },
+  {
+   "id": "APKMIRROR",
+   "label": "Apkmirror",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-PUBLIC-TRACKER",
+   "label": "Category Public Tracker",
+   "type": "aggregate"
+  },
+  {
+   "id": "CLARIVATE",
+   "label": "Clarivate",
+   "type": "site"
+  },
+  {
+   "id": "YUNDAEX",
+   "label": "Yundaex",
+   "type": "site"
+  },
+  {
+   "id": "COINONE",
+   "label": "Coinone",
+   "type": "site"
+  },
+  {
+   "id": "GEETEST",
+   "label": "Geetest",
+   "type": "site"
+  },
+  {
+   "id": "HAIER",
+   "label": "Haier",
+   "type": "site"
+  },
+  {
+   "id": "TECHTIMES",
+   "label": "Techtimes",
+   "type": "site"
+  },
+  {
+   "id": "TUTANOTA",
+   "label": "Tutanota",
+   "type": "site"
+  },
+  {
+   "id": "DRWEB",
+   "label": "Drweb",
+   "type": "site"
+  },
+  {
+   "id": "METART",
+   "label": "Metart",
+   "type": "site"
+  },
+  {
+   "id": "NEWEGG",
+   "label": "Newegg",
+   "type": "site"
+  },
+  {
+   "id": "SINGTAONEWSCORP",
+   "label": "Singtaonewscorp",
+   "type": "site"
+  },
+  {
+   "id": "YANDEX",
+   "label": "Yandex",
+   "type": "site"
+  },
+  {
+   "id": "CNB",
+   "label": "Cnb",
+   "type": "site"
+  },
+  {
+   "id": "DEEPIN",
+   "label": "Deepin",
+   "type": "site"
+  },
+  {
+   "id": "KKBOX",
+   "label": "Kkbox",
+   "type": "site"
+  },
+  {
+   "id": "MORISAWA",
+   "label": "Morisawa",
+   "type": "site"
+  },
+  {
+   "id": "UBIQUITI",
+   "label": "Ubiquiti",
+   "type": "site"
+  },
+  {
+   "id": "APPLE-CN",
+   "label": "Apple Cn",
+   "type": "site"
+  },
+  {
+   "id": "HURRICANEELECTRIC",
+   "label": "Hurricaneelectric",
+   "type": "site"
+  },
+  {
+   "id": "IMAGETWIST",
+   "label": "Imagetwist",
+   "type": "site"
+  },
+  {
+   "id": "OSU",
+   "label": "Osu",
+   "type": "site"
+  },
+  {
+   "id": "OTPBANK",
+   "label": "Otpbank",
+   "type": "site"
+  },
+  {
+   "id": "PINDUODUO",
+   "label": "Pinduoduo",
+   "type": "site"
+  },
+  {
+   "id": "RUBY",
+   "label": "Ruby",
+   "type": "site"
+  },
+  {
+   "id": "ACER",
+   "label": "Acer",
+   "type": "site"
+  },
+  {
+   "id": "BLUEARCHIVE",
+   "label": "Bluearchive",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ADS-IR",
+   "label": "Category Ads Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-SCHOLAR-HK",
+   "label": "Category Scholar Hk",
+   "type": "aggregate"
+  },
+  {
+   "id": "ESRI",
+   "label": "Esri",
+   "type": "site"
+  },
+  {
+   "id": "NETFLIX",
+   "label": "Netflix",
+   "type": "site"
+  },
+  {
+   "id": "NPMJS",
+   "label": "Npmjs",
+   "type": "site"
+  },
+  {
+   "id": "PINGPE",
+   "label": "Pingpe",
+   "type": "site"
+  },
+  {
+   "id": "BRILLIANT",
+   "label": "Brilliant",
+   "type": "site"
+  },
+  {
+   "id": "EROLABS",
+   "label": "Erolabs",
+   "type": "site"
+  },
+  {
+   "id": "LOWIRO",
+   "label": "Lowiro",
+   "type": "site"
+  },
+  {
+   "id": "TRUYEN-HENTAI",
+   "label": "Truyen Hentai",
+   "type": "site"
+  },
+  {
+   "id": "TUBI",
+   "label": "Tubi",
+   "type": "site"
+  },
+  {
+   "id": "X",
+   "label": "X",
+   "type": "site"
+  },
+  {
+   "id": "ZHIMEISHE",
+   "label": "Zhimeishe",
+   "type": "site"
+  },
+  {
+   "id": "ZOHO",
+   "label": "Zoho",
+   "type": "site"
+  },
+  {
+   "id": "115",
+   "label": "115",
+   "type": "site"
+  },
+  {
+   "id": "APPLEDAILY",
+   "label": "Appledaily",
+   "type": "site"
+  },
+  {
+   "id": "DANDANZAN",
+   "label": "Dandanzan",
+   "type": "site"
+  },
+  {
+   "id": "FT",
+   "label": "Ft",
+   "type": "site"
+  },
+  {
+   "id": "KECHUANG",
+   "label": "Kechuang",
+   "type": "site"
+  },
+  {
+   "id": "POLYMER",
+   "label": "Polymer",
+   "type": "site"
+  },
+  {
+   "id": "RUMBLE",
+   "label": "Rumble",
+   "type": "site"
+  },
+  {
+   "id": "ZUOYEBANG",
+   "label": "Zuoyebang",
+   "type": "site"
+  },
+  {
+   "id": "DAILYMOTION",
+   "label": "Dailymotion",
+   "type": "site"
+  },
+  {
+   "id": "FILIMO",
+   "label": "Filimo",
+   "type": "site"
+  },
+  {
+   "id": "GAMESPLANET",
+   "label": "Gamesplanet",
+   "type": "site"
+  },
+  {
+   "id": "REDDIT",
+   "label": "Reddit",
+   "type": "site"
+  },
+  {
+   "id": "58TONGCHENG",
+   "label": "58Tongcheng",
+   "type": "site"
+  },
+  {
+   "id": "AIRCHINA",
+   "label": "Airchina",
+   "type": "site"
+  },
+  {
+   "id": "DEPPON",
+   "label": "Deppon",
+   "type": "site"
+  },
+  {
+   "id": "DROPBOX",
+   "label": "Dropbox",
+   "type": "site"
+  },
+  {
+   "id": "INFRAPEDIA",
+   "label": "Infrapedia",
+   "type": "site"
+  },
+  {
+   "id": "MSN",
+   "label": "Msn",
+   "type": "site"
+  },
+  {
+   "id": "REDOTPAY",
+   "label": "Redotpay",
+   "type": "site"
+  },
+  {
+   "id": "SEGMENT",
+   "label": "Segment",
+   "type": "site"
+  },
+  {
+   "id": "ANANDTECH",
+   "label": "Anandtech",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-MEDIA-RU",
+   "label": "Category Media Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "IMGUR",
+   "label": "Imgur",
+   "type": "site"
+  },
+  {
+   "id": "PRIMEVIDEO",
+   "label": "Primevideo",
+   "type": "site"
+  },
+  {
+   "id": "PROGRESS",
+   "label": "Progress",
+   "type": "site"
+  },
+  {
+   "id": "RENREN",
+   "label": "Renren",
+   "type": "site"
+  },
+  {
+   "id": "TECHNOGYM",
+   "label": "Technogym",
+   "type": "site"
+  },
+  {
+   "id": "THOMSONREUTERS",
+   "label": "Thomsonreuters",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-COMMUNICATION",
+   "label": "Category Communication",
+   "type": "aggregate"
+  },
+  {
+   "id": "LIBERAPAY",
+   "label": "Liberapay",
+   "type": "site"
+  },
+  {
+   "id": "REGRU",
+   "label": "Regru",
+   "type": "site"
+  },
+  {
+   "id": "ANDROID",
+   "label": "Android",
+   "type": "site"
+  },
+  {
+   "id": "APTOIDE",
+   "label": "Aptoide",
+   "type": "site"
+  },
+  {
+   "id": "CARROTQUEST",
+   "label": "Carrotquest",
+   "type": "site"
+  },
+  {
+   "id": "CODE",
+   "label": "Code",
+   "type": "site"
+  },
+  {
+   "id": "CONTENTFUL",
+   "label": "Contentful",
+   "type": "site"
+  },
+  {
+   "id": "SERVICEPIPE",
+   "label": "Servicepipe",
+   "type": "site"
+  },
+  {
+   "id": "ARCHIVETODAY",
+   "label": "Archivetoday",
+   "type": "site"
+  },
+  {
+   "id": "AWS-CN",
+   "label": "Aws Cn",
+   "type": "site"
+  },
+  {
+   "id": "CHINAPOST",
+   "label": "Chinapost",
+   "type": "site"
+  },
+  {
+   "id": "JAVWIDE",
+   "label": "Javwide",
+   "type": "site"
+  },
+  {
+   "id": "LYSOL",
+   "label": "Lysol",
+   "type": "site"
+  },
+  {
+   "id": "PEARSON",
+   "label": "Pearson",
+   "type": "site"
+  },
+  {
+   "id": "PINGCAP",
+   "label": "Pingcap",
+   "type": "site"
+  },
+  {
+   "id": "RUBYCHINA",
+   "label": "Rubychina",
+   "type": "site"
+  },
+  {
+   "id": "CAVPORN",
+   "label": "Cavporn",
+   "type": "site"
+  },
+  {
+   "id": "EMBEDLY",
+   "label": "Embedly",
+   "type": "site"
+  },
+  {
+   "id": "HINET",
+   "label": "Hinet",
+   "type": "site"
+  },
+  {
+   "id": "KUBAKUBA",
+   "label": "Kubakuba",
+   "type": "site"
+  },
+  {
+   "id": "MIAOMIAOZHE",
+   "label": "Miaomiaozhe",
+   "type": "site"
+  },
+  {
+   "id": "OKKO",
+   "label": "Okko",
+   "type": "site"
+  },
+  {
+   "id": "TAILSCALE",
+   "label": "Tailscale",
+   "type": "site"
+  },
+  {
+   "id": "ARPHIC",
+   "label": "Arphic",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ANDROID-APP-DOWNLOAD",
+   "label": "Category Android App Download",
+   "type": "aggregate"
+  },
+  {
+   "id": "DISCORD",
+   "label": "Discord",
+   "type": "site"
+  },
+  {
+   "id": "DUOLINGO",
+   "label": "Duolingo",
+   "type": "site"
+  },
+  {
+   "id": "ESET",
+   "label": "Eset",
+   "type": "site"
+  },
+  {
+   "id": "POE",
+   "label": "Poe",
+   "type": "site"
+  },
+  {
+   "id": "UDN",
+   "label": "Udn",
+   "type": "site"
+  },
+  {
+   "id": "BANDCAMP",
+   "label": "Bandcamp",
+   "type": "site"
+  },
+  {
+   "id": "CNN",
+   "label": "Cnn",
+   "type": "site"
+  },
+  {
+   "id": "FFLOGS",
+   "label": "Fflogs",
+   "type": "site"
+  },
+  {
+   "id": "TOR",
+   "label": "Tor",
+   "type": "site"
+  },
+  {
+   "id": "CODECADEMY",
+   "label": "Codecademy",
+   "type": "site"
+  },
+  {
+   "id": "EDUHK",
+   "label": "Eduhk",
+   "type": "site"
+  },
+  {
+   "id": "LIGHTER",
+   "label": "Lighter",
+   "type": "site"
+  },
+  {
+   "id": "TRAE",
+   "label": "Trae",
+   "type": "site"
+  },
+  {
+   "id": "AZURE",
+   "label": "Azure",
+   "type": "site"
+  },
+  {
+   "id": "GARENA",
+   "label": "Garena",
+   "type": "site"
+  },
+  {
+   "id": "HKUST",
+   "label": "Hkust",
+   "type": "site"
+  },
+  {
+   "id": "IDECO-RU",
+   "label": "Ideco Ru",
+   "type": "site"
+  },
+  {
+   "id": "PCHOME",
+   "label": "Pchome",
+   "type": "site"
+  },
+  {
+   "id": "STACKPATH",
+   "label": "Stackpath",
+   "type": "site"
+  },
+  {
+   "id": "WANTMEDIA",
+   "label": "Wantmedia",
+   "type": "site"
+  },
+  {
+   "id": "WILDBERRIES",
+   "label": "Wildberries",
+   "type": "site"
+  },
+  {
+   "id": "EPICGAMES",
+   "label": "Epicgames",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLE-TRUST-SERVICES",
+   "label": "Google Trust Services",
+   "type": "site"
+  },
+  {
+   "id": "REBRANDLY",
+   "label": "Rebrandly",
+   "type": "site"
+  },
+  {
+   "id": "AMAZON",
+   "label": "Amazon",
+   "type": "site"
+  },
+  {
+   "id": "HKEDCITY",
+   "label": "Hkedcity",
+   "type": "site"
+  },
+  {
+   "id": "LAVTEAM",
+   "label": "Lavteam",
+   "type": "site"
+  },
+  {
+   "id": "LOCALIZEJS",
+   "label": "Localizejs",
+   "type": "site"
+  },
+  {
+   "id": "PRIVATE",
+   "label": "Private",
+   "type": "site"
+  },
+  {
+   "id": "VGTIME",
+   "label": "Vgtime",
+   "type": "site"
+  },
+  {
+   "id": "X5",
+   "label": "X5",
+   "type": "site"
+  },
+  {
+   "id": "ANEXIA",
+   "label": "Anexia",
+   "type": "site"
+  },
+  {
+   "id": "BETBOOM",
+   "label": "Betboom",
+   "type": "site"
+  },
+  {
+   "id": "BOBOPORN",
+   "label": "Boboporn",
+   "type": "site"
+  },
+  {
+   "id": "DONGCHEDI",
+   "label": "Dongchedi",
+   "type": "site"
+  },
+  {
+   "id": "FIGMA",
+   "label": "Figma",
+   "type": "site"
+  },
+  {
+   "id": "IDENTRUST",
+   "label": "Identrust",
+   "type": "site"
+  },
+  {
+   "id": "SONEMIC",
+   "label": "Sonemic",
+   "type": "site"
+  },
+  {
+   "id": "STREAMABLE",
+   "label": "Streamable",
+   "type": "site"
+  },
+  {
+   "id": "1337X",
+   "label": "1337X",
+   "type": "site"
+  },
+  {
+   "id": "BMW",
+   "label": "Bmw",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLE-CN",
+   "label": "Google Cn",
+   "type": "site"
+  },
+  {
+   "id": "REDIS",
+   "label": "Redis",
+   "type": "site"
+  },
+  {
+   "id": "SCMP",
+   "label": "Scmp",
+   "type": "site"
+  },
+  {
+   "id": "SUNING",
+   "label": "Suning",
+   "type": "site"
+  },
+  {
+   "id": "TBANK-RU",
+   "label": "Tbank Ru",
+   "type": "site"
+  },
+  {
+   "id": "TIANCITY",
+   "label": "Tiancity",
+   "type": "site"
+  },
+  {
+   "id": "AVAXHOME",
+   "label": "Avaxhome",
+   "type": "site"
+  },
+  {
+   "id": "FLIBUSTA",
+   "label": "Flibusta",
+   "type": "site"
+  },
+  {
+   "id": "FONTSHOP",
+   "label": "Fontshop",
+   "type": "site"
+  },
+  {
+   "id": "HOMEDEPOT",
+   "label": "Homedepot",
+   "type": "site"
+  },
+  {
+   "id": "IXBT",
+   "label": "Ixbt",
+   "type": "site"
+  },
+  {
+   "id": "MEIPIAN",
+   "label": "Meipian",
+   "type": "site"
+  },
+  {
+   "id": "ACTIVISION-BLIZZARD",
+   "label": "Activision Blizzard",
+   "type": "site"
+  },
+  {
+   "id": "AISIKU",
+   "label": "Aisiku",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-NETDISK-CN",
+   "label": "Category Netdisk Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "DMIT",
+   "label": "Dmit",
+   "type": "site"
+  },
+  {
+   "id": "FLOWWOW",
+   "label": "Flowwow",
+   "type": "site"
+  },
+  {
+   "id": "PAOFUYUN",
+   "label": "Paofuyun",
+   "type": "site"
+  },
+  {
+   "id": "PEPPY",
+   "label": "Peppy",
+   "type": "site"
+  },
+  {
+   "id": "TONGFANG",
+   "label": "Tongfang",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ELECTRONIC-CN",
+   "label": "Category Electronic Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "EMOJIPEDIA",
+   "label": "Emojipedia",
+   "type": "site"
+  },
+  {
+   "id": "EVERNOTE",
+   "label": "Evernote",
+   "type": "site"
+  },
+  {
+   "id": "FTV",
+   "label": "Ftv",
+   "type": "site"
+  },
+  {
+   "id": "HUYA",
+   "label": "Huya",
+   "type": "site"
+  },
+  {
+   "id": "NBCUNIVERSAL",
+   "label": "Nbcuniversal",
+   "type": "site"
+  },
+  {
+   "id": "18COMIC",
+   "label": "18Comic",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-NEWS-IR",
+   "label": "Category News Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-RETAIL-RU",
+   "label": "Category Retail Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "INTERNET-ARCHIVE",
+   "label": "Internet Archive",
+   "type": "site"
+  },
+  {
+   "id": "PUGPIG",
+   "label": "Pugpig",
+   "type": "site"
+  },
+  {
+   "id": "ATT",
+   "label": "Att",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-SECURITIES-CN",
+   "label": "Category Securities Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CODEFORCES",
+   "label": "Codeforces",
+   "type": "site"
+  },
+  {
+   "id": "HINET-ECA",
+   "label": "Hinet Eca",
+   "type": "site"
+  },
+  {
+   "id": "KINGSOFT",
+   "label": "Kingsoft",
+   "type": "site"
+  },
+  {
+   "id": "ONEKEY",
+   "label": "Onekey",
+   "type": "site"
+  },
+  {
+   "id": "SF-EXPRESS",
+   "label": "Sf Express",
+   "type": "site"
+  },
+  {
+   "id": "SMTIAOJIAOSHI",
+   "label": "Smtiaojiaoshi",
+   "type": "site"
+  },
+  {
+   "id": "HULU",
+   "label": "Hulu",
+   "type": "site"
+  },
+  {
+   "id": "OZON",
+   "label": "Ozon",
+   "type": "site"
+  },
+  {
+   "id": "SOYJAKPARTY",
+   "label": "Soyjakparty",
+   "type": "site"
+  },
+  {
+   "id": "SPICEWORKS",
+   "label": "Spiceworks",
+   "type": "site"
+  },
+  {
+   "id": "STRIKINGLY",
+   "label": "Strikingly",
+   "type": "site"
+  },
+  {
+   "id": "TVB",
+   "label": "Tvb",
+   "type": "site"
+  },
+  {
+   "id": "TYPOGRAPHY",
+   "label": "Typography",
+   "type": "site"
+  },
+  {
+   "id": "WANFANG",
+   "label": "Wanfang",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLEFCM",
+   "label": "Googlefcm",
+   "type": "site"
+  },
+  {
+   "id": "LE",
+   "label": "Le",
+   "type": "site"
+  },
+  {
+   "id": "LUMION",
+   "label": "Lumion",
+   "type": "site"
+  },
+  {
+   "id": "WHOOSH",
+   "label": "Whoosh",
+   "type": "site"
+  },
+  {
+   "id": "ZHIHU",
+   "label": "Zhihu",
+   "type": "site"
+  },
+  {
+   "id": "AGORA",
+   "label": "Agora",
+   "type": "site"
+  },
+  {
+   "id": "BEISEN",
+   "label": "Beisen",
+   "type": "site"
+  },
+  {
+   "id": "IQIYI",
+   "label": "Iqiyi",
+   "type": "site"
+  },
+  {
+   "id": "RARBG",
+   "label": "Rarbg",
+   "type": "site"
+  },
+  {
+   "id": "YUANFUDAO",
+   "label": "Yuanfudao",
+   "type": "site"
+  },
+  {
+   "id": "AKAMAI",
+   "label": "Akamai",
+   "type": "site"
+  },
+  {
+   "id": "B3LOG",
+   "label": "B3Log",
+   "type": "site"
+  },
+  {
+   "id": "BITSQUARE",
+   "label": "Bitsquare",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-DEV",
+   "label": "Category Dev",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-NOVEL",
+   "label": "Category Novel",
+   "type": "aggregate"
+  },
+  {
+   "id": "DEEZER",
+   "label": "Deezer",
+   "type": "site"
+  },
+  {
+   "id": "DIVAR",
+   "label": "Divar",
+   "type": "site"
+  },
+  {
+   "id": "GREATFIRE",
+   "label": "Greatfire",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ANTIVIRUS",
+   "label": "Category Antivirus",
+   "type": "aggregate"
+  },
+  {
+   "id": "DISQUS",
+   "label": "Disqus",
+   "type": "site"
+  },
+  {
+   "id": "KINDLE4RSS",
+   "label": "Kindle4Rss",
+   "type": "site"
+  },
+  {
+   "id": "MIKROTIK",
+   "label": "Mikrotik",
+   "type": "site"
+  },
+  {
+   "id": "MODRINTH",
+   "label": "Modrinth",
+   "type": "site"
+  },
+  {
+   "id": "NUROFEN",
+   "label": "Nurofen",
+   "type": "site"
+  },
+  {
+   "id": "STARBUCKS",
+   "label": "Starbucks",
+   "type": "site"
+  },
+  {
+   "id": "4CHAN",
+   "label": "4Chan",
+   "type": "site"
+  },
+  {
+   "id": "CANONICAL",
+   "label": "Canonical",
+   "type": "site"
+  },
+  {
+   "id": "CERTUM",
+   "label": "Certum",
+   "type": "site"
+  },
+  {
+   "id": "JABLE",
+   "label": "Jable",
+   "type": "site"
+  },
+  {
+   "id": "MAILRU-GROUP",
+   "label": "Mailru Group",
+   "type": "site"
+  },
+  {
+   "id": "PAGECDN",
+   "label": "Pagecdn",
+   "type": "site"
+  },
+  {
+   "id": "SBER",
+   "label": "Sber",
+   "type": "site"
+  },
+  {
+   "id": "STRIPE",
+   "label": "Stripe",
+   "type": "site"
+  },
+  {
+   "id": "APA",
+   "label": "Apa",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-BLOG-CN",
+   "label": "Category Blog Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-ENTERTAINMENT",
+   "label": "Category Entertainment",
+   "type": "aggregate"
+  },
+  {
+   "id": "HEYZO",
+   "label": "Heyzo",
+   "type": "site"
+  },
+  {
+   "id": "KICK",
+   "label": "Kick",
+   "type": "site"
+  },
+  {
+   "id": "MAILRU",
+   "label": "Mailru",
+   "type": "site"
+  },
+  {
+   "id": "MONOTYPE",
+   "label": "Monotype",
+   "type": "site"
+  },
+  {
+   "id": "NYPOST",
+   "label": "Nypost",
+   "type": "site"
+  },
+  {
+   "id": "AKIKO",
+   "label": "Akiko",
+   "type": "site"
+  },
+  {
+   "id": "CN",
+   "label": "Cn",
+   "type": "site"
+  },
+  {
+   "id": "DLSITE",
+   "label": "Dlsite",
+   "type": "site"
+  },
+  {
+   "id": "LINOTYPE",
+   "label": "Linotype",
+   "type": "site"
+  },
+  {
+   "id": "NAVER",
+   "label": "Naver",
+   "type": "site"
+  },
+  {
+   "id": "NVIDIA",
+   "label": "Nvidia",
+   "type": "site"
+  },
+  {
+   "id": "SNAP",
+   "label": "Snap",
+   "type": "site"
+  },
+  {
+   "id": "SOFTETHER",
+   "label": "Softether",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-STUN",
+   "label": "Category Stun",
+   "type": "aggregate"
+  },
+  {
+   "id": "DECRYPTIPASTORE",
+   "label": "Decryptipastore",
+   "type": "site"
+  },
+  {
+   "id": "ELEME",
+   "label": "Eleme",
+   "type": "site"
+  },
+  {
+   "id": "ENFA",
+   "label": "Enfa",
+   "type": "site"
+  },
+  {
+   "id": "GUO",
+   "label": "Guo",
+   "type": "site"
+  },
+  {
+   "id": "U17",
+   "label": "U17",
+   "type": "site"
+  },
+  {
+   "id": "VISA",
+   "label": "Visa",
+   "type": "site"
+  },
+  {
+   "id": "YOUQUAN",
+   "label": "Youquan",
+   "type": "site"
+  },
+  {
+   "id": "NEXITALLY",
+   "label": "Nexitally",
+   "type": "site"
+  },
+  {
+   "id": "ORACLE",
+   "label": "Oracle",
+   "type": "site"
+  },
+  {
+   "id": "TLD-CN",
+   "label": "Tld Cn",
+   "type": "tld"
+  },
+  {
+   "id": "VERIZON",
+   "label": "Verizon",
+   "type": "site"
+  },
+  {
+   "id": "ZOTERO",
+   "label": "Zotero",
+   "type": "site"
+  },
+  {
+   "id": "ANACONDA",
+   "label": "Anaconda",
+   "type": "site"
+  },
+  {
+   "id": "OLEVOD",
+   "label": "Olevod",
+   "type": "site"
+  },
+  {
+   "id": "SB",
+   "label": "Sb",
+   "type": "site"
+  },
+  {
+   "id": "TAKE-TWO",
+   "label": "Take Two",
+   "type": "site"
+  },
+  {
+   "id": "UNITY",
+   "label": "Unity",
+   "type": "site"
+  },
+  {
+   "id": "UNITYCHINA",
+   "label": "Unitychina",
+   "type": "site"
+  },
+  {
+   "id": "Z-LIBRARY",
+   "label": "Z Library",
+   "type": "site"
+  },
+  {
+   "id": "BAIDU",
+   "label": "Baidu",
+   "type": "site"
+  },
+  {
+   "id": "BLOOMBERG",
+   "label": "Bloomberg",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ACG",
+   "label": "Category Acg",
+   "type": "aggregate"
+  },
+  {
+   "id": "CRAIGSLIST",
+   "label": "Craigslist",
+   "type": "site"
+  },
+  {
+   "id": "FLATPAK",
+   "label": "Flatpak",
+   "type": "site"
+  },
+  {
+   "id": "FREENODE",
+   "label": "Freenode",
+   "type": "site"
+  },
+  {
+   "id": "PICSEE",
+   "label": "Picsee",
+   "type": "site"
+  },
+  {
+   "id": "TERMUX",
+   "label": "Termux",
+   "type": "site"
+  },
+  {
+   "id": "DOUBAO",
+   "label": "Doubao",
+   "type": "site"
+  },
+  {
+   "id": "NIKKAN-GENDAI",
+   "label": "Nikkan Gendai",
+   "type": "site"
+  },
+  {
+   "id": "OPENSOURCEINSIGHTS",
+   "label": "Opensourceinsights",
+   "type": "site"
+  },
+  {
+   "id": "SYMANTEC-PKI",
+   "label": "Symantec Pki",
+   "type": "site"
+  },
+  {
+   "id": "WALLHAVEN",
+   "label": "Wallhaven",
+   "type": "site"
+  },
+  {
+   "id": "WIN-UPDATE",
+   "label": "Win Update",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-DEV-CN",
+   "label": "Category Dev Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "DEDAO",
+   "label": "Dedao",
+   "type": "site"
+  },
+  {
+   "id": "ELSEVIER",
+   "label": "Elsevier",
+   "type": "site"
+  },
+  {
+   "id": "NORDSTROM",
+   "label": "Nordstrom",
+   "type": "site"
+  },
+  {
+   "id": "SLACK",
+   "label": "Slack",
+   "type": "site"
+  },
+  {
+   "id": "VRCDN",
+   "label": "Vrcdn",
+   "type": "site"
+  },
+  {
+   "id": "WYND",
+   "label": "Wynd",
+   "type": "site"
+  },
+  {
+   "id": "BILIBILI",
+   "label": "Bilibili",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-SCHOLAR-IR",
+   "label": "Category Scholar Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "HISENSE",
+   "label": "Hisense",
+   "type": "site"
+  },
+  {
+   "id": "MOZILLA",
+   "label": "Mozilla",
+   "type": "site"
+  },
+  {
+   "id": "QINIU",
+   "label": "Qiniu",
+   "type": "site"
+  },
+  {
+   "id": "AIXCODER",
+   "label": "Aixcoder",
+   "type": "site"
+  },
+  {
+   "id": "JAPONX",
+   "label": "Japonx",
+   "type": "site"
+  },
+  {
+   "id": "KUCOIN",
+   "label": "Kucoin",
+   "type": "site"
+  },
+  {
+   "id": "MAFENGWO",
+   "label": "Mafengwo",
+   "type": "site"
+  },
+  {
+   "id": "QNAP",
+   "label": "Qnap",
+   "type": "site"
+  },
+  {
+   "id": "YUKETANG",
+   "label": "Yuketang",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ENTERTAINMENT-CN",
+   "label": "Category Entertainment Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CENO",
+   "label": "Ceno",
+   "type": "site"
+  },
+  {
+   "id": "XIAOMI",
+   "label": "Xiaomi",
+   "type": "site"
+  },
+  {
+   "id": "2CH",
+   "label": "2Ch",
+   "type": "site"
+  },
+  {
+   "id": "CANON",
+   "label": "Canon",
+   "type": "site"
+  },
+  {
+   "id": "CHANGYOU",
+   "label": "Changyou",
+   "type": "site"
+  },
+  {
+   "id": "EDX",
+   "label": "Edx",
+   "type": "site"
+  },
+  {
+   "id": "FAMILYMART",
+   "label": "Familymart",
+   "type": "site"
+  },
+  {
+   "id": "JAVDB",
+   "label": "Javdb",
+   "type": "site"
+  },
+  {
+   "id": "LTN",
+   "label": "Ltn",
+   "type": "site"
+  },
+  {
+   "id": "REALCLEAR",
+   "label": "Realclear",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-CRYPTOCURRENCY",
+   "label": "Category Cryptocurrency",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-GOV-RU",
+   "label": "Category Gov Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-PROXY-TUNNELS",
+   "label": "Category Proxy Tunnels",
+   "type": "aggregate"
+  },
+  {
+   "id": "DLERCLOUD",
+   "label": "Dlercloud",
+   "type": "site"
+  },
+  {
+   "id": "LENOVO",
+   "label": "Lenovo",
+   "type": "site"
+  },
+  {
+   "id": "MINI",
+   "label": "Mini",
+   "type": "site"
+  },
+  {
+   "id": "OREILLY",
+   "label": "Oreilly",
+   "type": "site"
+  },
+  {
+   "id": "SCHOOPIA",
+   "label": "Schoopia",
+   "type": "site"
+  },
+  {
+   "id": "ANIME",
+   "label": "Anime",
+   "type": "site"
+  },
+  {
+   "id": "QIANXIN",
+   "label": "Qianxin",
+   "type": "site"
+  },
+  {
+   "id": "SKYPERFECT",
+   "label": "Skyperfect",
+   "type": "site"
+  },
+  {
+   "id": "TILDA",
+   "label": "Tilda",
+   "type": "site"
+  },
+  {
+   "id": "YOUKU",
+   "label": "Youku",
+   "type": "site"
+  },
+  {
+   "id": "ZOOM",
+   "label": "Zoom",
+   "type": "site"
+  },
+  {
+   "id": "APPLE-PKI",
+   "label": "Apple Pki",
+   "type": "site"
+  },
+  {
+   "id": "ARCHLINUX",
+   "label": "Archlinux",
+   "type": "site"
+  },
+  {
+   "id": "DUREX",
+   "label": "Durex",
+   "type": "site"
+  },
+  {
+   "id": "FLUTTER",
+   "label": "Flutter",
+   "type": "site"
+  },
+  {
+   "id": "KUAIKAN",
+   "label": "Kuaikan",
+   "type": "site"
+  },
+  {
+   "id": "KYODONEWS",
+   "label": "Kyodonews",
+   "type": "site"
+  },
+  {
+   "id": "LIVEPERSON",
+   "label": "Liveperson",
+   "type": "site"
+  },
+  {
+   "id": "MATRIX",
+   "label": "Matrix",
+   "type": "site"
+  },
+  {
+   "id": "COLORFULCLOUDS",
+   "label": "Colorfulclouds",
+   "type": "site"
+  },
+  {
+   "id": "DINGTALK",
+   "label": "Dingtalk",
+   "type": "site"
+  },
+  {
+   "id": "HONOR",
+   "label": "Honor",
+   "type": "site"
+  },
+  {
+   "id": "SALESFORCE",
+   "label": "Salesforce",
+   "type": "site"
+  },
+  {
+   "id": "SINOPEC",
+   "label": "Sinopec",
+   "type": "site"
+  },
+  {
+   "id": "SNK",
+   "label": "Snk",
+   "type": "site"
+  },
+  {
+   "id": "ABC",
+   "label": "Abc",
+   "type": "site"
+  },
+  {
+   "id": "EBAY",
+   "label": "Ebay",
+   "type": "site"
+  },
+  {
+   "id": "HEADHUNTER",
+   "label": "Headhunter",
+   "type": "site"
+  },
+  {
+   "id": "KINGKONGLIVE",
+   "label": "Kingkonglive",
+   "type": "site"
+  },
+  {
+   "id": "NETCUP",
+   "label": "Netcup",
+   "type": "site"
+  },
+  {
+   "id": "AMP",
+   "label": "Amp",
+   "type": "site"
+  },
+  {
+   "id": "BBC",
+   "label": "Bbc",
+   "type": "site"
+  },
+  {
+   "id": "BOOTSTRAP",
+   "label": "Bootstrap",
+   "type": "site"
+  },
+  {
+   "id": "CREATIVECOMMONS",
+   "label": "Creativecommons",
+   "type": "site"
+  },
+  {
+   "id": "INTSIG",
+   "label": "Intsig",
+   "type": "site"
+  },
+  {
+   "id": "KUAIYIKEJI",
+   "label": "Kuaiyikeji",
+   "type": "site"
+  },
+  {
+   "id": "V8",
+   "label": "V8",
+   "type": "site"
+  },
+  {
+   "id": "800BEST",
+   "label": "800Best",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLE-SCHOLAR",
+   "label": "Google Scholar",
+   "type": "site"
+  },
+  {
+   "id": "HKBN",
+   "label": "Hkbn",
+   "type": "site"
+  },
+  {
+   "id": "POCKETCASTS",
+   "label": "Pocketcasts",
+   "type": "site"
+  },
+  {
+   "id": "TIMEWEB",
+   "label": "Timeweb",
+   "type": "site"
+  },
+  {
+   "id": "W3SCHOOLS",
+   "label": "W3Schools",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ENTERTAINMENT-RU",
+   "label": "Category Entertainment Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "DYNU",
+   "label": "Dynu",
+   "type": "site"
+  },
+  {
+   "id": "FORBES",
+   "label": "Forbes",
+   "type": "site"
+  },
+  {
+   "id": "HOOLIGAPPS",
+   "label": "Hooligapps",
+   "type": "site"
+  },
+  {
+   "id": "LINUXDO",
+   "label": "Linuxdo",
+   "type": "site"
+  },
+  {
+   "id": "MOXING",
+   "label": "Moxing",
+   "type": "site"
+  },
+  {
+   "id": "ONEPLUS",
+   "label": "Oneplus",
+   "type": "site"
+  },
+  {
+   "id": "THEBORINGCOMPANY",
+   "label": "Theboringcompany",
+   "type": "site"
+  },
+  {
+   "id": "CTYUN",
+   "label": "Ctyun",
+   "type": "site"
+  },
+  {
+   "id": "IKEA",
+   "label": "Ikea",
+   "type": "site"
+  },
+  {
+   "id": "OUP",
+   "label": "Oup",
+   "type": "site"
+  },
+  {
+   "id": "POLOCLOUD",
+   "label": "Polocloud",
+   "type": "site"
+  },
+  {
+   "id": "SCHWAB",
+   "label": "Schwab",
+   "type": "site"
+  },
+  {
+   "id": "ZSCALER",
+   "label": "Zscaler",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-GAMES-!CN",
+   "label": "Category Games !Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "FREECODECAMP",
+   "label": "Freecodecamp",
+   "type": "site"
+  },
+  {
+   "id": "ICBC",
+   "label": "Icbc",
+   "type": "site"
+  },
+  {
+   "id": "ISGD",
+   "label": "Isgd",
+   "type": "site"
+  },
+  {
+   "id": "BDSMHUB",
+   "label": "Bdsmhub",
+   "type": "site"
+  },
+  {
+   "id": "KUROGAMES",
+   "label": "Kurogames",
+   "type": "site"
+  },
+  {
+   "id": "MVIDEO",
+   "label": "Mvideo",
+   "type": "site"
+  },
+  {
+   "id": "XUEERSI",
+   "label": "Xueersi",
+   "type": "site"
+  },
+  {
+   "id": "BJYOUTH",
+   "label": "Bjyouth",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-CONSENT-MANAGEMENT",
+   "label": "Category Consent Management",
+   "type": "aggregate"
+  },
+  {
+   "id": "COWLEVEL",
+   "label": "Cowlevel",
+   "type": "site"
+  },
+  {
+   "id": "IMAGEBAM",
+   "label": "Imagebam",
+   "type": "site"
+  },
+  {
+   "id": "IMGBB",
+   "label": "Imgbb",
+   "type": "site"
+  },
+  {
+   "id": "KODI",
+   "label": "Kodi",
+   "type": "site"
+  },
+  {
+   "id": "MXROUTE",
+   "label": "Mxroute",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-DOCUMENTS-CN",
+   "label": "Category Documents Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "SHAREPOINT",
+   "label": "Sharepoint",
+   "type": "site"
+  },
+  {
+   "id": "YMTC",
+   "label": "Ymtc",
+   "type": "site"
+  },
+  {
+   "id": "ACCUWEATHER",
+   "label": "Accuweather",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-BETTING-RU",
+   "label": "Category Betting Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "GOLANG",
+   "label": "Golang",
+   "type": "site"
+  },
+  {
+   "id": "HASHICORP",
+   "label": "Hashicorp",
+   "type": "site"
+  },
+  {
+   "id": "PROJECTPOI",
+   "label": "Projectpoi",
+   "type": "site"
+  },
+  {
+   "id": "SHIREYISHUNJIAN",
+   "label": "Shireyishunjian",
+   "type": "site"
+  },
+  {
+   "id": "TECHPOWERUP",
+   "label": "Techpowerup",
+   "type": "site"
+  },
+  {
+   "id": "TGBUS",
+   "label": "Tgbus",
+   "type": "site"
+  },
+  {
+   "id": "EPOCHMEDIAGROUP",
+   "label": "Epochmediagroup",
+   "type": "site"
+  },
+  {
+   "id": "FANDOM",
+   "label": "Fandom",
+   "type": "site"
+  },
+  {
+   "id": "FASTLY",
+   "label": "Fastly",
+   "type": "site"
+  },
+  {
+   "id": "LASTFM",
+   "label": "Lastfm",
+   "type": "site"
+  },
+  {
+   "id": "QIHOO360",
+   "label": "Qihoo360",
+   "type": "site"
+  },
+  {
+   "id": "WHOLEFOODSMARKET",
+   "label": "Wholefoodsmarket",
+   "type": "site"
+  },
+  {
+   "id": "BRIGHTCOVE",
+   "label": "Brightcove",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-SCHOLAR-CN",
+   "label": "Category Scholar Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-SHOPPING-IR",
+   "label": "Category Shopping Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "CEREBRAS",
+   "label": "Cerebras",
+   "type": "site"
+  },
+  {
+   "id": "FQNOVEL",
+   "label": "Fqnovel",
+   "type": "site"
+  },
+  {
+   "id": "HITUN",
+   "label": "Hitun",
+   "type": "site"
+  },
+  {
+   "id": "HUAWEICLOUD",
+   "label": "Huaweicloud",
+   "type": "site"
+  },
+  {
+   "id": "NYAA",
+   "label": "Nyaa",
+   "type": "site"
+  },
+  {
+   "id": "ABEMA",
+   "label": "Abema",
+   "type": "site"
+  },
+  {
+   "id": "BARRONS",
+   "label": "Barrons",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-FORUMS",
+   "label": "Category Forums",
+   "type": "aggregate"
+  },
+  {
+   "id": "GAMERSKY",
+   "label": "Gamersky",
+   "type": "site"
+  },
+  {
+   "id": "JETBRAINS-AI",
+   "label": "Jetbrains Ai",
+   "type": "site"
+  },
+  {
+   "id": "MANHUAGUI",
+   "label": "Manhuagui",
+   "type": "site"
+  },
+  {
+   "id": "NETLIFY",
+   "label": "Netlify",
+   "type": "site"
+  },
+  {
+   "id": "SOGOU",
+   "label": "Sogou",
+   "type": "site"
+  },
+  {
+   "id": "8BTC",
+   "label": "8Btc",
+   "type": "site"
+  },
+  {
+   "id": "CURSOR",
+   "label": "Cursor",
+   "type": "site"
+  },
+  {
+   "id": "HARPERCOLLINS",
+   "label": "Harpercollins",
+   "type": "site"
+  },
+  {
+   "id": "MANOTO",
+   "label": "Manoto",
+   "type": "site"
+  },
+  {
+   "id": "QUANTIL",
+   "label": "Quantil",
+   "type": "site"
+  },
+  {
+   "id": "UMENG",
+   "label": "Umeng",
+   "type": "site"
+  },
+  {
+   "id": "VOXMEDIA",
+   "label": "Voxmedia",
+   "type": "site"
+  },
+  {
+   "id": "XD",
+   "label": "Xd",
+   "type": "site"
+  },
+  {
+   "id": "BLOGSPOT",
+   "label": "Blogspot",
+   "type": "site"
+  },
+  {
+   "id": "ETHEREUM",
+   "label": "Ethereum",
+   "type": "site"
+  },
+  {
+   "id": "NIST",
+   "label": "Nist",
+   "type": "site"
+  },
+  {
+   "id": "OK",
+   "label": "Ok",
+   "type": "site"
+  },
+  {
+   "id": "STEAMUNLOCKED",
+   "label": "Steamunlocked",
+   "type": "site"
+  },
+  {
+   "id": "SXL",
+   "label": "Sxl",
+   "type": "site"
+  },
+  {
+   "id": "CISCO",
+   "label": "Cisco",
+   "type": "site"
+  },
+  {
+   "id": "COOLAPK",
+   "label": "Coolapk",
+   "type": "site"
+  },
+  {
+   "id": "IMAGECURL",
+   "label": "Imagecurl",
+   "type": "site"
+  },
+  {
+   "id": "SETN",
+   "label": "Setn",
+   "type": "site"
+  },
+  {
+   "id": "XBOX",
+   "label": "Xbox",
+   "type": "site"
+  },
+  {
+   "id": "ASPROEX",
+   "label": "Asproex",
+   "type": "site"
+  },
+  {
+   "id": "BITFLYER",
+   "label": "Bitflyer",
+   "type": "site"
+  },
+  {
+   "id": "DW",
+   "label": "Dw",
+   "type": "site"
+  },
+  {
+   "id": "MICROSOFT-PKI",
+   "label": "Microsoft Pki",
+   "type": "site"
+  },
+  {
+   "id": "PHOENIX",
+   "label": "Phoenix",
+   "type": "site"
+  },
+  {
+   "id": "VIU",
+   "label": "Viu",
+   "type": "site"
+  },
+  {
+   "id": "YOUPORN",
+   "label": "Youporn",
+   "type": "site"
+  },
+  {
+   "id": "INTERCOM",
+   "label": "Intercom",
+   "type": "site"
+  },
+  {
+   "id": "MASTERCARD",
+   "label": "Mastercard",
+   "type": "site"
+  },
+  {
+   "id": "WOLAI",
+   "label": "Wolai",
+   "type": "site"
+  },
+  {
+   "id": "APKCOMBO",
+   "label": "Apkcombo",
+   "type": "site"
+  },
+  {
+   "id": "COURSERA",
+   "label": "Coursera",
+   "type": "site"
+  },
+  {
+   "id": "IXSYSTEMS",
+   "label": "Ixsystems",
+   "type": "site"
+  },
+  {
+   "id": "KONACHAN",
+   "label": "Konachan",
+   "type": "site"
+  },
+  {
+   "id": "VERISIGN",
+   "label": "Verisign",
+   "type": "site"
+  },
+  {
+   "id": "VIMEO",
+   "label": "Vimeo",
+   "type": "site"
+  },
+  {
+   "id": "YTO-EXPRESS",
+   "label": "Yto Express",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-CAS",
+   "label": "Category Cas",
+   "type": "aggregate"
+  },
+  {
+   "id": "GEOLOCATION-!CN",
+   "label": "Geolocation !Cn",
+   "type": "site"
+  },
+  {
+   "id": "MAINICHI",
+   "label": "Mainichi",
+   "type": "site"
+  },
+  {
+   "id": "PIKPAK",
+   "label": "Pikpak",
+   "type": "site"
+  },
+  {
+   "id": "REUTERS",
+   "label": "Reuters",
+   "type": "site"
+  },
+  {
+   "id": "TLD-OPENNIC",
+   "label": "Tld Opennic",
+   "type": "tld"
+  },
+  {
+   "id": "BUYMEACOFFEE",
+   "label": "Buymeacoffee",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-FORUMS-IR",
+   "label": "Category Forums Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-MEDIA",
+   "label": "Category Media",
+   "type": "aggregate"
+  },
+  {
+   "id": "FENGXING",
+   "label": "Fengxing",
+   "type": "site"
+  },
+  {
+   "id": "JOHREN",
+   "label": "Johren",
+   "type": "site"
+  },
+  {
+   "id": "QT",
+   "label": "Qt",
+   "type": "site"
+  },
+  {
+   "id": "VEET",
+   "label": "Veet",
+   "type": "site"
+  },
+  {
+   "id": "GAIJIN",
+   "label": "Gaijin",
+   "type": "site"
+  },
+  {
+   "id": "KEMONO",
+   "label": "Kemono",
+   "type": "site"
+  },
+  {
+   "id": "OSCHINA",
+   "label": "Oschina",
+   "type": "site"
+  },
+  {
+   "id": "SKYENG",
+   "label": "Skyeng",
+   "type": "site"
+  },
+  {
+   "id": "BESTBUY",
+   "label": "Bestbuy",
+   "type": "site"
+  },
+  {
+   "id": "BTDIG",
+   "label": "Btdig",
+   "type": "site"
+  },
+  {
+   "id": "DETTOL",
+   "label": "Dettol",
+   "type": "site"
+  },
+  {
+   "id": "QUORA",
+   "label": "Quora",
+   "type": "site"
+  },
+  {
+   "id": "SPRINGER",
+   "label": "Springer",
+   "type": "site"
+  },
+  {
+   "id": "TRUSTASIA",
+   "label": "Trustasia",
+   "type": "site"
+  },
+  {
+   "id": "WEATHERCN",
+   "label": "Weathercn",
+   "type": "site"
+  },
+  {
+   "id": "ALIBABA",
+   "label": "Alibaba",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-EDUCATION-CN",
+   "label": "Category Education Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-TRAVEL-IR",
+   "label": "Category Travel Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "FUNPAY",
+   "label": "Funpay",
+   "type": "site"
+  },
+  {
+   "id": "IFANR",
+   "label": "Ifanr",
+   "type": "site"
+  },
+  {
+   "id": "NETCRAZE",
+   "label": "Netcraze",
+   "type": "site"
+  },
+  {
+   "id": "PETROCHINA",
+   "label": "Petrochina",
+   "type": "site"
+  },
+  {
+   "id": "SUPERCELL",
+   "label": "Supercell",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-PORN",
+   "label": "Category Porn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CYBERTRUST",
+   "label": "Cybertrust",
+   "type": "site"
+  },
+  {
+   "id": "HAITANG",
+   "label": "Haitang",
+   "type": "site"
+  },
+  {
+   "id": "LG",
+   "label": "Lg",
+   "type": "site"
+  },
+  {
+   "id": "SHOWTIMEANYTIME",
+   "label": "Showtimeanytime",
+   "type": "site"
+  },
+  {
+   "id": "VIVO",
+   "label": "Vivo",
+   "type": "site"
+  },
+  {
+   "id": "XIAOMI-AI",
+   "label": "Xiaomi Ai",
+   "type": "site"
+  },
+  {
+   "id": "AIRWICK",
+   "label": "Airwick",
+   "type": "site"
+  },
+  {
+   "id": "HUGECORE",
+   "label": "Hugecore",
+   "type": "site"
+  },
+  {
+   "id": "KINOPOISK",
+   "label": "Kinopoisk",
+   "type": "site"
+  },
+  {
+   "id": "SURFLITE",
+   "label": "Surflite",
+   "type": "site"
+  },
+  {
+   "id": "CAS",
+   "label": "Cas",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-SCHOLAR-UK",
+   "label": "Category Scholar Uk",
+   "type": "aggregate"
+  },
+  {
+   "id": "DYNA",
+   "label": "Dyna",
+   "type": "site"
+  },
+  {
+   "id": "HSBC-CN",
+   "label": "Hsbc Cn",
+   "type": "site"
+  },
+  {
+   "id": "LISIKU",
+   "label": "Lisiku",
+   "type": "site"
+  },
+  {
+   "id": "POSITIVE-TECHNOLOGIES",
+   "label": "Positive Technologies",
+   "type": "site"
+  },
+  {
+   "id": "DJI",
+   "label": "Dji",
+   "type": "site"
+  },
+  {
+   "id": "DSLREPORTS",
+   "label": "Dslreports",
+   "type": "site"
+  },
+  {
+   "id": "MUSIXMATCH",
+   "label": "Musixmatch",
+   "type": "site"
+  },
+  {
+   "id": "QCC",
+   "label": "Qcc",
+   "type": "site"
+  },
+  {
+   "id": "XIAOHEIHE",
+   "label": "Xiaoheihe",
+   "type": "site"
+  },
+  {
+   "id": "BRAZZERS",
+   "label": "Brazzers",
+   "type": "site"
+  },
+  {
+   "id": "CYLINK",
+   "label": "Cylink",
+   "type": "site"
+  },
+  {
+   "id": "DIDI",
+   "label": "Didi",
+   "type": "site"
+  },
+  {
+   "id": "FONTAWESOME",
+   "label": "Fontawesome",
+   "type": "site"
+  },
+  {
+   "id": "FRAMER",
+   "label": "Framer",
+   "type": "site"
+  },
+  {
+   "id": "AMAP",
+   "label": "Amap",
+   "type": "site"
+  },
+  {
+   "id": "APARAT",
+   "label": "Aparat",
+   "type": "site"
+  },
+  {
+   "id": "MINDBOX",
+   "label": "Mindbox",
+   "type": "site"
+  },
+  {
+   "id": "SPANKBANG",
+   "label": "Spankbang",
+   "type": "site"
+  },
+  {
+   "id": "TENCENT-GAMES",
+   "label": "Tencent Games",
+   "type": "site"
+  },
+  {
+   "id": "UBER",
+   "label": "Uber",
+   "type": "site"
+  },
+  {
+   "id": "V2RAY",
+   "label": "V2Ray",
+   "type": "site"
+  },
+  {
+   "id": "XIAOYUZHOU",
+   "label": "Xiaoyuzhou",
+   "type": "site"
+  },
+  {
+   "id": "JKF",
+   "label": "Jkf",
+   "type": "site"
+  },
+  {
+   "id": "TELEKOM",
+   "label": "Telekom",
+   "type": "site"
+  },
+  {
+   "id": "BAMTECH",
+   "label": "Bamtech",
+   "type": "site"
+  },
+  {
+   "id": "BYBIT",
+   "label": "Bybit",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ENTERPRISE-QUERY-PLATFORM-CN",
+   "label": "Category Enterprise Query Platform Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "IBKR",
+   "label": "Ibkr",
+   "type": "site"
+  },
+  {
+   "id": "NATIONALGEOGRAPHIC",
+   "label": "Nationalgeographic",
+   "type": "site"
+  },
+  {
+   "id": "NGA",
+   "label": "Nga",
+   "type": "site"
+  },
+  {
+   "id": "SOHU",
+   "label": "Sohu",
+   "type": "site"
+  },
+  {
+   "id": "TAYLORFRANCIS",
+   "label": "Taylorfrancis",
+   "type": "site"
+  },
+  {
+   "id": "AUTODESK",
+   "label": "Autodesk",
+   "type": "site"
+  },
+  {
+   "id": "BEATS",
+   "label": "Beats",
+   "type": "site"
+  },
+  {
+   "id": "FASTSTONE",
+   "label": "Faststone",
+   "type": "site"
+  },
+  {
+   "id": "KUGOU",
+   "label": "Kugou",
+   "type": "site"
+  },
+  {
+   "id": "MIRAHEZE",
+   "label": "Miraheze",
+   "type": "site"
+  },
+  {
+   "id": "SHORTURL",
+   "label": "Shorturl",
+   "type": "site"
+  },
+  {
+   "id": "AWEMPIRE",
+   "label": "Awempire",
+   "type": "site"
+  },
+  {
+   "id": "CALGONCARBON",
+   "label": "Calgoncarbon",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-BANK-MM",
+   "label": "Category Bank Mm",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-COMPANIES",
+   "label": "Category Companies",
+   "type": "aggregate"
+  },
+  {
+   "id": "CCB",
+   "label": "Ccb",
+   "type": "site"
+  },
+  {
+   "id": "TABOOLA",
+   "label": "Taboola",
+   "type": "site"
+  },
+  {
+   "id": "UDEMY",
+   "label": "Udemy",
+   "type": "site"
+  },
+  {
+   "id": "HUOBI",
+   "label": "Huobi",
+   "type": "site"
+  },
+  {
+   "id": "JINSHUJU",
+   "label": "Jinshuju",
+   "type": "site"
+  },
+  {
+   "id": "OSKELLY",
+   "label": "Oskelly",
+   "type": "site"
+  },
+  {
+   "id": "SQUIRRELVPN",
+   "label": "Squirrelvpn",
+   "type": "site"
+  },
+  {
+   "id": "COUPANG",
+   "label": "Coupang",
+   "type": "site"
+  },
+  {
+   "id": "HKGOLDEN",
+   "label": "Hkgolden",
+   "type": "site"
+  },
+  {
+   "id": "LIBGEN",
+   "label": "Libgen",
+   "type": "site"
+  },
+  {
+   "id": "PAWCHIVE",
+   "label": "Pawchive",
+   "type": "site"
+  },
+  {
+   "id": "SECOM",
+   "label": "Secom",
+   "type": "site"
+  },
+  {
+   "id": "BOHEMIA",
+   "label": "Bohemia",
+   "type": "site"
+  },
+  {
+   "id": "KEYBASE",
+   "label": "Keybase",
+   "type": "site"
+  },
+  {
+   "id": "N26",
+   "label": "N26",
+   "type": "site"
+  },
+  {
+   "id": "NHK",
+   "label": "Nhk",
+   "type": "site"
+  },
+  {
+   "id": "QIMAO",
+   "label": "Qimao",
+   "type": "site"
+  },
+  {
+   "id": "UOLIV",
+   "label": "Uoliv",
+   "type": "site"
+  },
+  {
+   "id": "YOUTUBE",
+   "label": "Youtube",
+   "type": "site"
+  },
+  {
+   "id": "QWANT",
+   "label": "Qwant",
+   "type": "site"
+  },
+  {
+   "id": "VPNGATE",
+   "label": "Vpngate",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-CDN-!CN",
+   "label": "Category Cdn !Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "GITHUB",
+   "label": "Github",
+   "type": "site"
+  },
+  {
+   "id": "IDG",
+   "label": "Idg",
+   "type": "site"
+  },
+  {
+   "id": "SOUNDOFHOPE",
+   "label": "Soundofhope",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-RU",
+   "label": "Category Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "VOLVO",
+   "label": "Volvo",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-HOSPITAL-CN",
+   "label": "Category Hospital Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-IP-GEO-DETECT",
+   "label": "Category Ip Geo Detect",
+   "type": "aggregate"
+  },
+  {
+   "id": "INOREADER",
+   "label": "Inoreader",
+   "type": "site"
+  },
+  {
+   "id": "JUSTAV",
+   "label": "Justav",
+   "type": "site"
+  },
+  {
+   "id": "WINLINE",
+   "label": "Winline",
+   "type": "site"
+  },
+  {
+   "id": "FANSTA",
+   "label": "Fansta",
+   "type": "site"
+  },
+  {
+   "id": "FUTU",
+   "label": "Futu",
+   "type": "site"
+  },
+  {
+   "id": "IMPERIALCOLLEGE",
+   "label": "Imperialcollege",
+   "type": "site"
+  },
+  {
+   "id": "JUSHUITAN",
+   "label": "Jushuitan",
+   "type": "site"
+  },
+  {
+   "id": "KAKAO",
+   "label": "Kakao",
+   "type": "site"
+  },
+  {
+   "id": "NIXOS",
+   "label": "Nixos",
+   "type": "site"
+  },
+  {
+   "id": "PANASONIC",
+   "label": "Panasonic",
+   "type": "site"
+  },
+  {
+   "id": "RFERL",
+   "label": "Rferl",
+   "type": "site"
+  },
+  {
+   "id": "AMAZONTRUST",
+   "label": "Amazontrust",
+   "type": "site"
+  },
+  {
+   "id": "BAHAMUT",
+   "label": "Bahamut",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-PASSWORD-MANAGEMENT",
+   "label": "Category Password Management",
+   "type": "aggregate"
+  },
+  {
+   "id": "LIMELIGHT",
+   "label": "Limelight",
+   "type": "site"
+  },
+  {
+   "id": "SCP",
+   "label": "Scp",
+   "type": "site"
+  },
+  {
+   "id": "SECTIGO",
+   "label": "Sectigo",
+   "type": "site"
+  },
+  {
+   "id": "SSLCOM",
+   "label": "Sslcom",
+   "type": "site"
+  },
+  {
+   "id": "THESCOREGROUP",
+   "label": "Thescoregroup",
+   "type": "site"
+  },
+  {
+   "id": "HUNANTV",
+   "label": "Hunantv",
+   "type": "site"
+  },
+  {
+   "id": "HENTAICHEN",
+   "label": "Hentaichen",
+   "type": "site"
+  },
+  {
+   "id": "ZEETV",
+   "label": "Zeetv",
+   "type": "site"
+  },
+  {
+   "id": "0X0",
+   "label": "0X0",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-NTP-JP",
+   "label": "Category Ntp Jp",
+   "type": "aggregate"
+  },
+  {
+   "id": "CHINATOWER",
+   "label": "Chinatower",
+   "type": "site"
+  },
+  {
+   "id": "HBO",
+   "label": "Hbo",
+   "type": "site"
+  },
+  {
+   "id": "JD",
+   "label": "Jd",
+   "type": "site"
+  },
+  {
+   "id": "WIWIDE",
+   "label": "Wiwide",
+   "type": "site"
+  },
+  {
+   "id": "YAHOO",
+   "label": "Yahoo",
+   "type": "site"
+  },
+  {
+   "id": "CERTINOMIS",
+   "label": "Certinomis",
+   "type": "site"
+  },
+  {
+   "id": "CUHK",
+   "label": "Cuhk",
+   "type": "site"
+  },
+  {
+   "id": "DEEPSEEK",
+   "label": "Deepseek",
+   "type": "site"
+  },
+  {
+   "id": "MESSENGER",
+   "label": "Messenger",
+   "type": "site"
+  },
+  {
+   "id": "SNAPP",
+   "label": "Snapp",
+   "type": "site"
+  },
+  {
+   "id": "WEIPHONE",
+   "label": "Weiphone",
+   "type": "site"
+  },
+  {
+   "id": "EHENTAI",
+   "label": "Ehentai",
+   "type": "site"
+  },
+  {
+   "id": "MZED",
+   "label": "Mzed",
+   "type": "site"
+  },
+  {
+   "id": "OOKLA-SPEEDTEST",
+   "label": "Ookla Speedtest",
+   "type": "site"
+  },
+  {
+   "id": "SPACESHIP",
+   "label": "Spaceship",
+   "type": "site"
+  },
+  {
+   "id": "APPLE-INTELLIGENCE",
+   "label": "Apple Intelligence",
+   "type": "site"
+  },
+  {
+   "id": "BILIINTL",
+   "label": "Biliintl",
+   "type": "site"
+  },
+  {
+   "id": "FEDORA",
+   "label": "Fedora",
+   "type": "site"
+  },
+  {
+   "id": "FIBANK",
+   "label": "Fibank",
+   "type": "site"
+  },
+  {
+   "id": "ILLUSION-NONOFFICIAL",
+   "label": "Illusion Nonofficial",
+   "type": "site"
+  },
+  {
+   "id": "MEDIUM",
+   "label": "Medium",
+   "type": "site"
+  },
+  {
+   "id": "OKJIKE",
+   "label": "Okjike",
+   "type": "site"
+  },
+  {
+   "id": "XINGKONGWUXIANMEDIA",
+   "label": "Xingkongwuxianmedia",
+   "type": "site"
+  },
+  {
+   "id": "ADBLOCKPLUS",
+   "label": "Adblockplus",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-DOH",
+   "label": "Category Doh",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-MOOC-CN",
+   "label": "Category Mooc Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-WEB-ARCHIVE",
+   "label": "Category Web Archive",
+   "type": "aggregate"
+  },
+  {
+   "id": "DIGICERT",
+   "label": "Digicert",
+   "type": "site"
+  },
+  {
+   "id": "HUAWEI-DEV",
+   "label": "Huawei Dev",
+   "type": "site"
+  },
+  {
+   "id": "ASUS",
+   "label": "Asus",
+   "type": "site"
+  },
+  {
+   "id": "DISCUZ",
+   "label": "Discuz",
+   "type": "site"
+  },
+  {
+   "id": "EASYLIST",
+   "label": "Easylist",
+   "type": "site"
+  },
+  {
+   "id": "EVERBRIGHT",
+   "label": "Everbright",
+   "type": "site"
+  },
+  {
+   "id": "GANJI",
+   "label": "Ganji",
+   "type": "site"
+  },
+  {
+   "id": "HANYI",
+   "label": "Hanyi",
+   "type": "site"
+  },
+  {
+   "id": "JAVCC",
+   "label": "Javcc",
+   "type": "site"
+  },
+  {
+   "id": "MOCHA",
+   "label": "Mocha",
+   "type": "site"
+  },
+  {
+   "id": "CLIPS4SALE",
+   "label": "Clips4Sale",
+   "type": "site"
+  },
+  {
+   "id": "EASTMONEY",
+   "label": "Eastmoney",
+   "type": "site"
+  },
+  {
+   "id": "ICLOUD",
+   "label": "Icloud",
+   "type": "site"
+  },
+  {
+   "id": "METABRAINZ",
+   "label": "Metabrainz",
+   "type": "site"
+  },
+  {
+   "id": "NETEASE",
+   "label": "Netease",
+   "type": "site"
+  },
+  {
+   "id": "NIKE",
+   "label": "Nike",
+   "type": "site"
+  },
+  {
+   "id": "PPTV",
+   "label": "Pptv",
+   "type": "site"
+  },
+  {
+   "id": "ROCKSTAR",
+   "label": "Rockstar",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-CDN-CN",
+   "label": "Category Cdn Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "ELECTRON",
+   "label": "Electron",
+   "type": "site"
+  },
+  {
+   "id": "RUANMEI",
+   "label": "Ruanmei",
+   "type": "site"
+  },
+  {
+   "id": "TENCENT-TME",
+   "label": "Tencent Tme",
+   "type": "site"
+  },
+  {
+   "id": "TRUSTWALLET",
+   "label": "Trustwallet",
+   "type": "site"
+  },
+  {
+   "id": "YCOMBINATOR",
+   "label": "Ycombinator",
+   "type": "site"
+  },
+  {
+   "id": "LIEPIN",
+   "label": "Liepin",
+   "type": "site"
+  },
+  {
+   "id": "LINAKESI",
+   "label": "Linakesi",
+   "type": "site"
+  },
+  {
+   "id": "YNOPROJECT",
+   "label": "Ynoproject",
+   "type": "site"
+  },
+  {
+   "id": "AUTORU",
+   "label": "Autoru",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-CONTAINER",
+   "label": "Category Container",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-VPNSERVICES",
+   "label": "Category Vpnservices",
+   "type": "aggregate"
+  },
+  {
+   "id": "MATTERS",
+   "label": "Matters",
+   "type": "site"
+  },
+  {
+   "id": "QINGCLOUD",
+   "label": "Qingcloud",
+   "type": "site"
+  },
+  {
+   "id": "SHOPEE",
+   "label": "Shopee",
+   "type": "site"
+  },
+  {
+   "id": "WINDSURF",
+   "label": "Windsurf",
+   "type": "site"
+  },
+  {
+   "id": "2GIS",
+   "label": "2Gis",
+   "type": "site"
+  },
+  {
+   "id": "BOOMERANG",
+   "label": "Boomerang",
+   "type": "site"
+  },
+  {
+   "id": "FINISH",
+   "label": "Finish",
+   "type": "site"
+  },
+  {
+   "id": "PAYPAL",
+   "label": "Paypal",
+   "type": "site"
+  },
+  {
+   "id": "REDHAT",
+   "label": "Redhat",
+   "type": "site"
+  },
+  {
+   "id": "RTHK",
+   "label": "Rthk",
+   "type": "site"
+  },
+  {
+   "id": "STARPLUS",
+   "label": "Starplus",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ANTICENSORSHIP",
+   "label": "Category Anticensorship",
+   "type": "aggregate"
+  },
+  {
+   "id": "CONNECTIVITY-CHECK",
+   "label": "Connectivity Check",
+   "type": "site"
+  },
+  {
+   "id": "GITBOOK",
+   "label": "Gitbook",
+   "type": "site"
+  },
+  {
+   "id": "GITV",
+   "label": "Gitv",
+   "type": "site"
+  },
+  {
+   "id": "ITCHIO",
+   "label": "Itchio",
+   "type": "site"
+  },
+  {
+   "id": "QIXIN",
+   "label": "Qixin",
+   "type": "site"
+  },
+  {
+   "id": "PATREON",
+   "label": "Patreon",
+   "type": "site"
+  },
+  {
+   "id": "PIXIV",
+   "label": "Pixiv",
+   "type": "site"
+  },
+  {
+   "id": "PUBMATIC",
+   "label": "Pubmatic",
+   "type": "site"
+  },
+  {
+   "id": "REURL",
+   "label": "Reurl",
+   "type": "site"
+  },
+  {
+   "id": "VISUALARTS",
+   "label": "Visualarts",
+   "type": "site"
+  },
+  {
+   "id": "VOKINO",
+   "label": "Vokino",
+   "type": "site"
+  },
+  {
+   "id": "4PLEBS",
+   "label": "4Plebs",
+   "type": "site"
+  },
+  {
+   "id": "GIMY",
+   "label": "Gimy",
+   "type": "site"
+  },
+  {
+   "id": "GOFUNDME",
+   "label": "Gofundme",
+   "type": "site"
+  },
+  {
+   "id": "LITV",
+   "label": "Litv",
+   "type": "site"
+  },
+  {
+   "id": "MDN",
+   "label": "Mdn",
+   "type": "site"
+  },
+  {
+   "id": "TRACKER",
+   "label": "Tracker",
+   "type": "site"
+  },
+  {
+   "id": "WSJ",
+   "label": "Wsj",
+   "type": "site"
+  },
+  {
+   "id": "YY",
+   "label": "Yy",
+   "type": "site"
+  },
+  {
+   "id": "CLOUDFLARE-IPFS",
+   "label": "Cloudflare Ipfs",
+   "type": "site"
+  },
+  {
+   "id": "DMM-PORN",
+   "label": "Dmm Porn",
+   "type": "site"
+  },
+  {
+   "id": "LONGBRIDGE",
+   "label": "Longbridge",
+   "type": "site"
+  },
+  {
+   "id": "MOSMETRO",
+   "label": "Mosmetro",
+   "type": "site"
+  },
+  {
+   "id": "OPENAI",
+   "label": "Openai",
+   "type": "site"
+  },
+  {
+   "id": "TELEGRAM",
+   "label": "Telegram",
+   "type": "site"
+  },
+  {
+   "id": "WISTIA",
+   "label": "Wistia",
+   "type": "site"
+  },
+  {
+   "id": "BESTV",
+   "label": "Bestv",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-OLYMPIAD-IN-INFORMATICS",
+   "label": "Category Olympiad In Informatics",
+   "type": "aggregate"
+  },
+  {
+   "id": "SONYPICTURES",
+   "label": "Sonypictures",
+   "type": "site"
+  },
+  {
+   "id": "ADDTOANY",
+   "label": "Addtoany",
+   "type": "site"
+  },
+  {
+   "id": "APPLYSQUARE",
+   "label": "Applysquare",
+   "type": "site"
+  },
+  {
+   "id": "BLENDER",
+   "label": "Blender",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ADS",
+   "label": "Category Ads",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-ADS-ALL",
+   "label": "Category Ads All",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-AI-RU",
+   "label": "Category Ai Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "COREL",
+   "label": "Corel",
+   "type": "site"
+  },
+  {
+   "id": "GETTYIMAGES",
+   "label": "Gettyimages",
+   "type": "site"
+  },
+  {
+   "id": "AWS",
+   "label": "Aws",
+   "type": "site"
+  },
+  {
+   "id": "CHINASO",
+   "label": "Chinaso",
+   "type": "site"
+  },
+  {
+   "id": "FEISHU",
+   "label": "Feishu",
+   "type": "site"
+  },
+  {
+   "id": "JUSTMYSOCKS",
+   "label": "Justmysocks",
+   "type": "site"
+  },
+  {
+   "id": "LANDIAN",
+   "label": "Landian",
+   "type": "site"
+  },
+  {
+   "id": "LANZOU",
+   "label": "Lanzou",
+   "type": "site"
+  },
+  {
+   "id": "LOGITECH",
+   "label": "Logitech",
+   "type": "site"
+  },
+  {
+   "id": "MUJI",
+   "label": "Muji",
+   "type": "site"
+  },
+  {
+   "id": "BORNEOSCHEMATICS",
+   "label": "Borneoschematics",
+   "type": "site"
+  },
+  {
+   "id": "DMM",
+   "label": "Dmm",
+   "type": "site"
+  },
+  {
+   "id": "ESPRESSIF",
+   "label": "Espressif",
+   "type": "site"
+  },
+  {
+   "id": "HKT",
+   "label": "Hkt",
+   "type": "site"
+  },
+  {
+   "id": "IINA",
+   "label": "Iina",
+   "type": "site"
+  },
+  {
+   "id": "INSTAGRAM",
+   "label": "Instagram",
+   "type": "site"
+  },
+  {
+   "id": "KAGGLE",
+   "label": "Kaggle",
+   "type": "site"
+  },
+  {
+   "id": "MISSKEY",
+   "label": "Misskey",
+   "type": "site"
+  },
+  {
+   "id": "BTTZYW",
+   "label": "Bttzyw",
+   "type": "site"
+  },
+  {
+   "id": "BYTEDANCE-AI-!CN",
+   "label": "Bytedance Ai !Cn",
+   "type": "site"
+  },
+  {
+   "id": "COWTRANSFER",
+   "label": "Cowtransfer",
+   "type": "site"
+  },
+  {
+   "id": "GISMETEO",
+   "label": "Gismeteo",
+   "type": "site"
+  },
+  {
+   "id": "HABR",
+   "label": "Habr",
+   "type": "site"
+  },
+  {
+   "id": "IPIP",
+   "label": "Ipip",
+   "type": "site"
+  },
+  {
+   "id": "MAPBOX",
+   "label": "Mapbox",
+   "type": "site"
+  },
+  {
+   "id": "MCDONALDS",
+   "label": "Mcdonalds",
+   "type": "site"
+  },
+  {
+   "id": "6PARK",
+   "label": "6Park",
+   "type": "site"
+  },
+  {
+   "id": "ALJAZEERA",
+   "label": "Aljazeera",
+   "type": "site"
+  },
+  {
+   "id": "C-SPAN",
+   "label": "C Span",
+   "type": "site"
+  },
+  {
+   "id": "KRAKEN",
+   "label": "Kraken",
+   "type": "site"
+  },
+  {
+   "id": "ROSTELECOM",
+   "label": "Rostelecom",
+   "type": "site"
+  },
+  {
+   "id": "SCALA",
+   "label": "Scala",
+   "type": "site"
+  },
+  {
+   "id": "TARGET",
+   "label": "Target",
+   "type": "site"
+  },
+  {
+   "id": "4399",
+   "label": "4399",
+   "type": "site"
+  },
+  {
+   "id": "HETZNER",
+   "label": "Hetzner",
+   "type": "site"
+  },
+  {
+   "id": "JFROG",
+   "label": "Jfrog",
+   "type": "site"
+  },
+  {
+   "id": "MOTOROLA",
+   "label": "Motorola",
+   "type": "site"
+  },
+  {
+   "id": "WWE",
+   "label": "Wwe",
+   "type": "site"
+  },
+  {
+   "id": "BINANCE",
+   "label": "Binance",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-BANK-IR",
+   "label": "Category Bank Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-FORUMS-RU",
+   "label": "Category Forums Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "CNBC",
+   "label": "Cnbc",
+   "type": "site"
+  },
+  {
+   "id": "HKU",
+   "label": "Hku",
+   "type": "site"
+  },
+  {
+   "id": "IMGIX",
+   "label": "Imgix",
+   "type": "site"
+  },
+  {
+   "id": "MADSHI",
+   "label": "Madshi",
+   "type": "site"
+  },
+  {
+   "id": "PASKOOCHEH",
+   "label": "Paskoocheh",
+   "type": "site"
+  },
+  {
+   "id": "BROADCOM",
+   "label": "Broadcom",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-AUTOMOBILE-CN",
+   "label": "Category Automobile Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CLOUDFLARE-CN",
+   "label": "Cloudflare Cn",
+   "type": "site"
+  },
+  {
+   "id": "CUTTLY",
+   "label": "Cuttly",
+   "type": "site"
+  },
+  {
+   "id": "LIHKG",
+   "label": "Lihkg",
+   "type": "site"
+  },
+  {
+   "id": "SCI-HUB",
+   "label": "Sci Hub",
+   "type": "site"
+  },
+  {
+   "id": "TWITCH",
+   "label": "Twitch",
+   "type": "site"
+  },
+  {
+   "id": "WISE",
+   "label": "Wise",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-IR",
+   "label": "Category Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "CHATANGO",
+   "label": "Chatango",
+   "type": "site"
+  },
+  {
+   "id": "ECONOMIST",
+   "label": "Economist",
+   "type": "site"
+  },
+  {
+   "id": "ORGANICMAPS",
+   "label": "Organicmaps",
+   "type": "site"
+  },
+  {
+   "id": "PLEX",
+   "label": "Plex",
+   "type": "site"
+  },
+  {
+   "id": "RULEOFLAW",
+   "label": "Ruleoflaw",
+   "type": "site"
+  },
+  {
+   "id": "TUBE8",
+   "label": "Tube8",
+   "type": "site"
+  },
+  {
+   "id": "XIAOMI-IOT",
+   "label": "Xiaomi Iot",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-NTP",
+   "label": "Category Ntp",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-VOIP",
+   "label": "Category Voip",
+   "type": "aggregate"
+  },
+  {
+   "id": "DONGJIAO",
+   "label": "Dongjiao",
+   "type": "site"
+  },
+  {
+   "id": "MONGODB",
+   "label": "Mongodb",
+   "type": "site"
+  },
+  {
+   "id": "NIKKEI",
+   "label": "Nikkei",
+   "type": "site"
+  },
+  {
+   "id": "OPENSTREETMAP",
+   "label": "Openstreetmap",
+   "type": "site"
+  },
+  {
+   "id": "YUANBEI",
+   "label": "Yuanbei",
+   "type": "site"
+  },
+  {
+   "id": "ZDNS",
+   "label": "Zdns",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-FOOD-CN",
+   "label": "Category Food Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CODEBERG",
+   "label": "Codeberg",
+   "type": "site"
+  },
+  {
+   "id": "FLYIO",
+   "label": "Flyio",
+   "type": "site"
+  },
+  {
+   "id": "HP",
+   "label": "Hp",
+   "type": "site"
+  },
+  {
+   "id": "MIT",
+   "label": "Mit",
+   "type": "site"
+  },
+  {
+   "id": "SAMSUNG",
+   "label": "Samsung",
+   "type": "site"
+  },
+  {
+   "id": "SUISHOUJI",
+   "label": "Suishouji",
+   "type": "site"
+  },
+  {
+   "id": "TCL",
+   "label": "Tcl",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-MEDIA-IR",
+   "label": "Category Media Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-NTP-CN",
+   "label": "Category Ntp Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-SOCIAL-MEDIA-IR",
+   "label": "Category Social Media Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "LINKEDIN",
+   "label": "Linkedin",
+   "type": "site"
+  },
+  {
+   "id": "UC",
+   "label": "Uc",
+   "type": "site"
+  },
+  {
+   "id": "AP",
+   "label": "Ap",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-DDNS",
+   "label": "Category Ddns",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-NUMBER-VERIFICATION-CN",
+   "label": "Category Number Verification Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "GANDI",
+   "label": "Gandi",
+   "type": "site"
+  },
+  {
+   "id": "GENOTEK-RU",
+   "label": "Genotek Ru",
+   "type": "site"
+  },
+  {
+   "id": "IYF",
+   "label": "Iyf",
+   "type": "site"
+  },
+  {
+   "id": "LASTPASS",
+   "label": "Lastpass",
+   "type": "site"
+  },
+  {
+   "id": "META",
+   "label": "Meta",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-GAMES",
+   "label": "Category Games",
+   "type": "aggregate"
+  },
+  {
+   "id": "CDEK",
+   "label": "Cdek",
+   "type": "site"
+  },
+  {
+   "id": "LAGOU",
+   "label": "Lagou",
+   "type": "site"
+  },
+  {
+   "id": "PINKCORE",
+   "label": "Pinkcore",
+   "type": "site"
+  },
+  {
+   "id": "SWAG",
+   "label": "Swag",
+   "type": "site"
+  },
+  {
+   "id": "THESUN",
+   "label": "Thesun",
+   "type": "site"
+  },
+  {
+   "id": "THETYPE",
+   "label": "Thetype",
+   "type": "site"
+  },
+  {
+   "id": "WJX",
+   "label": "Wjx",
+   "type": "site"
+  },
+  {
+   "id": "DINGDATECH",
+   "label": "Dingdatech",
+   "type": "site"
+  },
+  {
+   "id": "GLOBALSIGN",
+   "label": "Globalsign",
+   "type": "site"
+  },
+  {
+   "id": "HOMEBREW",
+   "label": "Homebrew",
+   "type": "site"
+  },
+  {
+   "id": "LIFEWIRE",
+   "label": "Lifewire",
+   "type": "site"
+  },
+  {
+   "id": "MICROSOFT-DEV",
+   "label": "Microsoft Dev",
+   "type": "site"
+  },
+  {
+   "id": "ZHUBAJIE",
+   "label": "Zhubajie",
+   "type": "site"
+  },
+  {
+   "id": "ALIBABACLOUD",
+   "label": "Alibabacloud",
+   "type": "site"
+  },
+  {
+   "id": "BEGET",
+   "label": "Beget",
+   "type": "site"
+  },
+  {
+   "id": "DART",
+   "label": "Dart",
+   "type": "site"
+  },
+  {
+   "id": "F-DROID",
+   "label": "F Droid",
+   "type": "site"
+  },
+  {
+   "id": "OPENSPEEDTEST",
+   "label": "Openspeedtest",
+   "type": "site"
+  },
+  {
+   "id": "PICACG",
+   "label": "Picacg",
+   "type": "site"
+  },
+  {
+   "id": "QUALCOMM",
+   "label": "Qualcomm",
+   "type": "site"
+  },
+  {
+   "id": "SMARTONE",
+   "label": "Smartone",
+   "type": "site"
+  },
+  {
+   "id": "FOX",
+   "label": "Fox",
+   "type": "site"
+  },
+  {
+   "id": "NOTION",
+   "label": "Notion",
+   "type": "site"
+  },
+  {
+   "id": "PROQUEST",
+   "label": "Proquest",
+   "type": "site"
+  },
+  {
+   "id": "ZEE",
+   "label": "Zee",
+   "type": "site"
+  },
+  {
+   "id": "ADIDAS",
+   "label": "Adidas",
+   "type": "site"
+  },
+  {
+   "id": "BAISHANCLOUD",
+   "label": "Baishancloud",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-AI-!CN",
+   "label": "Category Ai !Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-MEDIA-CN",
+   "label": "Category Media Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "GUCCI",
+   "label": "Gucci",
+   "type": "site"
+  },
+  {
+   "id": "HM",
+   "label": "Hm",
+   "type": "site"
+  },
+  {
+   "id": "JLC",
+   "label": "Jlc",
+   "type": "site"
+  },
+  {
+   "id": "MTS-RU",
+   "label": "Mts Ru",
+   "type": "site"
+  },
+  {
+   "id": "AEROGARD",
+   "label": "Aerogard",
+   "type": "site"
+  },
+  {
+   "id": "DOI",
+   "label": "Doi",
+   "type": "site"
+  },
+  {
+   "id": "GETUI",
+   "label": "Getui",
+   "type": "site"
+  },
+  {
+   "id": "HUFFPOST",
+   "label": "Huffpost",
+   "type": "site"
+  },
+  {
+   "id": "IMAGESHACK",
+   "label": "Imageshack",
+   "type": "site"
+  },
+  {
+   "id": "JIANSHU",
+   "label": "Jianshu",
+   "type": "site"
+  },
+  {
+   "id": "KHANACADEMY",
+   "label": "Khanacademy",
+   "type": "site"
+  },
+  {
+   "id": "TLD-RU",
+   "label": "Tld Ru",
+   "type": "tld"
+  },
+  {
+   "id": "AIQICHA",
+   "label": "Aiqicha",
+   "type": "site"
+  },
+  {
+   "id": "BOOTCDN",
+   "label": "Bootcdn",
+   "type": "site"
+  },
+  {
+   "id": "LINE",
+   "label": "Line",
+   "type": "site"
+  },
+  {
+   "id": "MOONVY",
+   "label": "Moonvy",
+   "type": "site"
+  },
+  {
+   "id": "SNODEHOME",
+   "label": "Snodehome",
+   "type": "site"
+  },
+  {
+   "id": "ST",
+   "label": "St",
+   "type": "site"
+  },
+  {
+   "id": "STO-EXPRESS",
+   "label": "Sto Express",
+   "type": "site"
+  },
+  {
+   "id": "THEGUARDIAN",
+   "label": "Theguardian",
+   "type": "site"
+  },
+  {
+   "id": "CMB",
+   "label": "Cmb",
+   "type": "site"
+  },
+  {
+   "id": "CNKI",
+   "label": "Cnki",
+   "type": "site"
+  },
+  {
+   "id": "JETBRAINS",
+   "label": "Jetbrains",
+   "type": "site"
+  },
+  {
+   "id": "NEOWIN",
+   "label": "Neowin",
+   "type": "site"
+  },
+  {
+   "id": "NICONICO",
+   "label": "Niconico",
+   "type": "site"
+  },
+  {
+   "id": "ROBLOX",
+   "label": "Roblox",
+   "type": "site"
+  },
+  {
+   "id": "UBUNTUKYLIN",
+   "label": "Ubuntukylin",
+   "type": "site"
+  },
+  {
+   "id": "DOLA",
+   "label": "Dola",
+   "type": "site"
+  },
+  {
+   "id": "DOWJONES",
+   "label": "Dowjones",
+   "type": "site"
+  },
+  {
+   "id": "DUOWAN",
+   "label": "Duowan",
+   "type": "site"
+  },
+  {
+   "id": "FANS66",
+   "label": "Fans66",
+   "type": "site"
+  },
+  {
+   "id": "LETHALHARDCORE",
+   "label": "Lethalhardcore",
+   "type": "site"
+  },
+  {
+   "id": "RIOT",
+   "label": "Riot",
+   "type": "site"
+  },
+  {
+   "id": "SOURCEHUT",
+   "label": "Sourcehut",
+   "type": "site"
+  },
+  {
+   "id": "TEST-IPV6",
+   "label": "Test Ipv6",
+   "type": "site"
+  },
+  {
+   "id": "ANKER",
+   "label": "Anker",
+   "type": "site"
+  },
+  {
+   "id": "BILIBILI2",
+   "label": "Bilibili2",
+   "type": "site"
+  },
+  {
+   "id": "CODING",
+   "label": "Coding",
+   "type": "site"
+  },
+  {
+   "id": "INTEL",
+   "label": "Intel",
+   "type": "site"
+  },
+  {
+   "id": "TWILIO",
+   "label": "Twilio",
+   "type": "site"
+  },
+  {
+   "id": "VOLCENGINE",
+   "label": "Volcengine",
+   "type": "site"
+  },
+  {
+   "id": "WPS",
+   "label": "Wps",
+   "type": "site"
+  },
+  {
+   "id": "XUEQIU",
+   "label": "Xueqiu",
+   "type": "site"
+  },
+  {
+   "id": "51JOB",
+   "label": "51Job",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-MEDICINE-RU",
+   "label": "Category Medicine Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-SOCIAL-MEDIA-!CN",
+   "label": "Category Social Media !Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CSIS",
+   "label": "Csis",
+   "type": "site"
+  },
+  {
+   "id": "DUYAOSS",
+   "label": "Duyaoss",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLE-GEMINI",
+   "label": "Google Gemini",
+   "type": "site"
+  },
+  {
+   "id": "HSBC",
+   "label": "Hsbc",
+   "type": "site"
+  },
+  {
+   "id": "IBM",
+   "label": "Ibm",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-MOBILE-REPAIR",
+   "label": "Category Mobile Repair",
+   "type": "aggregate"
+  },
+  {
+   "id": "CLOUDFLARE",
+   "label": "Cloudflare",
+   "type": "site"
+  },
+  {
+   "id": "COMFY",
+   "label": "Comfy",
+   "type": "site"
+  },
+  {
+   "id": "FCBOX",
+   "label": "Fcbox",
+   "type": "site"
+  },
+  {
+   "id": "SITEPOINT",
+   "label": "Sitepoint",
+   "type": "site"
+  },
+  {
+   "id": "UCLOUD",
+   "label": "Ucloud",
+   "type": "site"
+  },
+  {
+   "id": "WALMART",
+   "label": "Walmart",
+   "type": "site"
+  },
+  {
+   "id": "ARCHIVEOFOUROWN",
+   "label": "Archiveofourown",
+   "type": "site"
+  },
+  {
+   "id": "DUCKDUCKGO",
+   "label": "Duckduckgo",
+   "type": "site"
+  },
+  {
+   "id": "TRACKERNETWORK",
+   "label": "Trackernetwork",
+   "type": "site"
+  },
+  {
+   "id": "XDA",
+   "label": "Xda",
+   "type": "site"
+  },
+  {
+   "id": "ADOBE",
+   "label": "Adobe",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ENHANCE-GAMING",
+   "label": "Category Enhance Gaming",
+   "type": "aggregate"
+  },
+  {
+   "id": "JAVBUS",
+   "label": "Javbus",
+   "type": "site"
+  },
+  {
+   "id": "MEDUZA",
+   "label": "Meduza",
+   "type": "site"
+  },
+  {
+   "id": "MOGUJIE",
+   "label": "Mogujie",
+   "type": "site"
+  },
+  {
+   "id": "REAGROUP",
+   "label": "Reagroup",
+   "type": "site"
+  },
+  {
+   "id": "TYPENETWORK",
+   "label": "Typenetwork",
+   "type": "site"
+  },
+  {
+   "id": "CANVA",
+   "label": "Canva",
+   "type": "site"
+  },
+  {
+   "id": "CHINAMOBILE",
+   "label": "Chinamobile",
+   "type": "site"
+  },
+  {
+   "id": "IMDB",
+   "label": "Imdb",
+   "type": "site"
+  },
+  {
+   "id": "LARACASTS",
+   "label": "Laracasts",
+   "type": "site"
+  },
+  {
+   "id": "SAKURAFRP",
+   "label": "Sakurafrp",
+   "type": "site"
+  },
+  {
+   "id": "TEST",
+   "label": "Test",
+   "type": "site"
+  },
+  {
+   "id": "THEINITIUM",
+   "label": "Theinitium",
+   "type": "site"
+  },
+  {
+   "id": "WIX",
+   "label": "Wix",
+   "type": "site"
+  },
+  {
+   "id": "ARTSTATION",
+   "label": "Artstation",
+   "type": "site"
+  },
+  {
+   "id": "EGGHEAD",
+   "label": "Egghead",
+   "type": "site"
+  },
+  {
+   "id": "JQUERY",
+   "label": "Jquery",
+   "type": "site"
+  },
+  {
+   "id": "KUAIDI100",
+   "label": "Kuaidi100",
+   "type": "site"
+  },
+  {
+   "id": "STEEMIT",
+   "label": "Steemit",
+   "type": "site"
+  },
+  {
+   "id": "XAI",
+   "label": "Xai",
+   "type": "site"
+  },
+  {
+   "id": "YOUMIND",
+   "label": "Youmind",
+   "type": "site"
+  },
+  {
+   "id": "ANON-V",
+   "label": "Anon V",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-URLSHORTNER",
+   "label": "Category Urlshortner",
+   "type": "aggregate"
+  },
+  {
+   "id": "FASTLANE",
+   "label": "Fastlane",
+   "type": "site"
+  },
+  {
+   "id": "HEROGAME",
+   "label": "Herogame",
+   "type": "site"
+  },
+  {
+   "id": "PORNHUB",
+   "label": "Pornhub",
+   "type": "site"
+  },
+  {
+   "id": "REMNAWAVE",
+   "label": "Remnawave",
+   "type": "site"
+  },
+  {
+   "id": "BLUEPOCH",
+   "label": "Bluepoch",
+   "type": "site"
+  },
+  {
+   "id": "DERIBIT",
+   "label": "Deribit",
+   "type": "site"
+  },
+  {
+   "id": "DZEN",
+   "label": "Dzen",
+   "type": "site"
+  },
+  {
+   "id": "HUPUN",
+   "label": "Hupun",
+   "type": "site"
+  },
+  {
+   "id": "PSTORAGE",
+   "label": "Pstorage",
+   "type": "site"
+  },
+  {
+   "id": "TAOMEE",
+   "label": "Taomee",
+   "type": "site"
+  },
+  {
+   "id": "WATCHOUT",
+   "label": "Watchout",
+   "type": "site"
+  },
+  {
+   "id": "WOOLITE",
+   "label": "Woolite",
+   "type": "site"
+  },
+  {
+   "id": "CYGAMES",
+   "label": "Cygames",
+   "type": "site"
+  },
+  {
+   "id": "GEMFURY",
+   "label": "Gemfury",
+   "type": "site"
+  },
+  {
+   "id": "KODIK",
+   "label": "Kodik",
+   "type": "site"
+  },
+  {
+   "id": "REDTUBE",
+   "label": "Redtube",
+   "type": "site"
+  },
+  {
+   "id": "TVDB",
+   "label": "Tvdb",
+   "type": "site"
+  },
+  {
+   "id": "ENTRUST",
+   "label": "Entrust",
+   "type": "site"
+  },
+  {
+   "id": "FOCUSCHINA",
+   "label": "Focuschina",
+   "type": "site"
+  },
+  {
+   "id": "GATEIO",
+   "label": "Gateio",
+   "type": "site"
+  },
+  {
+   "id": "HCAPTCHA",
+   "label": "Hcaptcha",
+   "type": "site"
+  },
+  {
+   "id": "HUPU",
+   "label": "Hupu",
+   "type": "site"
+  },
+  {
+   "id": "PLUTOTV",
+   "label": "Plutotv",
+   "type": "site"
+  },
+  {
+   "id": "VODAFONE",
+   "label": "Vodafone",
+   "type": "site"
+  },
+  {
+   "id": "CERN",
+   "label": "Cern",
+   "type": "site"
+  },
+  {
+   "id": "DISNEY",
+   "label": "Disney",
+   "type": "site"
+  },
+  {
+   "id": "JIGUANG",
+   "label": "Jiguang",
+   "type": "site"
+  },
+  {
+   "id": "LINUX",
+   "label": "Linux",
+   "type": "site"
+  },
+  {
+   "id": "OCULUS",
+   "label": "Oculus",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-INSURANCE-IR",
+   "label": "Category Insurance Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "KANZHONGGUO",
+   "label": "Kanzhongguo",
+   "type": "site"
+  },
+  {
+   "id": "ROKU",
+   "label": "Roku",
+   "type": "site"
+  },
+  {
+   "id": "WISEKEY",
+   "label": "Wisekey",
+   "type": "site"
+  },
+  {
+   "id": "DANGDANG",
+   "label": "Dangdang",
+   "type": "site"
+  },
+  {
+   "id": "FACEIT",
+   "label": "Faceit",
+   "type": "site"
+  },
+  {
+   "id": "JIYUKOBO",
+   "label": "Jiyukobo",
+   "type": "site"
+  },
+  {
+   "id": "LOUISVUITTON",
+   "label": "Louisvuitton",
+   "type": "site"
+  },
+  {
+   "id": "SONY",
+   "label": "Sony",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-SPEEDTEST",
+   "label": "Category Speedtest",
+   "type": "aggregate"
+  },
+  {
+   "id": "CTRIP",
+   "label": "Ctrip",
+   "type": "site"
+  },
+  {
+   "id": "HUMBLEBUNDLE",
+   "label": "Humblebundle",
+   "type": "site"
+  },
+  {
+   "id": "LIKEE",
+   "label": "Likee",
+   "type": "site"
+  },
+  {
+   "id": "OKX",
+   "label": "Okx",
+   "type": "site"
+  },
+  {
+   "id": "XTOM",
+   "label": "Xtom",
+   "type": "site"
+  },
+  {
+   "id": "NARWAL",
+   "label": "Narwal",
+   "type": "site"
+  },
+  {
+   "id": "2KGAMES",
+   "label": "2Kgames",
+   "type": "site"
+  },
+  {
+   "id": "CITYU-HK",
+   "label": "Cityu Hk",
+   "type": "site"
+  },
+  {
+   "id": "GFYCAT",
+   "label": "Gfycat",
+   "type": "site"
+  },
+  {
+   "id": "SYMANTEC",
+   "label": "Symantec",
+   "type": "site"
+  },
+  {
+   "id": "FLOWUS",
+   "label": "Flowus",
+   "type": "site"
+  },
+  {
+   "id": "STARTPAGE",
+   "label": "Startpage",
+   "type": "site"
+  },
+  {
+   "id": "COPYMANGA",
+   "label": "Copymanga",
+   "type": "site"
+  },
+  {
+   "id": "EMBARK",
+   "label": "Embark",
+   "type": "site"
+  },
+  {
+   "id": "ENVATO",
+   "label": "Envato",
+   "type": "site"
+  },
+  {
+   "id": "GREE",
+   "label": "Gree",
+   "type": "site"
+  },
+  {
+   "id": "MOJI",
+   "label": "Moji",
+   "type": "site"
+  },
+  {
+   "id": "OPPO",
+   "label": "Oppo",
+   "type": "site"
+  },
+  {
+   "id": "RAIFFEISENBANK",
+   "label": "Raiffeisenbank",
+   "type": "site"
+  },
+  {
+   "id": "YNET",
+   "label": "Ynet",
+   "type": "site"
+  },
+  {
+   "id": "COOMER",
+   "label": "Coomer",
+   "type": "site"
+  },
+  {
+   "id": "ESCAPEFROMTARKOV",
+   "label": "Escapefromtarkov",
+   "type": "site"
+  },
+  {
+   "id": "KEEP",
+   "label": "Keep",
+   "type": "site"
+  },
+  {
+   "id": "MSI",
+   "label": "Msi",
+   "type": "site"
+  },
+  {
+   "id": "SKY",
+   "label": "Sky",
+   "type": "site"
+  },
+  {
+   "id": "928PLUS",
+   "label": "928Plus",
+   "type": "site"
+  },
+  {
+   "id": "AMC",
+   "label": "Amc",
+   "type": "site"
+  },
+  {
+   "id": "BLUESKY",
+   "label": "Bluesky",
+   "type": "site"
+  },
+  {
+   "id": "DDMAICAI",
+   "label": "Ddmaicai",
+   "type": "site"
+  },
+  {
+   "id": "FICBOOK",
+   "label": "Ficbook",
+   "type": "site"
+  },
+  {
+   "id": "GMO-INTERNET",
+   "label": "Gmo Internet",
+   "type": "site"
+  },
+  {
+   "id": "KUBERNETES",
+   "label": "Kubernetes",
+   "type": "site"
+  },
+  {
+   "id": "MEIZU",
+   "label": "Meizu",
+   "type": "site"
+  },
+  {
+   "id": "METACRITIC",
+   "label": "Metacritic",
+   "type": "site"
+  },
+  {
+   "id": "NEXO",
+   "label": "Nexo",
+   "type": "site"
+  },
+  {
+   "id": "AIRBNB",
+   "label": "Airbnb",
+   "type": "site"
+  },
+  {
+   "id": "APPLE-UPDATE",
+   "label": "Apple Update",
+   "type": "site"
+  },
+  {
+   "id": "BYTEDANCE",
+   "label": "Bytedance",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-GOV-IR",
+   "label": "Category Gov Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "NUTAKU",
+   "label": "Nutaku",
+   "type": "site"
+  },
+  {
+   "id": "PIRATEBAY",
+   "label": "Piratebay",
+   "type": "site"
+  },
+  {
+   "id": "SHARETHIS",
+   "label": "Sharethis",
+   "type": "site"
+  },
+  {
+   "id": "SNAPCRAFT",
+   "label": "Snapcraft",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-LOGISTICS-CN",
+   "label": "Category Logistics Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "DEWU",
+   "label": "Dewu",
+   "type": "site"
+  },
+  {
+   "id": "TENCENT-DEV",
+   "label": "Tencent Dev",
+   "type": "site"
+  },
+  {
+   "id": "VOANEWS",
+   "label": "Voanews",
+   "type": "site"
+  },
+  {
+   "id": "ZB",
+   "label": "Zb",
+   "type": "site"
+  },
+  {
+   "id": "IHUMAN",
+   "label": "Ihuman",
+   "type": "site"
+  },
+  {
+   "id": "TONGCHENG",
+   "label": "Tongcheng",
+   "type": "site"
+  },
+  {
+   "id": "VERCEL",
+   "label": "Vercel",
+   "type": "site"
+  },
+  {
+   "id": "WHATSAPP",
+   "label": "Whatsapp",
+   "type": "site"
+  },
+  {
+   "id": "CLOUDINARY",
+   "label": "Cloudinary",
+   "type": "site"
+  },
+  {
+   "id": "EMBL",
+   "label": "Embl",
+   "type": "site"
+  },
+  {
+   "id": "HDREZKA",
+   "label": "Hdrezka",
+   "type": "site"
+  },
+  {
+   "id": "PLAYBOY",
+   "label": "Playboy",
+   "type": "site"
+  },
+  {
+   "id": "SUPERSONIC",
+   "label": "Supersonic",
+   "type": "site"
+  },
+  {
+   "id": "TMDB",
+   "label": "Tmdb",
+   "type": "site"
+  },
+  {
+   "id": "YOSTAR",
+   "label": "Yostar",
+   "type": "site"
+  },
+  {
+   "id": "YUEWEN",
+   "label": "Yuewen",
+   "type": "site"
+  },
+  {
+   "id": "ICLOUDPRIVATERELAY",
+   "label": "Icloudprivaterelay",
+   "type": "site"
+  },
+  {
+   "id": "NOIP",
+   "label": "Noip",
+   "type": "site"
+  },
+  {
+   "id": "PERL",
+   "label": "Perl",
+   "type": "site"
+  },
+  {
+   "id": "PLAYCOVER",
+   "label": "Playcover",
+   "type": "site"
+  },
+  {
+   "id": "SPACEMAIL",
+   "label": "Spacemail",
+   "type": "site"
+  },
+  {
+   "id": "TESLA",
+   "label": "Tesla",
+   "type": "site"
+  },
+  {
+   "id": "BANGUMI",
+   "label": "Bangumi",
+   "type": "site"
+  },
+  {
+   "id": "INTUIT",
+   "label": "Intuit",
+   "type": "site"
+  },
+  {
+   "id": "KUWO",
+   "label": "Kuwo",
+   "type": "site"
+  },
+  {
+   "id": "LARK",
+   "label": "Lark",
+   "type": "site"
+  },
+  {
+   "id": "XEDGE",
+   "label": "Xedge",
+   "type": "site"
+  },
+  {
+   "id": "AMD",
+   "label": "Amd",
+   "type": "site"
+  },
+  {
+   "id": "CABLETV",
+   "label": "Cabletv",
+   "type": "site"
+  },
+  {
+   "id": "CNET",
+   "label": "Cnet",
+   "type": "site"
+  },
+  {
+   "id": "CURSEFORGE",
+   "label": "Curseforge",
+   "type": "site"
+  },
+  {
+   "id": "HUGGINGFACE",
+   "label": "Huggingface",
+   "type": "site"
+  },
+  {
+   "id": "SENTRY",
+   "label": "Sentry",
+   "type": "site"
+  },
+  {
+   "id": "SWIFT",
+   "label": "Swift",
+   "type": "site"
+  },
+  {
+   "id": "YUNLAOPO",
+   "label": "Yunlaopo",
+   "type": "site"
+  },
+  {
+   "id": "ACTIVISION",
+   "label": "Activision",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-WIKI-CN",
+   "label": "Category Wiki Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CTEXCEL",
+   "label": "Ctexcel",
+   "type": "site"
+  },
+  {
+   "id": "GRAVATAR",
+   "label": "Gravatar",
+   "type": "site"
+  },
+  {
+   "id": "HENTAIVN",
+   "label": "Hentaivn",
+   "type": "site"
+  },
+  {
+   "id": "KONTUR",
+   "label": "Kontur",
+   "type": "site"
+  },
+  {
+   "id": "PROTONMAIL",
+   "label": "Protonmail",
+   "type": "site"
+  },
+  {
+   "id": "QWEATHER",
+   "label": "Qweather",
+   "type": "site"
+  },
+  {
+   "id": "ILLUSION",
+   "label": "Illusion",
+   "type": "site"
+  },
+  {
+   "id": "NEWSCORP",
+   "label": "Newscorp",
+   "type": "site"
+  },
+  {
+   "id": "OPENREC",
+   "label": "Openrec",
+   "type": "site"
+  },
+  {
+   "id": "STARFIELDTECH",
+   "label": "Starfieldtech",
+   "type": "site"
+  },
+  {
+   "id": "SUMKOO",
+   "label": "Sumkoo",
+   "type": "site"
+  },
+  {
+   "id": "TEAMSPEAK",
+   "label": "Teamspeak",
+   "type": "site"
+  },
+  {
+   "id": "VRZWK",
+   "label": "Vrzwk",
+   "type": "site"
+  },
+  {
+   "id": "XDTY",
+   "label": "Xdty",
+   "type": "site"
+  },
+  {
+   "id": "QUIP",
+   "label": "Quip",
+   "type": "site"
+  },
+  {
+   "id": "YOMIURI",
+   "label": "Yomiuri",
+   "type": "site"
+  },
+  {
+   "id": "AUXGROUP",
+   "label": "Auxgroup",
+   "type": "site"
+  },
+  {
+   "id": "CLEARASIL",
+   "label": "Clearasil",
+   "type": "site"
+  },
+  {
+   "id": "COMFY-UI-LAUNCHER",
+   "label": "Comfy Ui Launcher",
+   "type": "site"
+  },
+  {
+   "id": "GRAPHENEOS",
+   "label": "Grapheneos",
+   "type": "site"
+  },
+  {
+   "id": "JWPLAYER",
+   "label": "Jwplayer",
+   "type": "site"
+  },
+  {
+   "id": "LOCALBITCOINS",
+   "label": "Localbitcoins",
+   "type": "site"
+  },
+  {
+   "id": "MANUS",
+   "label": "Manus",
+   "type": "site"
+  },
+  {
+   "id": "RAZER",
+   "label": "Razer",
+   "type": "site"
+  },
+  {
+   "id": "BOXUN",
+   "label": "Boxun",
+   "type": "site"
+  },
+  {
+   "id": "FARFETCH",
+   "label": "Farfetch",
+   "type": "site"
+  },
+  {
+   "id": "GEOLOCATION-CN",
+   "label": "Geolocation Cn",
+   "type": "site"
+  },
+  {
+   "id": "KU6",
+   "label": "Ku6",
+   "type": "site"
+  },
+  {
+   "id": "OPENCOLLECTIVE",
+   "label": "Opencollective",
+   "type": "site"
+  },
+  {
+   "id": "REALITYKINGS",
+   "label": "Realitykings",
+   "type": "site"
+  },
+  {
+   "id": "STREPSILS",
+   "label": "Strepsils",
+   "type": "site"
+  },
+  {
+   "id": "VERISIGN-PKI",
+   "label": "Verisign Pki",
+   "type": "site"
+  },
+  {
+   "id": "9NEWS",
+   "label": "9News",
+   "type": "site"
+  },
+  {
+   "id": "APPLE",
+   "label": "Apple",
+   "type": "site"
+  },
+  {
+   "id": "PORNPROS",
+   "label": "Pornpros",
+   "type": "site"
+  },
+  {
+   "id": "SELECTEL",
+   "label": "Selectel",
+   "type": "site"
+  },
+  {
+   "id": "SURUGA-YA",
+   "label": "Suruga Ya",
+   "type": "site"
+  },
+  {
+   "id": "ALIGAMES",
+   "label": "Aligames",
+   "type": "site"
+  },
+  {
+   "id": "DISCOURSE",
+   "label": "Discourse",
+   "type": "site"
+  },
+  {
+   "id": "DISCOVERYPLUS",
+   "label": "Discoveryplus",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLE-REGISTRY",
+   "label": "Google Registry",
+   "type": "site"
+  },
+  {
+   "id": "JIEMIAN",
+   "label": "Jiemian",
+   "type": "site"
+  },
+  {
+   "id": "OKAAPPS",
+   "label": "Okaapps",
+   "type": "site"
+  },
+  {
+   "id": "VRCHAT",
+   "label": "Vrchat",
+   "type": "site"
+  },
+  {
+   "id": "ZIROOM",
+   "label": "Ziroom",
+   "type": "site"
+  },
+  {
+   "id": "BITWARDEN",
+   "label": "Bitwarden",
+   "type": "site"
+  },
+  {
+   "id": "LIGASTAVOK",
+   "label": "Ligastavok",
+   "type": "site"
+  },
+  {
+   "id": "ONEDRIVE",
+   "label": "Onedrive",
+   "type": "site"
+  },
+  {
+   "id": "RUST",
+   "label": "Rust",
+   "type": "site"
+  },
+  {
+   "id": "APPLE-PODCASTS",
+   "label": "Apple Podcasts",
+   "type": "site"
+  },
+  {
+   "id": "BOOKS",
+   "label": "Books",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-SOCIAL-MEDIA-CN",
+   "label": "Category Social Media Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-TRAVEL-RU",
+   "label": "Category Travel Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "CHEGG",
+   "label": "Chegg",
+   "type": "site"
+  },
+  {
+   "id": "GLOBALVOICES",
+   "label": "Globalvoices",
+   "type": "site"
+  },
+  {
+   "id": "TORPROJECT",
+   "label": "Torproject",
+   "type": "site"
+  },
+  {
+   "id": "AFP",
+   "label": "Afp",
+   "type": "site"
+  },
+  {
+   "id": "FIREBASE",
+   "label": "Firebase",
+   "type": "site"
+  },
+  {
+   "id": "INSIDER",
+   "label": "Insider",
+   "type": "site"
+  },
+  {
+   "id": "MICROSOFT",
+   "label": "Microsoft",
+   "type": "site"
+  },
+  {
+   "id": "TED",
+   "label": "Ted",
+   "type": "site"
+  },
+  {
+   "id": "TIDAL",
+   "label": "Tidal",
+   "type": "site"
+  },
+  {
+   "id": "TSQUARE",
+   "label": "Tsquare",
+   "type": "site"
+  },
+  {
+   "id": "WINDY",
+   "label": "Windy",
+   "type": "site"
+  },
+  {
+   "id": "CHESSCOM",
+   "label": "Chesscom",
+   "type": "site"
+  },
+  {
+   "id": "CHINAPOWER",
+   "label": "Chinapower",
+   "type": "site"
+  },
+  {
+   "id": "MUCINEX",
+   "label": "Mucinex",
+   "type": "site"
+  },
+  {
+   "id": "NEXON",
+   "label": "Nexon",
+   "type": "site"
+  },
+  {
+   "id": "NGROK",
+   "label": "Ngrok",
+   "type": "site"
+  },
+  {
+   "id": "SAFEPAL",
+   "label": "Safepal",
+   "type": "site"
+  },
+  {
+   "id": "FEEDLY",
+   "label": "Feedly",
+   "type": "site"
+  },
+  {
+   "id": "MOJANG",
+   "label": "Mojang",
+   "type": "site"
+  },
+  {
+   "id": "PBS",
+   "label": "Pbs",
+   "type": "site"
+  },
+  {
+   "id": "PERPLEXITY",
+   "label": "Perplexity",
+   "type": "site"
+  },
+  {
+   "id": "ZEPLIN",
+   "label": "Zeplin",
+   "type": "site"
+  },
+  {
+   "id": "BETHESDA",
+   "label": "Bethesda",
+   "type": "site"
+  },
+  {
+   "id": "EA",
+   "label": "Ea",
+   "type": "site"
+  },
+  {
+   "id": "NINTENDO",
+   "label": "Nintendo",
+   "type": "site"
+  },
+  {
+   "id": "RUTRACKER",
+   "label": "Rutracker",
+   "type": "site"
+  },
+  {
+   "id": "TIANYANCHA",
+   "label": "Tianyancha",
+   "type": "site"
+  },
+  {
+   "id": "TOKYO-SPORTS",
+   "label": "Tokyo Sports",
+   "type": "site"
+  },
+  {
+   "id": "36KR",
+   "label": "36Kr",
+   "type": "site"
+  },
+  {
+   "id": "GOG",
+   "label": "Gog",
+   "type": "site"
+  },
+  {
+   "id": "STAGE1ST",
+   "label": "Stage1St",
+   "type": "site"
+  },
+  {
+   "id": "5CH",
+   "label": "5Ch",
+   "type": "site"
+  },
+  {
+   "id": "AGILEBITS",
+   "label": "Agilebits",
+   "type": "site"
+  },
+  {
+   "id": "HUANGHUAGANG",
+   "label": "Huanghuagang",
+   "type": "site"
+  },
+  {
+   "id": "ILLGAMES",
+   "label": "Illgames",
+   "type": "site"
+  },
+  {
+   "id": "JSDELIVR",
+   "label": "Jsdelivr",
+   "type": "site"
+  },
+  {
+   "id": "SCIENCEDIRECT",
+   "label": "Sciencedirect",
+   "type": "site"
+  },
+  {
+   "id": "WEBNOVEL",
+   "label": "Webnovel",
+   "type": "site"
+  },
+  {
+   "id": "ADGUARD",
+   "label": "Adguard",
+   "type": "site"
+  },
+  {
+   "id": "AVIASALES",
+   "label": "Aviasales",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-GAME-PLATFORMS-DOWNLOAD",
+   "label": "Category Game Platforms Download",
+   "type": "aggregate"
+  },
+  {
+   "id": "DAILYMAIL",
+   "label": "Dailymail",
+   "type": "site"
+  },
+  {
+   "id": "ENEBA",
+   "label": "Eneba",
+   "type": "site"
+  },
+  {
+   "id": "MAGNIT",
+   "label": "Magnit",
+   "type": "site"
+  },
+  {
+   "id": "CHEETAHMOBILE",
+   "label": "Cheetahmobile",
+   "type": "site"
+  },
+  {
+   "id": "ENTERMEDIADB",
+   "label": "Entermediadb",
+   "type": "site"
+  },
+  {
+   "id": "ESPN",
+   "label": "Espn",
+   "type": "site"
+  },
+  {
+   "id": "LONDONREAL",
+   "label": "Londonreal",
+   "type": "site"
+  },
+  {
+   "id": "NIC-RU",
+   "label": "Nic Ru",
+   "type": "site"
+  },
+  {
+   "id": "QCLOUD",
+   "label": "Qcloud",
+   "type": "site"
+  },
+  {
+   "id": "APIFOX",
+   "label": "Apifox",
+   "type": "site"
+  },
+  {
+   "id": "BOYLOVE",
+   "label": "Boylove",
+   "type": "site"
+  },
+  {
+   "id": "DOUYU",
+   "label": "Douyu",
+   "type": "site"
+  },
+  {
+   "id": "HEROKU",
+   "label": "Heroku",
+   "type": "site"
+  },
+  {
+   "id": "OAN",
+   "label": "Oan",
+   "type": "site"
+  },
+  {
+   "id": "PANDANET",
+   "label": "Pandanet",
+   "type": "site"
+  },
+  {
+   "id": "RT",
+   "label": "Rt",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-NETDISK-!CN",
+   "label": "Category Netdisk !Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "FORZA",
+   "label": "Forza",
+   "type": "site"
+  },
+  {
+   "id": "HIKVISION",
+   "label": "Hikvision",
+   "type": "site"
+  },
+  {
+   "id": "HOYOVERSE",
+   "label": "Hoyoverse",
+   "type": "site"
+  },
+  {
+   "id": "SOKOLOV",
+   "label": "Sokolov",
+   "type": "site"
+  },
+  {
+   "id": "SQUAREUP",
+   "label": "Squareup",
+   "type": "site"
+  },
+  {
+   "id": "GLOBO",
+   "label": "Globo",
+   "type": "site"
+  },
+  {
+   "id": "HTTPDNS",
+   "label": "Httpdns",
+   "type": "site"
+  },
+  {
+   "id": "RAKUTEN",
+   "label": "Rakuten",
+   "type": "site"
+  },
+  {
+   "id": "TIDELIFT",
+   "label": "Tidelift",
+   "type": "site"
+  },
+  {
+   "id": "ACFUN",
+   "label": "Acfun",
+   "type": "site"
+  },
+  {
+   "id": "BOOKING",
+   "label": "Booking",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-ECOMMERCE-RU",
+   "label": "Category Ecommerce Ru",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-TECH-MEDIA",
+   "label": "Category Tech Media",
+   "type": "aggregate"
+  },
+  {
+   "id": "OP",
+   "label": "Op",
+   "type": "site"
+  },
+  {
+   "id": "VIBER",
+   "label": "Viber",
+   "type": "site"
+  },
+  {
+   "id": "EBUYER",
+   "label": "Ebuyer",
+   "type": "site"
+  },
+  {
+   "id": "MISSKEY-UNIVERSE",
+   "label": "Misskey Universe",
+   "type": "site"
+  },
+  {
+   "id": "SMZDM",
+   "label": "Smzdm",
+   "type": "site"
+  },
+  {
+   "id": "BANDWAGONHOST",
+   "label": "Bandwagonhost",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-BOURSE-IR",
+   "label": "Category Bourse Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "IFLYTEK",
+   "label": "Iflytek",
+   "type": "site"
+  },
+  {
+   "id": "SHADOWSOCKSCOM",
+   "label": "Shadowsockscom",
+   "type": "site"
+  },
+  {
+   "id": "WESTERNDIGITAL",
+   "label": "Westerndigital",
+   "type": "site"
+  },
+  {
+   "id": "ZYNGA",
+   "label": "Zynga",
+   "type": "site"
+  },
+  {
+   "id": "ARCHIVE",
+   "label": "Archive",
+   "type": "site"
+  },
+  {
+   "id": "GITLAB",
+   "label": "Gitlab",
+   "type": "site"
+  },
+  {
+   "id": "KINOPUB",
+   "label": "Kinopub",
+   "type": "site"
+  },
+  {
+   "id": "MIDEA",
+   "label": "Midea",
+   "type": "site"
+  },
+  {
+   "id": "PINGAN",
+   "label": "Pingan",
+   "type": "site"
+  },
+  {
+   "id": "T2-RU",
+   "label": "T2 Ru",
+   "type": "site"
+  },
+  {
+   "id": "ADJUST",
+   "label": "Adjust",
+   "type": "site"
+  },
+  {
+   "id": "DOUBAN",
+   "label": "Douban",
+   "type": "site"
+  },
+  {
+   "id": "FORMULA1",
+   "label": "Formula1",
+   "type": "site"
+  },
+  {
+   "id": "LETSENCRYPT",
+   "label": "Letsencrypt",
+   "type": "site"
+  },
+  {
+   "id": "OPENWRT",
+   "label": "Openwrt",
+   "type": "site"
+  },
+  {
+   "id": "STANDARDCHARTERED",
+   "label": "Standardchartered",
+   "type": "site"
+  },
+  {
+   "id": "MIHOYO-CN",
+   "label": "Mihoyo Cn",
+   "type": "site"
+  },
+  {
+   "id": "NOWCODER",
+   "label": "Nowcoder",
+   "type": "site"
+  },
+  {
+   "id": "SPACEX",
+   "label": "Spacex",
+   "type": "site"
+  },
+  {
+   "id": "SYNOLOGY",
+   "label": "Synology",
+   "type": "site"
+  },
+  {
+   "id": "BRIDGESTONE",
+   "label": "Bridgestone",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-PAYMENT-IR",
+   "label": "Category Payment Ir",
+   "type": "aggregate"
+  },
+  {
+   "id": "DOCKER",
+   "label": "Docker",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLE-DEEPMIND",
+   "label": "Google Deepmind",
+   "type": "site"
+  },
+  {
+   "id": "MAOCLOUD",
+   "label": "Maocloud",
+   "type": "site"
+  },
+  {
+   "id": "APPLE-TVPLUS",
+   "label": "Apple Tvplus",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-BROWSER-!CN",
+   "label": "Category Browser !Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CATEGORY-ORGS",
+   "label": "Category Orgs",
+   "type": "aggregate"
+  },
+  {
+   "id": "ICABLE",
+   "label": "Icable",
+   "type": "site"
+  },
+  {
+   "id": "IFAST",
+   "label": "Ifast",
+   "type": "site"
+  },
+  {
+   "id": "JAVA",
+   "label": "Java",
+   "type": "site"
+  },
+  {
+   "id": "KONAMI",
+   "label": "Konami",
+   "type": "site"
+  },
+  {
+   "id": "MEDIACHINESEGROUP",
+   "label": "Mediachinesegroup",
+   "type": "site"
+  },
+  {
+   "id": "AVMOO",
+   "label": "Avmoo",
+   "type": "site"
+  },
+  {
+   "id": "CAMBRIDGE",
+   "label": "Cambridge",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-BANK-CN",
+   "label": "Category Bank Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "CLEARBIT",
+   "label": "Clearbit",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLE-REGISTRY-TLD",
+   "label": "Google Registry Tld",
+   "type": "site"
+  },
+  {
+   "id": "HASKELL",
+   "label": "Haskell",
+   "type": "site"
+  },
+  {
+   "id": "MAILCOM",
+   "label": "Mailcom",
+   "type": "site"
+  },
+  {
+   "id": "MORTEIN",
+   "label": "Mortein",
+   "type": "site"
+  },
+  {
+   "id": "CHAOXING",
+   "label": "Chaoxing",
+   "type": "site"
+  },
+  {
+   "id": "MIXI",
+   "label": "Mixi",
+   "type": "site"
+  },
+  {
+   "id": "NODESEEK",
+   "label": "Nodeseek",
+   "type": "site"
+  },
+  {
+   "id": "SEASUN",
+   "label": "Seasun",
+   "type": "site"
+  },
+  {
+   "id": "SPEEDTEST",
+   "label": "Speedtest",
+   "type": "site"
+  },
+  {
+   "id": "TRANSLATEWIKI",
+   "label": "Translatewiki",
+   "type": "site"
+  },
+  {
+   "id": "TUMBLR",
+   "label": "Tumblr",
+   "type": "site"
+  },
+  {
+   "id": "TYPEKIT",
+   "label": "Typekit",
+   "type": "site"
+  },
+  {
+   "id": "GITHUB1S",
+   "label": "Github1S",
+   "type": "site"
+  },
+  {
+   "id": "GOOGLE",
+   "label": "Google",
+   "type": "site"
+  },
+  {
+   "id": "RADIKO",
+   "label": "Radiko",
+   "type": "site"
+  },
+  {
+   "id": "REABBLE",
+   "label": "Reabble",
+   "type": "site"
+  },
+  {
+   "id": "TEMP-MAIL",
+   "label": "Temp Mail",
+   "type": "site"
+  },
+  {
+   "id": "WBGAMES",
+   "label": "Wbgames",
+   "type": "site"
+  },
+  {
+   "id": "XVIDEOS",
+   "label": "Xvideos",
+   "type": "site"
+  },
+  {
+   "id": "17ZUOYE",
+   "label": "17Zuoye",
+   "type": "site"
+  },
+  {
+   "id": "BILIBILI-GAME",
+   "label": "Bilibili Game",
+   "type": "site"
+  },
+  {
+   "id": "CATCHPLAY",
+   "label": "Catchplay",
+   "type": "site"
+  },
+  {
+   "id": "DAZN",
+   "label": "Dazn",
+   "type": "site"
+  },
+  {
+   "id": "HUJIANG",
+   "label": "Hujiang",
+   "type": "site"
+  },
+  {
+   "id": "SPOTIFY",
+   "label": "Spotify",
+   "type": "site"
+  },
+  {
+   "id": "WANMEI",
+   "label": "Wanmei",
+   "type": "site"
+  },
+  {
+   "id": "WIN-EXTRA",
+   "label": "Win Extra",
+   "type": "site"
+  },
+  {
+   "id": "BONGACAMS",
+   "label": "Bongacams",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-COLLABORATE-CN",
+   "label": "Category Collaborate Cn",
+   "type": "aggregate"
+  },
+  {
+   "id": "HONGKONGPOST",
+   "label": "Hongkongpost",
+   "type": "site"
+  },
+  {
+   "id": "TEAMVIEWER",
+   "label": "Teamviewer",
+   "type": "site"
+  },
+  {
+   "id": "WASU",
+   "label": "Wasu",
+   "type": "site"
+  },
+  {
+   "id": "CATEGORY-REMOTE-CONTROL",
+   "label": "Category Remote Control",
+   "type": "aggregate"
+  },
+  {
+   "id": "DWION",
+   "label": "Dwion",
+   "type": "site"
+  },
+  {
+   "id": "KASPERSKY",
+   "label": "Kaspersky",
+   "type": "site"
+  },
+  {
+   "id": "LIZHI",
+   "label": "Lizhi",
+   "type": "site"
+  }
+ ]
+}
