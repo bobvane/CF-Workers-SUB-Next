@@ -772,10 +772,8 @@ let nodeSaveTimer = null;
 function saveNodeEnabled() {
   clearTimeout(nodeSaveTimer);
   nodeSaveTimer = setTimeout(async () => {
-    const enabled = [];
-    document.querySelectorAll('#nodesTableBody input[type="checkbox"][data-fp]').forEach(c => {
-      if (c.checked) enabled.push(c.dataset.fp);
-    });
+    // 基于 state.nodes 全量数据构建（不受搜索过滤影响）
+    const enabled = state.nodes.filter(n => n.enabled).map(n => n.fingerprint);
     try {
       await api('/nodes/enabled', { method: 'PUT', body: JSON.stringify({ enabled }) });
       toast('节点选择已保存');
