@@ -27,7 +27,6 @@
 
 1. Cloudflare 账号
 2. GitHub 账号
-3. Node.js 20+（本地开发用）
 
 ### 第一步：创建 KV 命名空间
 
@@ -46,7 +45,7 @@
 | `ADMIN_PASSWORD` | 管理界面登录密码 | ✅ |
 | `SESSION_SECRET` | Session 加密密钥（随机字符串） | ✅ |
 
-### 第四步：推送代码触发部署
+### 第三步：推送代码触发部署
 
 推送 `main` 分支，GitHub Actions 自动构建并部署。
 
@@ -55,27 +54,6 @@
 https://<你的-worker名>.<子域>.workers.dev
 ```
 使用 `ADMIN_PASSWORD` 设置的密码登录。
-
----
-
-## 💻 本地开发
-
-```bash
-npm install
-cp .dev.vars.example .dev.vars   # 填入 ADMIN_PASSWORD / SESSION_SECRET
-npm run dev                       # wrangler dev --local
-```
-
-访问 `http://localhost:8787`。
-
-### 常用命令
-
-| 命令 | 说明 |
-|------|------|
-| `npm run dev` | 本地开发服务器 |
-| `npm test` | 运行测试（Vitest） |
-| `npm run build` | 构建（内联 HTML + 类型检查） |
-| `npm run deploy` | 部署到 Cloudflare Workers |
 
 ---
 
