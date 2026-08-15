@@ -36,6 +36,20 @@ export interface CatalogEntry {
   type: 'aggregate' | 'site' | 'tld';
 }
 
+/** 用户自定义加入的规则（存 KV，合并进 RULE_GROUPS 展示与生成） */
+export interface CustomRule {
+  /** geosite 分类 id（大写） */
+  id: string;
+  /** 显示名（用户可改） */
+  label: string;
+  /** 归入的大分组 key（必须是 RULE_GROUPS 中的 key） */
+  groupKey: string;
+  /** 分流目标 */
+  target: 'PROXY' | 'DIRECT' | 'REJECT';
+  /** 添加时间戳 */
+  createdAt?: number;
+}
+
 export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog: CatalogEntry[] } = catalogRaw as unknown as {
   meta: Record<string, string | number>;
   catalog: CatalogEntry[];
@@ -194,4 +208,39 @@ export function findCatalogEntry(id: string): CatalogEntry | undefined {
 /** 检查分类是否存在于真实 geosite 数据 */
 export function isValidCategory(id: string): boolean {
   return METACUBEX_CATALOG.catalog.some(e => e.id === id.toUpperCase());
+}
+
+/**
+ * 将自定义规则合并进 RULE_GROUPS（按 groupKey 插入对应分组）
+ * 返回新的分组数组（不修改原常量）
+ */
+export function mergeCustomRules(custom: CustomRule[]): RuleGroup[] {
+  if (custom.length === 0) return RULE_GROUPS;
+  const groups = RULE_GROUPS.map(g => ({ key: g.key, name: g.name, icon: g.icon, items: [...g.items] }));
+  for (const c of custom) {
+    const group = groups.find(g => g.key === c.groupKey);
+    const item: MetaCubeXRule = { id: c.id, label: c.label, tag: 'geosite', target: c.target };
+    if (group) {
+      // 去重：同一分组内已存在同 id 则替换
+      const idx = group.items.findIndex(i => i.id === c.id);
+      if (idx >= 0) group.items[idx] = item;
+      else group.items.push(item);
+    } else {
+      // 分组不存在则放到"其他常用"，不存在就建一个
+      const other = groups.find(g => g.key === 'other');
+      if (other && !other.items.some(i => i.id === c.id)) other.items.push(item);
+    }
+  }
+  return groups;
+}
+
+/**
+ * 在合并了自定义规则的分组中查找规则（含自定义）
+ */
+export function findRuleInGroups(groups: RuleGroup[], id: string): MetaCubeXRule | undefined {
+  for (const g of groups) {
+    const f = g.items.find(i => i.id === id);
+    if (f) return f;
+  }
+  return undefined;
 }

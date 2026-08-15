@@ -299,10 +299,10 @@ export function createApp(deps: AppDeps): Hono {
 
   // ============ Rules API (分流规则) ============
 
-  // 获取预定义规则大类（前端规则页的数据源）
+  // 获取预定义规则大类（已合并用户自定义规则，前端规则页的数据源）
   app.get('/api/rules/groups', async (c) => {
-    const { RULE_GROUPS } = await import('@/data/metacubex-rules');
-    return c.json({ success: true, data: { groups: RULE_GROUPS } });
+    const groups = await config.getMergedGroups();
+    return c.json({ success: true, data: { groups } });
   });
 
   // 获取 MetaCubeX 全量分类目录（供扫描/搜索/添加，含 1546 个分类）
@@ -334,6 +334,33 @@ export function createApp(deps: AppDeps): Hono {
     }
     await config.setSelectedRuleIds(body.ids);
     return c.json({ success: true, data: { ids: body.ids } });
+  });
+
+  // 获取用户自定义规则列表
+  app.get('/api/rules/custom', async (c) => {
+    const rules = await config.getCustomRules();
+    return c.json({ success: true, data: { rules } });
+  });
+
+  // 添加/更新一条自定义规则
+  app.post('/api/rules/custom', async (c) => {
+    const body = await readBody<{ id?: string; label?: string; groupKey?: string; target?: string }>(c);
+    const id = (body.id || '').trim().toUpperCase();
+    if (!id) {
+      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'id 不能为空' } }, 400);
+    }
+    const groupKey = (body.groupKey || 'other').trim();
+    const target = (['PROXY', 'DIRECT', 'REJECT'].includes(body.target || '') ? body.target : 'PROXY') as 'PROXY' | 'DIRECT' | 'REJECT';
+    const label = (body.label || id).trim();
+    await config.upsertCustomRule({ id, label, groupKey, target });
+    return c.json({ success: true, data: { id } });
+  });
+
+  // 删除一条自定义规则
+  app.delete('/api/rules/custom/:id', async (c) => {
+    const id = c.req.param('id').toUpperCase();
+    await config.deleteCustomRule(id);
+    return c.json({ success: true, data: { id } });
   });
 
   // ============ Settings ============

@@ -252,6 +252,44 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
       </div>
       <button class="btn btn-primary mt-12" onclick="saveSettings()">💾 保存</button>
     </div>
+
+    <!-- 规则库：从 MetaCubeX 全量分类挑选加入分流规则 -->
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <h3 style="margin:0">📚 规则库 <span style="color:var(--text2);font-size:12px;font-weight:normal">从 1546 个 MetaCubeX 分类中挑选加入分流规则</span></h3>
+        <span style="color:var(--text2);font-size:12px" id="catalogCount"></span>
+      </div>
+      <div class="form-group">
+        <input id="catalogSearch" placeholder="🔍 输入分类名或搜索（如 netflix、openai、ads）…" oninput="debouncedSearchCatalog()">
+      </div>
+      <div id="catalogList" style="max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:8px">
+        <div style="color:var(--text2);padding:16px;text-align:center">输入关键词开始搜索</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 加入规则弹窗 -->
+  <div class="modal-overlay" id="addRuleModal">
+    <div class="modal-content" style="max-width:480px">
+      <div class="modal-header"><h3>➕ 加入分流规则</h3><button class="modal-close" onclick="closeModal('addRuleModal')">✕</button></div>
+      <div class="modal-body">
+        <div class="form-group"><label>分类 ID</label><input id="addRuleId" readonly></div>
+        <div class="form-group"><label>显示名称</label><input id="addRuleLabel" placeholder="例如: Netfilx"></div>
+        <div class="form-group">
+          <label>目标分组</label>
+          <select id="addRuleGroup"></select>
+        </div>
+        <div class="form-group">
+          <label>目标策略</label>
+          <select id="addRuleTarget">
+            <option value="PROXY">🚀 走代理 (PROXY)</option>
+            <option value="DIRECT">🟢 直连 (DIRECT)</option>
+            <option value="REJECT">🚫 拦截 (REJECT)</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="confirmAddRule()">✅ 加入规则</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -412,7 +450,7 @@ function switchPage(page) {
   if (page === 'nodes') loadNodes();
   if (page === 'output') loadOutput();
   if (page === 'rules') loadRules();
-  if (page === 'settings') loadSettings();
+  if (page === 'settings') { loadSettings(); ensureCatalogLoaded(); }
 }
 
 // ============ 分流规则 ============
@@ -851,6 +889,91 @@ async function saveSettings() {
     await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName }) });
     toast('设置已保存');
   } catch (e) { toast('保存失败: ' + e.message, 'error'); }
+}
+
+// ============ 规则库（设置页） ============
+let catalogAll = [];      // 全量 1546 分类
+let catalogSearchTimer = null;
+let addRuleGroupOptions = []; // 目标分组下拉选项
+
+// 首次进入设置页时加载 catalog 和分组下拉（只加载一次，后续复用）
+async function ensureCatalogLoaded() {
+  try {
+    if (catalogAll.length === 0) {
+      const groupsRes = await api('/rules/groups');
+      const groups = groupsRes.data?.groups || [];
+      // 缓存分组下拉选项
+      addRuleGroupOptions = groups.map(g => ({ key: g.key, name: g.icon + ' ' + g.name }));
+      // 加载 catalog 元信息（数量）
+      const catRes = await api('/rules/catalog?limit=1');
+      const total = catRes.data?.meta?.total ?? 0;
+      document.getElementById('catalogCount').textContent = total ? \`共 \${total} 个分类\` : '';
+      // 预填分组下拉
+      const sel = document.getElementById('addRuleGroup');
+      sel.innerHTML = addRuleGroupOptions.map(o => \`<option value="\${escHtml(o.key)}">\${escHtml(o.name)}</option>\`).join('');
+    }
+  } catch { /* catalog 加载失败静默，搜索时会再尝试 */ }
+}
+
+function debouncedSearchCatalog() {
+  clearTimeout(catalogSearchTimer);
+  catalogSearchTimer = setTimeout(searchCatalog, 250);
+}
+
+async function searchCatalog() {
+  const q = document.getElementById('catalogSearch').value.trim();
+  const list = document.getElementById('catalogList');
+  if (!q) {
+    list.innerHTML = '<div style="color:var(--text2);padding:16px;text-align:center">输入关键词开始搜索</div>';
+    return;
+  }
+  list.innerHTML = '<div style="color:var(--text2);padding:16px;text-align:center">⏳ 搜索中…</div>';
+  try {
+    const res = await api(\`/rules/catalog?q=\${encodeURIComponent(q)}&limit=200\`);
+    const items = res.data?.catalog || [];
+    if (items.length === 0) {
+      list.innerHTML = '<div style="color:var(--text2);padding:16px;text-align:center">未找到匹配的分类</div>';
+      return;
+    }
+    list.innerHTML = items.map(it => \`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <span style="font-weight:600">\${escHtml(it.id)}</span>
+          <span style="color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${escHtml(it.label || '')}</span>
+          <span style="color:var(--text2);font-size:11px;background:var(--bg);padding:2px 8px;border-radius:20px">\${it.type}</span>
+        </div>
+        <button class="btn btn-sm" onclick="openAddRule('\${escHtml(it.id)}','\${escHtml(it.label || '')}')">➕ 加入</button>
+      </div>\`).join('');
+  } catch { list.innerHTML = '<div style="color:var(--red);padding:16px;text-align:center">❌ 搜索失败</div>'; }
+}
+
+function openAddRule(id, label) {
+  document.getElementById('addRuleId').value = id;
+  document.getElementById('addRuleLabel').value = label || id;
+  // 重置分组和目标为默认
+  const groupSel = document.getElementById('addRuleGroup');
+  groupSel.value = 'other';
+  document.getElementById('addRuleTarget').value = 'PROXY';
+  document.getElementById('addRuleModal').classList.add('show');
+}
+
+async function confirmAddRule() {
+  const id = document.getElementById('addRuleId').value.trim();
+  const label = document.getElementById('addRuleLabel').value.trim() || id;
+  const groupKey = document.getElementById('addRuleGroup').value;
+  const target = document.getElementById('addRuleTarget').value;
+  if (!id) { toast('分类 ID 无效', 'error'); return; }
+  try {
+    await api('/rules/custom', {
+      method: 'POST',
+      body: JSON.stringify({ id, label, groupKey, target }),
+    });
+    toast('✅ 已加入规则库');
+    closeModal('addRuleModal');
+    // 刷新规则页，让新规则出现在对应分组；并清空搜索框恢复初始态
+    if (typeof RULE_GROUPS !== 'undefined') { RULE_GROUPS = []; }
+    if (window.pageRules) { /* no-op */ }
+  } catch (e) { toast('加入失败: ' + e.message, 'error'); }
 }
 
 // ============ Utils ============

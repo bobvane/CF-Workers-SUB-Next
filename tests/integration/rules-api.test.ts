@@ -134,4 +134,36 @@ describe('Rules API', () => {
     });
     expect(res.status).toBe(400);
   });
+
+  it('POST/GET/DELETE /api/rules/custom 自定义规则增删', async () => {
+    // 添加
+    const post = await app.request('/api/rules/custom', {
+      method: 'POST',
+      headers: { ...baseHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 'MY-SITE', label: '我的站点', groupKey: 'cloud', target: 'PROXY' }),
+    });
+    expect(post.status).toBe(200);
+    // 读取
+    const get = await app.request('/api/rules/custom', { headers: baseHeaders });
+    const getJson = (await get.json()) as ResData;
+    expect(getJson.success).toBe(true);
+    const rules = (getJson.data as unknown as { rules: { id: string }[] }).rules;
+    expect(rules.some(r => r.id === 'MY-SITE')).toBe(true);
+    // 删除
+    const del = await app.request('/api/rules/custom/MY-SITE', { method: 'DELETE', headers: baseHeaders });
+    expect(del.status).toBe(200);
+    const get2 = await app.request('/api/rules/custom', { headers: baseHeaders });
+    const get2Json = (await get2.json()) as ResData;
+    const rules2 = (get2Json.data as unknown as { rules: { id: string }[] }).rules;
+    expect(rules2.some(r => r.id === 'MY-SITE')).toBe(false);
+  });
+
+  it('POST /api/rules/custom 空id返回400', async () => {
+    const res = await app.request('/api/rules/custom', {
+      method: 'POST',
+      headers: { ...baseHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: '', label: '空', groupKey: 'other', target: 'PROXY' }),
+    });
+    expect(res.status).toBe(400);
+  });
 });

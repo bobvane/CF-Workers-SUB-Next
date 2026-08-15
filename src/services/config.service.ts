@@ -12,7 +12,7 @@ import { generateBase64Config } from '@/generator/base64-generator';
 import { generateSurgeConfig } from '@/generator/surge';
 import { generateQuantumultXConfig } from '@/generator/quantumultx';
 import { nodeToUrl } from '@/generator/node-to-url';
-import { MetaCubeXRule, RULE_GROUPS } from '@/data/metacubex-rules';
+import { MetaCubeXRule, RULE_GROUPS, CustomRule, mergeCustomRules, findRuleInGroups } from '@/data/metacubex-rules';
 
 export type OutputFormat =
   | 'mihomo'
@@ -45,6 +45,14 @@ export interface ConfigService {
   setSelectedRuleIds(ids: string[]): Promise<void>;
   /** 获取用户勾选的完整规则对象列表（由 id 解析自 RULE_GROUPS） */
   getSelectedRules(): Promise<MetaCubeXRule[]>;
+  /** 获取自定义规则列表 */
+  getCustomRules(): Promise<CustomRule[]>;
+  /** 添加/更新一条自定义规则 */
+  upsertCustomRule(rule: CustomRule): Promise<void>;
+  /** 删除一条自定义规则（按 id） */
+  deleteCustomRule(id: string): Promise<void>;
+  /** 获取合并自定义规则后的完整分组（供 /api/rules/groups 返回） */
+  getMergedGroups(): Promise<(typeof RULE_GROUPS)[number][]>;
 }
 
 const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string }> = {
@@ -61,9 +69,7 @@ const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string 
 
 const DISABLED_NODES_KEY = 'disabled_nodes';
 const SELECTED_RULES_KEY = 'selected_rules';
-
-/** 所有预定义规则平铺，供 id → 规则对象解析 */
-const ALL_RULES: MetaCubeXRule[] = RULE_GROUPS.flatMap((g) => g.items);
+const CUSTOM_RULES_KEY = 'custom_rules';
 
 export function createConfigService(repos: Repositories): ConfigService {
   return {
@@ -106,9 +112,46 @@ export function createConfigService(repos: Repositories): ConfigService {
 
     async getSelectedRules(): Promise<MetaCubeXRule[]> {
       const ids = await this.getSelectedRuleIds();
+      const groups = await this.getMergedGroups();
       return ids
-        .map((id) => ALL_RULES.find((r) => r.id === id))
+        .map((id) => findRuleInGroups(groups, id))
         .filter((r): r is MetaCubeXRule => r !== undefined);
+    },
+
+    async getCustomRules(): Promise<CustomRule[]> {
+      const raw = await repos.settings.get(CUSTOM_RULES_KEY);
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed as CustomRule[] : [];
+      } catch {
+        return [];
+      }
+    },
+
+    async upsertCustomRule(rule: CustomRule): Promise<void> {
+      const rules = await this.getCustomRules();
+      const idx = rules.findIndex((r) => r.id === rule.id);
+      const item: CustomRule = { ...rule, createdAt: rule.createdAt ?? Date.now() };
+      if (idx >= 0) rules[idx] = item;
+      else rules.push(item);
+      await repos.settings.set(CUSTOM_RULES_KEY, JSON.stringify(rules));
+    },
+
+    async deleteCustomRule(id: string): Promise<void> {
+      const rules = await this.getCustomRules();
+      const filtered = rules.filter((r) => r.id !== id);
+      await repos.settings.set(CUSTOM_RULES_KEY, JSON.stringify(filtered));
+      // 同时从勾选集合中移除
+      const selected = await this.getSelectedRuleIds();
+      if (selected.includes(id)) {
+        await this.setSelectedRuleIds(selected.filter((s) => s !== id));
+      }
+    },
+
+    async getMergedGroups() {
+      const custom = await this.getCustomRules();
+      return mergeCustomRules(custom);
     },
 
     async generate(format: OutputFormat): Promise<string> {
