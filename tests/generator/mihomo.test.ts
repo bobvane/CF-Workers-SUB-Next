@@ -71,7 +71,11 @@ describe('nodeToMihomoProxy', () => {
       makeNode({ flow: 'xtls-rprx-vision', pbk: 'pubkey', sid: 'abc' })
     );
     expect(proxy.flow).toBe('xtls-rprx-vision');
-    expect((proxy.realityOpts as Record<string, unknown>).publicKey).toBe('pubkey');
+    // Mihomo 用连字符字段 reality-opts（kebab-case）
+    const realityOpts = proxy['reality-opts'] as Record<string, unknown>;
+    expect(realityOpts['public-key']).toBe('pubkey');
+    expect(realityOpts['short-id']).toBe('abc');
+    expect(proxy['client-fingerprint']).toBe('chrome');
   });
 });
 
