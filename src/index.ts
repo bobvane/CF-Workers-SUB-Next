@@ -99,9 +99,9 @@ export default {
     }));
     const result = await catalogSync.sync();
     if (result.status === 'stale') {
-      console.error(`[CatalogSync] 扫描失败: ${result.error}`);
+      console.warn(`[CatalogSync] 扫描失败: ${result.error}`);
     } else {
-      console.log(`[CatalogSync] 扫描完成: ${result.total} 个分类, 新增 ${result.added.length}, 移除 ${result.removed.length}`);
+      console.warn(`[CatalogSync] 扫描完成: ${result.total} 个分类, 新增 ${result.added.length}, 移除 ${result.removed.length}`);
     }
   },
 };

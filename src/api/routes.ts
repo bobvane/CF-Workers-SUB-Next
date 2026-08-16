@@ -19,7 +19,7 @@ import { nodeToLink } from '@/services/config.service';
 import { nodeFingerprint } from '@/models/node';
 import { APP_META, isNewerVersion } from '@/meta';
 import { createCatalogSyncService, CatalogSyncService } from '@/services/catalog-sync.service';
-import { RuleCatalog, RuleCatalogMeta } from '@/models/rule-catalog';
+import { RuleCatalogMeta } from '@/models/rule-catalog';
 
 export interface AppDeps {
   repos: Repositories;
