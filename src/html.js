@@ -278,6 +278,22 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
         <div style="color:var(--text2);padding:16px;text-align:center">输入关键词开始搜索</div>
       </div>
     </div>
+
+    <!-- 规则库管理：状态/刷新/失效历史 -->
+    <div class="card" style="margin-top:16px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
+        <h3 style="margin:0">⚙️ 规则库管理</h3>
+        <button class="btn btn-sm" onclick="refreshCatalog()" id="catalogRefreshBtn">🔄 立即刷新</button>
+      </div>
+      <div id="catalogStatus" style="color:var(--text2);padding:8px 0">加载中…</div>
+      <div id="catalogRemovedSection" style="display:none;margin-top:8px">
+        <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleRemovedHistory()">
+          <span id="catalogRemovedToggle">▶</span>
+          <span style="font-size:13px;color:var(--text2)">失效分类历史 (<span id="catalogRemovedCount">0</span>)</span>
+        </div>
+        <div id="catalogRemovedList" style="display:none;margin-top:8px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:8px;font-size:13px"></div>
+      </div>
+    </div>
   </div>
 
   <!-- 加入规则弹窗 -->
@@ -938,6 +954,7 @@ async function loadSettings() {
     const data = await api('/settings');
     document.getElementById('settingAppName').value = data.data?.app_name || '';
   } catch {}
+  loadCatalogStatus();
 }
 
 async function saveSettings() {
@@ -946,6 +963,89 @@ async function saveSettings() {
     await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName }) });
     toast('设置已保存');
   } catch (e) { toast('保存失败: ' + e.message, 'error'); }
+}
+
+// ============ 规则库管理（设置页） ============
+
+/** 加载目录状态（更新时间/总数/失效数） */
+async function loadCatalogStatus() {
+  try {
+    const res = await api('/rules/catalog/meta');
+    const meta = res.data?.meta || {};
+    const removed = res.data?.removed || [];
+    const statusEl = document.getElementById('catalogStatus');
+    const removedSection = document.getElementById('catalogRemovedSection');
+    const removedCount = document.getElementById('catalogRemovedCount');
+
+    if (meta.status === 'never') {
+      statusEl.innerHTML = '⚠️ 尚未同步过规则库，点击「立即刷新」开始同步';
+      return;
+    }
+
+    const statusText = meta.status === 'stale' ? '🟡 数据过期' : '🟢 正常';
+    const lastUpdate = meta.fetchedAt ? new Date(meta.fetchedAt).toLocaleString('zh-CN') : '未知';
+    statusEl.innerHTML = \`
+      <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px">
+        <span>\${statusText}</span>
+        <span>上次更新: \${lastUpdate}</span>
+        <span>分类总数: \${meta.total ?? 0}</span>
+        <span>已失效移除: \${meta.removedCount ?? 0}</span>
+      </div>
+      \${meta.lastError ? \`<div style="color:var(--red);font-size:12px;margin-top:4px">上次错误: \${escHtml(meta.lastError)}</div>\` : ''}
+    \`;
+
+    if (removed.length > 0) {
+      removedSection.style.display = 'block';
+      removedCount.textContent = removed.length;
+      document.getElementById('catalogRemovedList').innerHTML = removed.map(r =>
+        \`<div style="display:flex;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px">
+          <span style="color:var(--red)">\${escHtml(r.id)}</span>
+          <span style="color:var(--text2)">\${new Date(r.removedAt).toLocaleString('zh-CN')}</span>
+        </div>\`
+      ).join('');
+    }
+  } catch {
+    document.getElementById('catalogStatus').innerHTML = '❌ 加载规则库状态失败';
+  }
+}
+
+/** 手动刷新规则库 */
+async function refreshCatalog() {
+  const btn = document.getElementById('catalogRefreshBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ 刷新中…';
+  try {
+    const res = await api('/rules/catalog/refresh', { method: 'POST' });
+    if (res.success) {
+      toast('✅ 规则库刷新完成');
+      // 重新加载状态和搜索
+      loadCatalogStatus();
+      // 清空搜索缓存，下次搜索走新数据
+      catalogAll = [];
+      const searchEl = document.getElementById('catalogSearch');
+      if (searchEl.value) debouncedSearchCatalog();
+    } else {
+      toast('❌ 刷新失败: ' + (res.error?.message || '未知错误'), 'error');
+    }
+  } catch (e) {
+    toast('❌ 刷新失败: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '🔄 立即刷新';
+  }
+}
+
+/** 展开/收起失效历史 */
+function toggleRemovedHistory() {
+  const list = document.getElementById('catalogRemovedList');
+  const toggle = document.getElementById('catalogRemovedToggle');
+  if (list.style.display === 'none') {
+    list.style.display = 'block';
+    toggle.textContent = '▼';
+  } else {
+    list.style.display = 'none';
+    toggle.textContent = '▶';
+  }
 }
 
 // ============ 规则库（设置页） ============
