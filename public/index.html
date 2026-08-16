@@ -947,6 +947,7 @@ async function loadSettings() {
     document.getElementById('settingAppName').value = data.data?.app_name || '';
   } catch {}
   loadCatalogStatus();
+  searchCatalog(); // 默认显示前 100 个分类
 }
 
 async function saveSettings() {
@@ -1072,16 +1073,15 @@ function debouncedSearchCatalog() {
 async function searchCatalog() {
   const q = document.getElementById('catalogSearch').value.trim();
   const list = document.getElementById('catalogList');
-  if (!q) {
-    list.innerHTML = '<div style="color:var(--text2);padding:16px;text-align:center">输入关键词开始搜索</div>';
-    return;
-  }
   list.innerHTML = '<div style="color:var(--text2);padding:16px;text-align:center">⏳ 搜索中…</div>';
   try {
-    const res = await api(`/rules/catalog?q=${encodeURIComponent(q)}&limit=200`);
+    const limit = q ? 200 : 100;
+    const url = q ? `/rules/catalog?q=${encodeURIComponent(q)}&limit=${limit}` : `/rules/catalog?limit=${limit}`;
+    const res = await api(url);
     const items = res.data?.catalog || [];
+    const total = res.data?.meta?.total || 0;
     if (items.length === 0) {
-      list.innerHTML = '<div style="color:var(--text2);padding:16px;text-align:center">未找到匹配的分类</div>';
+      list.innerHTML = `<div style="color:var(--text2);padding:16px;text-align:center">${q ? '未找到匹配的分类' : '暂无数据，请先同步规则库'}</div>`;
       return;
     }
     list.innerHTML = items.map(it => `
@@ -1091,9 +1091,29 @@ async function searchCatalog() {
           <span style="color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(it.label || '')}</span>
           <span style="color:var(--text2);font-size:11px;background:var(--bg);padding:2px 8px;border-radius:20px">${it.type}</span>
         </div>
+        <button class="btn btn-sm" onclick="openAddRule('${escHtml(it.id)}','${escHtml(it.label || '')}'">➕ 加入</button>
+      </div>`).join('') +
+      (total > items.length ? `<div style="text-align:center;padding:12px"><button class="btn btn-sm" onclick="showAllCatalog()" id="showAllBtn">📋 显示全部 ${total} 个分类</button></div>` : '');
+  } catch { list.innerHTML = '<div style="color:var(--red);padding:16px;text-align:center">❌ 搜索失败</div>'; }
+}
+
+/** 显示全部 1899 个分类 */
+async function showAllCatalog() {
+  const btn = document.getElementById('showAllBtn');
+  if (btn) { btn.disabled = true; btn.textContent = '⏳ 加载中…'; }
+  try {
+    const res = await api('/rules/catalog?limit=5000');
+    const items = res.data?.catalog || [];
+    document.getElementById('catalogList').innerHTML = items.map(it => `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+        <div style="display:flex;align-items:center;gap:10px;min-width:0">
+          <span style="font-weight:600">${escHtml(it.id)}</span>
+          <span style="color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(it.label || '')}</span>
+          <span style="color:var(--text2);font-size:11px;background:var(--bg);padding:2px 8px;border-radius:20px">${it.type}</span>
+        </div>
         <button class="btn btn-sm" onclick="openAddRule('${escHtml(it.id)}','${escHtml(it.label || '')}')">➕ 加入</button>
       </div>`).join('');
-  } catch { list.innerHTML = '<div style="color:var(--red);padding:16px;text-align:center">❌ 搜索失败</div>'; }
+  } catch { document.getElementById('catalogList').innerHTML = '<div style="color:var(--red);padding:16px;text-align:center">❌ 加载失败</div>'; }
 }
 
 function openAddRule(id, label) {
