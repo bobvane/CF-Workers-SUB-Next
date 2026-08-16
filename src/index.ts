@@ -20,6 +20,23 @@ export interface Env {
   DATABASE: KVNamespace;
   ADMIN_PASSWORD?: string;
   SESSION_SECRET?: string;
+  /** GitHub Personal Access Token（提升 API 限流至 5000/h，用于规则目录同步） */
+  GITHUB_TOKEN?: string;
+}
+
+/** 创建带 GitHub Token 的 fetcher（用于 rule-catalog 同步） */
+function createCatalogFetcher(token?: string) {
+  return (url: string) => {
+    const headers: Record<string, string> = {};
+    if (token && url.includes('api.github.com')) {
+      headers['Authorization'] = `token ${token}`;
+      headers['User-Agent'] = 'cf-workers-sub-next';
+    }
+    return fetch(url, { headers }).then((r) => {
+      if (!r.ok) throw new Error(`fetch ${url} failed: ${r.status}`);
+      return r.text();
+    });
+  };
 }
 
 async function buildApp(env: Env): Promise<Hono> {
@@ -54,10 +71,7 @@ async function buildApp(env: Env): Promise<Hono> {
   const config = createConfigService(repos);
 
   // 规则目录同步服务（供 scheduled handler + API 共用）
-  const catalogSync = createCatalogSyncService(repos, (url) => fetch(url).then((r) => {
-    if (!r.ok) throw new Error(`fetch ${url} failed: ${r.status}`);
-    return r.text();
-  }));
+  const catalogSync = createCatalogSyncService(repos, createCatalogFetcher(env.GITHUB_TOKEN));
 
   return createApp({
     repos, auth, subscriptions, config,
@@ -93,10 +107,7 @@ export default {
   async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
     const kv = new KvAdapter(env.DATABASE);
     const repos = createRepositories(kv);
-    const catalogSync = createCatalogSyncService(repos, (url) => fetch(url).then((r) => {
-      if (!r.ok) throw new Error(`fetch ${url} failed: ${r.status}`);
-      return r.text();
-    }));
+    const catalogSync = createCatalogSyncService(repos, createCatalogFetcher(env.GITHUB_TOKEN));
     const result = await catalogSync.sync();
     if (result.status === 'stale') {
       console.warn(`[CatalogSync] 扫描失败: ${result.error}`);

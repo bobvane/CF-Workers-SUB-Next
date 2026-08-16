@@ -265,33 +265,29 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
       <button class="btn btn-primary mt-12" onclick="saveSettings()">💾 保存</button>
     </div>
 
-    <!-- 规则库：从 MetaCubeX 全量分类挑选加入分流规则 -->
+    <!-- 规则库：从 MetaCubeX 全量分类挑选加入分流规则 + 同步管理 -->
     <div class="card" style="margin-top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
         <h3 style="margin:0">📚 规则库 <span style="color:var(--text2);font-size:12px;font-weight:normal">从 1546 个 MetaCubeX 分类中挑选加入分流规则</span></h3>
-        <span style="color:var(--text2);font-size:12px" id="catalogCount"></span>
+        <div style="display:flex;align-items:center;gap:12px">
+          <span style="color:var(--text2);font-size:12px" id="catalogCount"></span>
+          <button class="btn btn-sm" onclick="refreshCatalog()" id="catalogRefreshBtn">🔄 立即刷新</button>
+        </div>
+      </div>
+      <!-- 同步状态 / 失效历史（展开式） -->
+      <div id="catalogStatus" style="color:var(--text2);font-size:12px;padding:6px 12px;background:var(--bg);border-radius:8px;margin-bottom:12px">加载中…</div>
+      <div id="catalogRemovedSection" style="display:none;margin-bottom:12px">
+        <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleRemovedHistory()">
+          <span id="catalogRemovedToggle">▶</span>
+          <span style="font-size:12px;color:var(--text2)">失效分类历史 (<span id="catalogRemovedCount">0</span>)</span>
+        </div>
+        <div id="catalogRemovedList" style="display:none;margin-top:8px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:8px;font-size:13px"></div>
       </div>
       <div class="form-group">
         <input id="catalogSearch" placeholder="🔍 输入分类名或搜索（如 netflix、openai、ads）…" oninput="debouncedSearchCatalog()">
       </div>
       <div id="catalogList" style="max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:8px">
         <div style="color:var(--text2);padding:16px;text-align:center">输入关键词开始搜索</div>
-      </div>
-    </div>
-
-    <!-- 规则库管理：状态/刷新/失效历史 -->
-    <div class="card" style="margin-top:16px">
-      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-        <h3 style="margin:0">⚙️ 规则库管理</h3>
-        <button class="btn btn-sm" onclick="refreshCatalog()" id="catalogRefreshBtn">🔄 立即刷新</button>
-      </div>
-      <div id="catalogStatus" style="color:var(--text2);padding:8px 0">加载中…</div>
-      <div id="catalogRemovedSection" style="display:none;margin-top:8px">
-        <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleRemovedHistory()">
-          <span id="catalogRemovedToggle">▶</span>
-          <span style="font-size:13px;color:var(--text2)">失效分类历史 (<span id="catalogRemovedCount">0</span>)</span>
-        </div>
-        <div id="catalogRemovedList" style="display:none;margin-top:8px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:8px;font-size:13px"></div>
       </div>
     </div>
   </div>
