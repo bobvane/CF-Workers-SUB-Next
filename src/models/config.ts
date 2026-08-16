@@ -43,4 +43,10 @@ export const KV_KEYS = {
   setting: (key: string) => `setting:${key}`,
   /** 管理员密码哈希 */
   adminPassword: 'admin:hash',
+  /** 规则目录快照（动态扫描入库，全量分类） */
+  ruleCatalog: 'rule-catalog',
+  /** 规则目录已失效黑名单 */
+  ruleCatalogRemoved: 'rule-catalog-removed',
+  /** 规则目录元信息（版本/时间/状态） */
+  ruleCatalogMeta: 'rule-catalog-meta',
 } as const;

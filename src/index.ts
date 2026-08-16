@@ -12,6 +12,7 @@ import {
 import { createAuthService, createPasswordHash } from '@/services/auth.service';
 import { createSubscriptionService } from '@/services/subscription.service';
 import { createConfigService } from '@/services/config.service';
+import { createCatalogSyncService } from '@/services/catalog-sync.service';
 import { fetchSubscription } from '@/engine/fetcher';
 import HTML from '@/html';
 
@@ -52,11 +53,18 @@ async function buildApp(env: Env): Promise<Hono> {
 
   const config = createConfigService(repos);
 
+  // 规则目录同步服务（供 scheduled handler + API 共用）
+  const catalogSync = createCatalogSyncService(repos, (url) => fetch(url).then((r) => {
+    if (!r.ok) throw new Error(`fetch ${url} failed: ${r.status}`);
+    return r.text();
+  }));
+
   return createApp({
     repos, auth, subscriptions, config,
     adminPassword: env.ADMIN_PASSWORD ?? '',
     fetchRaw: fetchSubscription,
     parseContent: async () => [],
+    catalogSync,
   });
 }
 
@@ -79,5 +87,21 @@ export default {
     }
     const app = await appPromise;
     return app.fetch(request, env);
+  },
+
+  /** 规则目录定时同步（每月 1 号 03:00 UTC） */
+  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+    const kv = new KvAdapter(env.DATABASE);
+    const repos = createRepositories(kv);
+    const catalogSync = createCatalogSyncService(repos, (url) => fetch(url).then((r) => {
+      if (!r.ok) throw new Error(`fetch ${url} failed: ${r.status}`);
+      return r.text();
+    }));
+    const result = await catalogSync.sync();
+    if (result.status === 'stale') {
+      console.error(`[CatalogSync] 扫描失败: ${result.error}`);
+    } else {
+      console.log(`[CatalogSync] 扫描完成: ${result.total} 个分类, 新增 ${result.added.length}, 移除 ${result.removed.length}`);
+    }
   },
 };

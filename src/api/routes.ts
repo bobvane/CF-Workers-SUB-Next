@@ -18,6 +18,8 @@ import { rateLimit } from './rate-limit';
 import { nodeToLink } from '@/services/config.service';
 import { nodeFingerprint } from '@/models/node';
 import { APP_META, isNewerVersion } from '@/meta';
+import { createCatalogSyncService, CatalogSyncService } from '@/services/catalog-sync.service';
+import { RuleCatalog, RuleCatalogMeta } from '@/models/rule-catalog';
 
 export interface AppDeps {
   repos: Repositories;
@@ -29,11 +31,20 @@ export interface AppDeps {
   fetchRaw: (url: string) => Promise<string>;
   /** 节点解析管线（parser 完成后注入） */
   parseContent: (content: string, source: string) => Promise<unknown[]>;
+  /** 规则目录同步服务（可选注入，默认内部构造） */
+  catalogSync?: CatalogSyncService;
 }
 
 export function createApp(deps: AppDeps): Hono {
   const app = new Hono();
   const { repos, auth, subscriptions, config } = deps;
+  // 规则目录同步服务：默认用 Workers 全局 fetch 拉 GitHub；测试可注入 mock
+  const catalogSync: CatalogSyncService =
+    deps.catalogSync ??
+    createCatalogSyncService(repos, (url) => fetch(url).then((r) => {
+      if (!r.ok) throw new Error(`fetch ${url} failed: ${r.status}`);
+      return r.text();
+    }));
 
   // ============ 全局错误处理 ============
   app.onError(errorHandler);
@@ -352,19 +363,42 @@ export function createApp(deps: AppDeps): Hono {
     return c.json({ success: true, data: { groups } });
   });
 
-  // 获取 MetaCubeX 全量分类目录（供扫描/搜索/添加，含 1546 个分类）
+  // 获取规则分类目录（动态：KV 优先，KV 空回退内置 seed）
+  // 供扫描/搜索/添加。可搜索 q 过滤、limit 截断。
   app.get('/api/rules/catalog', async (c) => {
-    const { METACUBEX_CATALOG } = await import('@/data/metacubex-rules');
+    const { entries, fromKv } = await catalogSync.getCatalog();
     const q = (c.req.query('q') || '').trim().toLowerCase();
     const limit = Math.min(Number(c.req.query('limit') || 5000), 5000);
-    let catalog = METACUBEX_CATALOG.catalog;
+    let catalog = entries;
     if (q) {
-      catalog = catalog.filter(
-        (e: { id: string; label: string }) =>
-          e.id.toLowerCase().includes(q) || e.label.toLowerCase().includes(q)
-      );
+      catalog = catalog.filter((e) => e.id.toLowerCase().includes(q));
     }
-    return c.json({ success: true, data: { meta: METACUBEX_CATALOG.meta, catalog: catalog.slice(0, limit) } });
+    return c.json({
+      success: true,
+      data: {
+        meta: { source: 'MetaCubeX/meta-rules-dat', total: entries.length, fromKv },
+        catalog: catalog.slice(0, limit),
+      },
+    });
+  });
+
+  // 获取规则目录状态 + 失败黑名单（需登录，含内部状态）
+  app.get('/api/rules/catalog/meta', requireAuth(auth), async (c) => {
+    const catalogMeta: RuleCatalogMeta = await repos.ruleCatalog.getMeta();
+    const removed = await repos.ruleCatalog.getRemoved();
+    return c.json({ success: true, data: { meta: catalogMeta, removed } });
+  });
+
+  // 手动刷新规则库（需登录；触发一次扫描，失败时返回 stale 状态）
+  app.post('/api/rules/catalog/refresh', requireAuth(auth), async (c) => {
+    const result = await catalogSync.sync();
+    if (result.status === 'stale') {
+      return c.json({
+        success: false,
+        error: { code: 'UPSTREAM_UNAVAILABLE', message: result.error ?? '上游不可达，已保留旧库' },
+      }, 502);
+    }
+    return c.json({ success: true, data: { ...result } });
   });
 
   // 获取用户勾选的规则 id 列表

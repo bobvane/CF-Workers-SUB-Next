@@ -10,3 +10,7 @@ id = "00000000-0000-0000-0000-000000000000"
 
 # 无需敏感信息，全部通过 Cloudflare Secrets 配置
 # ADMIN_PASSWORD, SESSION_SECRET 由 `wrangler secret put` 设置
+
+# 规则目录同步：每月 1 号 03:00 UTC 自动扫描 MetaCubeX 仓库
+[triggers]
+crons = ["0 3 1 * *"]

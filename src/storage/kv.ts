@@ -11,6 +11,12 @@ import {
 import { Node } from '@/models/node';
 import { Rule, createRule } from '@/models/rule';
 import { Session, KV_KEYS } from '@/models/config';
+import {
+  RuleCatalog,
+  RuleCatalogRemovedEntry,
+  RuleCatalogMeta,
+  createCatalogMeta,
+} from '@/models/rule-catalog';
 
 export interface KVStorage {
   // 通用 KV 操作
@@ -323,6 +329,81 @@ export class KvSettingsRepository implements SettingsRepository {
   }
 }
 
+// ============ 规则目录仓储 ============
+
+export interface RuleCatalogRepository {
+  /** 读取规则目录快照；无则 null */
+  getCatalog(): Promise<RuleCatalog | null>;
+  /** 读取已失效黑名单 */
+  getRemoved(): Promise<RuleCatalogRemovedEntry[]>;
+  /** 读取目录元信息；无则返回 never 状态 */
+  getMeta(): Promise<RuleCatalogMeta>;
+  /** 写入完整快照（目录 + 黑名单 + 元信息） */
+  setCatalog(data: RuleCatalog, removed: RuleCatalogRemovedEntry[], meta: RuleCatalogMeta): Promise<void>;
+  /** 仅更新元信息（失败兜底等场景） */
+  setMeta(meta: RuleCatalogMeta): Promise<void>;
+  /** 追加移除记录 */
+  appendRemoved(entries: RuleCatalogRemovedEntry[]): Promise<void>;
+}
+
+export class KvRuleCatalogRepository implements RuleCatalogRepository {
+  constructor(private readonly kv: KVStorage) {}
+
+  async getCatalog(): Promise<RuleCatalog | null> {
+    const raw = await this.kv.get(KV_KEYS.ruleCatalog);
+    if (!raw) return null;
+    try {
+      return JSON.parse(raw) as RuleCatalog;
+    } catch {
+      return null;
+    }
+  }
+
+  async getRemoved(): Promise<RuleCatalogRemovedEntry[]> {
+    const raw = await this.kv.get(KV_KEYS.ruleCatalogRemoved);
+    if (!raw) return [];
+    try {
+      return JSON.parse(raw) as RuleCatalogRemovedEntry[];
+    } catch {
+      return [];
+    }
+  }
+
+  async getMeta(): Promise<RuleCatalogMeta> {
+    const raw = await this.kv.get(KV_KEYS.ruleCatalogMeta);
+    if (!raw) return createCatalogMeta();
+    try {
+      return JSON.parse(raw) as RuleCatalogMeta;
+    } catch {
+      return createCatalogMeta();
+    }
+  }
+
+  async setCatalog(
+    data: RuleCatalog,
+    removed: RuleCatalogRemovedEntry[],
+    meta: RuleCatalogMeta
+  ): Promise<void> {
+    await this.kv.put(KV_KEYS.ruleCatalog, JSON.stringify(data));
+    await this.kv.put(KV_KEYS.ruleCatalogRemoved, JSON.stringify(removed));
+    await this.kv.put(KV_KEYS.ruleCatalogMeta, JSON.stringify(meta));
+  }
+
+  async setMeta(meta: RuleCatalogMeta): Promise<void> {
+    await this.kv.put(KV_KEYS.ruleCatalogMeta, JSON.stringify(meta));
+  }
+
+  async appendRemoved(entries: RuleCatalogRemovedEntry[]): Promise<void> {
+    if (entries.length === 0) return;
+    const existing = await this.getRemoved();
+    const merged = [...existing];
+    for (const e of entries) {
+      if (!merged.some((m) => m.id === e.id)) merged.push(e);
+    }
+    await this.kv.put(KV_KEYS.ruleCatalogRemoved, JSON.stringify(merged));
+  }
+}
+
 // ============ 仓库聚合（依赖注入） ============
 
 export interface Repositories {
@@ -331,6 +412,7 @@ export interface Repositories {
   rules: RuleRepository;
   sessions: SessionRepository;
   settings: SettingsRepository;
+  ruleCatalog: RuleCatalogRepository;
 }
 
 export function createRepositories(kv: KVStorage): Repositories {
@@ -340,5 +422,6 @@ export function createRepositories(kv: KVStorage): Repositories {
     rules: new KvRuleRepository(kv),
     sessions: new KvSessionRepository(kv),
     settings: new KvSettingsRepository(kv),
+    ruleCatalog: new KvRuleCatalogRepository(kv),
   };
 }

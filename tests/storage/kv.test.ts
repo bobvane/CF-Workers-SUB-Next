@@ -6,8 +6,10 @@ import {
   KvRuleRepository,
   KvSessionRepository,
   KvSettingsRepository,
+  KvRuleCatalogRepository,
 } from '@/storage/kv';
 import { createNode } from '@/models/node';
+import { RuleCatalogEntry, createCatalogMeta } from '@/models/rule-catalog';
 
 describe('MemoryKvAdapter', () => {
   let kv: MemoryKvAdapter;
@@ -193,5 +195,64 @@ describe('KvSettingsRepository', () => {
   it('should return null for missing setting', async () => {
     const repo = new KvSettingsRepository(new MemoryKvAdapter());
     expect(await repo.get('missing')).toBeNull();
+  });
+});
+
+describe('KvRuleCatalogRepository', () => {
+  const kv = () => new MemoryKvAdapter();
+  const repo = (kv2: MemoryKvAdapter) => new KvRuleCatalogRepository(kv2);
+
+  it('should return null catalog when empty', async () => {
+    expect(await repo(kv()).getCatalog()).toBeNull();
+  });
+
+  it('should return never meta when empty', async () => {
+    const m = await repo(kv()).getMeta();
+    expect(m.status).toBe('never');
+  });
+
+  it('should not crash on corrupt catalog', async () => {
+    const kv2 = kv();
+    await kv2.put('rule-catalog', '{bad json');
+    expect(await repo(kv2).getCatalog()).toBeNull();
+  });
+
+  it('should set and read a catalog snapshot', async () => {
+    const kv2 = kv();
+    const r = repo(kv2);
+    const entry: RuleCatalogEntry = {
+      id: 'NETFLIX',
+      type: 'site',
+      mrsUrl: 'https://example.com/netflix.mrs',
+      verifiedAt: 1000,
+    };
+    await r.setCatalog(
+      { version: '1', source: 'test', fetchedAt: 1000, entries: [entry] },
+      [],
+      createCatalogMeta({ version: '1', fetchedAt: 1000, total: 1, status: 'ok' })
+    );
+    const c = await r.getCatalog();
+    expect(c?.entries[0].id).toBe('NETFLIX');
+    const meta = await r.getMeta();
+    expect(meta.total).toBe(1);
+    expect(meta.status).toBe('ok');
+  });
+
+  it('should set meta only', async () => {
+    const kv2 = kv();
+    const r = repo(kv2);
+    await r.setMeta(createCatalogMeta({ version: 'x', status: 'stale', lastError: 'boom' }));
+    const meta = await r.getMeta();
+    expect(meta.status).toBe('stale');
+    expect(meta.lastError).toBe('boom');
+  });
+
+  it('should appendRemoved without duplicate', async () => {
+    const kv2 = kv();
+    const r = repo(kv2);
+    await r.appendRemoved([{ id: 'OLD', removedAt: 1, reason: 'upstream-gone' }]);
+    await r.appendRemoved([{ id: 'OLD', removedAt: 2, reason: 'upstream-gone' }, { id: 'OLD2', removedAt: 3, reason: 'upstream-gone' }]);
+    const removed = await r.getRemoved();
+    expect(removed.map((x) => x.id).sort()).toEqual(['OLD', 'OLD2']);
   });
 });
