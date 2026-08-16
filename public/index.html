@@ -1077,15 +1077,21 @@ async function searchCatalog() {
       return;
     }
     list.innerHTML = items.map(it => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+      <div class="catalog-item" data-id="${escHtml(it.id)}" data-label="${escHtml(it.label || it.id)}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
         <div style="display:flex;align-items:center;gap:10px;min-width:0">
           <span style="font-weight:600">${escHtml(it.id)}</span>
           <span style="color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(it.label || '')}</span>
           <span style="color:var(--text2);font-size:11px;background:var(--bg);padding:2px 8px;border-radius:20px">${it.type}</span>
         </div>
-        <button class="btn btn-sm" onclick="openAddRule('${escHtml(it.id)}','${escHtml(it.label || '')}'">➕ 加入</button>
+        <button class="btn btn-sm add-rule-btn">➕ 加入</button>
       </div>`).join('') +
       (total > items.length ? `<div style="text-align:center;padding:12px"><button class="btn btn-sm" onclick="showAllCatalog()" id="showAllBtn">📋 显示全部 ${total} 个分类</button></div>` : '');
+    document.querySelectorAll('.add-rule-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const item = this.closest('.catalog-item');
+        if (item) openAddRule(item.dataset.id || '', item.dataset.label || '');
+      });
+    });
   } catch { list.innerHTML = '<div style="color:var(--red);padding:16px;text-align:center">❌ 搜索失败</div>'; }
 }
 
@@ -1097,14 +1103,20 @@ async function showAllCatalog() {
     const res = await api('/rules/catalog?limit=5000');
     const items = res.data?.catalog || [];
     document.getElementById('catalogList').innerHTML = items.map(it => `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
+      <div class="catalog-item" data-id="${escHtml(it.id)}" data-label="${escHtml(it.label || it.id)}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
         <div style="display:flex;align-items:center;gap:10px;min-width:0">
           <span style="font-weight:600">${escHtml(it.id)}</span>
           <span style="color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(it.label || '')}</span>
           <span style="color:var(--text2);font-size:11px;background:var(--bg);padding:2px 8px;border-radius:20px">${it.type}</span>
         </div>
-        <button class="btn btn-sm" onclick="openAddRule('${escHtml(it.id)}','${escHtml(it.label || '')}')">➕ 加入</button>
+        <button class="btn btn-sm add-rule-btn">➕ 加入</button>
       </div>`).join('');
+    document.querySelectorAll('.add-rule-btn').forEach(btn => {
+      btn.addEventListener('click', function() {
+        const item = this.closest('.catalog-item');
+        if (item) openAddRule(item.dataset.id || '', item.dataset.label || '');
+      });
+    });
   } catch { document.getElementById('catalogList').innerHTML = '<div style="color:var(--red);padding:16px;text-align:center">❌ 加载失败</div>'; }
 }
 
