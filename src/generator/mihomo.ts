@@ -134,12 +134,12 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
 }
 
 /**
- * 生成代理组配置（参考 ACL4SSR_Online_Full.ini 排序）
+ * 生成代理组配置（参考 ACL4SSR_Online_Full.ini 排序与结构）
  *
- * 分组排序（自上而下，参考 ACL4SSR）：
- *   1. 节点选择（默认 自动选择）
- *   2. 自动选择（url-test 测速）
- *   3. 手动切换（逐个节点）
+ * 分组排序（参考 Bob 的 V1 项目 sub.bobvane.top）：
+ *   1. 节点选择（select：自动选择 + 地理组 + 手动切换 + DIRECT）
+ *   2. 手动切换（select：所有节点扁平列表，逐节点选）
+ *   3. 自动选择（url-test：所有节点，自动测速最优）
  *   4. 国外媒体（流媒体 PROXY，默认 自动选择）
  *   5. 国内媒体（默认 DIRECT）
  *   6. 广告拦截（默认 REJECT）
@@ -147,13 +147,9 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
  *   8. 规则分类组（AI服务/加密货币/游戏/社交/云服务/开发/其他，默认 节点选择）
  *   9. 漏网之鱼（MATCH 兜底，默认 节点选择）
  *   10. GLOBAL（顶层全局，默认 DIRECT）
- *   11. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...）
+ *   11. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，url-test 类型，自动测速选最优节点）
  *
- * 除地理组外，所有策略组都包含完整访问链：
- *   节点选择 / 手动切换 / 自动选择 → 地理组/DIRECT
- *   规则分类组 / 国外媒体 / 国内媒体 / 漏网之鱼 / GLOBAL → [节点选择, 手动切换, 自动选择, ...地理组, DIRECT]
- *
- * 始终生成：节点选择, 自动选择, 手动切换, 国外媒体, 国内媒体, 广告拦截, 应用净化, 漏网之鱼, GLOBAL, 地理组
+ * 始终生成：节点选择, 手动切换, 自动选择, 国外媒体, 国内媒体, 广告拦截, 应用净化, 漏网之鱼, GLOBAL, 地理组
  * 条件生成（勾选规则才出现）：AI服务, 加密货币, 游戏, 社交, 云服务, 开发工具, 其他常用
  */
 export function generateProxyGroups(
@@ -165,24 +161,27 @@ export function generateProxyGroups(
   const hasSelected = (key: string): boolean =>
     selectedRules.some(r => ruleGroups.find(g => g.key === key)?.items.some(i => i.id === r.id));
 
-  // 1. 地理分组（叶节点层）
+  // 1. 地理分组（按节点名识别地区）
   const geoGroups = groupNodesByGeo(nodeNames);
   const geoGroupNames = geoGroups.map(g => g.name);
   const allGeoNodes = geoGroups.flatMap(g => g.nodes);
   const groups: Record<string, unknown>[] = [];
 
-  // 策略组访问链（所有非叶子组都引用这一套）
-  // 完整访问链：节点选择 → 手动切换 → 自动选择 → [地区组...] → DIRECT
-  const fullChain = ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'];
-
-  // 2. 节点选择（AI/加密等规则分类组的默认出口；用户手动选地区）
+  // 2. 节点选择（手动选地区/节点方案，默认自动选择）
   groups.push({
     name: '节点选择',
     type: 'select',
-    proxies: ['自动选择', ...geoGroupNames, 'DIRECT'],
+    proxies: ['自动选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
 
-  // 3. 自动选择（url-test 测速，全局自动最优）
+  // 3. 手动切换（所有节点扁平列表，逐节点选）
+  groups.push({
+    name: '手动切换',
+    type: 'select',
+    proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
+  });
+
+  // 4. 自动选择（url-test 测速，全局自动最优）
   groups.push({
     name: '自动选择',
     type: 'url-test',
@@ -192,43 +191,35 @@ export function generateProxyGroups(
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
-  // 4. 手动切换（逐节点选，不参与自动）
-  groups.push({
-    name: '手动切换',
-    type: 'select',
-    proxies: [...geoGroupNames, 'DIRECT'],
-  });
-
   // 5. 国外媒体（流媒体 PROXY，默认自动选择）
   groups.push({
     name: '国外媒体',
     type: 'select',
-    proxies: ['自动选择', ...fullChain.filter(p => p !== '自动选择')], // 自动选择 → 节点选择 → 手动切换 → 地区组 → DIRECT
+    proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
 
-  // 6. 国内媒体（默认直接直连，按需可切节点）
+  // 6. 国内媒体（默认直连，按需可切节点）
   groups.push({
     name: '国内媒体',
     type: 'select',
-    proxies: ['DIRECT', ...fullChain.filter(p => p !== 'DIRECT')],
+    proxies: ['DIRECT', '节点选择', ...geoGroupNames, '手动切换', '自动选择'],
   });
 
   // 7. 广告拦截（默认 REJECT）
   groups.push({
     name: '广告拦截',
     type: 'select',
-    proxies: ['REJECT', 'DIRECT', ...fullChain.filter(p => p !== 'DIRECT')],
+    proxies: ['REJECT', 'DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
   });
 
   // 8. 应用净化（默认 REJECT）
   groups.push({
     name: '应用净化',
     type: 'select',
-    proxies: ['REJECT', 'DIRECT', ...fullChain.filter(p => p !== 'DIRECT')],
+    proxies: ['REJECT', 'DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
   });
 
   // 9. 规则分类组（仅当勾选该大类规则时才生成）
-  //    需要生成独立分组的大类 key（排除被合并到国外媒体/国内媒体/广告拦截的）
   const independentGroupKeys = ['crypto', 'ai', 'social', 'game', 'cloud', 'dev', 'other'];
   const ruleClassGroupNames: string[] = [];
   for (const key of independentGroupKeys) {
@@ -238,7 +229,7 @@ export function generateProxyGroups(
     groups.push({
       name: g.name,
       type: 'select',
-      proxies: ['节点选择', ...fullChain.filter(p => p !== '节点选择')],
+      proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
     });
   }
 
@@ -246,7 +237,7 @@ export function generateProxyGroups(
   groups.push({
     name: '漏网之鱼',
     type: 'select',
-    proxies: ['节点选择', ...fullChain.filter(p => p !== '节点选择')],
+    proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
   // 11. GLOBAL（Clash 顶层全局组，默认 DIRECT）
@@ -256,12 +247,15 @@ export function generateProxyGroups(
     proxies: ['节点选择', '国外媒体', '国内媒体', ...ruleClassGroupNames, '漏网之鱼', 'DIRECT'],
   });
 
-  // 12. 地理组（放在最后，作为所有策略组的出口叶子）
+  // 12. 地理组（url-test 类型，自动测速选该地区最优节点）
   for (const geo of geoGroups) {
     groups.push({
       name: geo.name,
-      type: 'select',
-      proxies: ['自动选择', ...geo.nodes],
+      type: 'url-test',
+      url: 'http://www.gstatic.com/generate_204',
+      interval: 300,
+      tolerance: 50,
+      proxies: geo.nodes,
     });
   }
 
