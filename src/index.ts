@@ -29,7 +29,8 @@ function createCatalogFetcher(token?: string) {
   return (url: string) => {
     const headers: Record<string, string> = {};
     if (token && url.includes('api.github.com')) {
-      headers['Authorization'] = `token ${token}`;
+      // Fine-grained PAT 只认 Bearer，不认 token 前缀
+      headers['Authorization'] = `Bearer ${token}`;
       headers['User-Agent'] = 'cf-workers-sub-next';
     }
     return fetch(url, { headers }).then((r) => {

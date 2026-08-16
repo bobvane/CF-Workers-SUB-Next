@@ -8,8 +8,9 @@
  *  - 写回 KV：catalog / removed / meta
  *
  * 数据源选择（2026-08-16 验证）：
- *  - GitHub Trees API 一次返回整个分支文件树，含 geo/geosite/*.mrs 全部文件名，
- *    无需对每条规则单独 HEAD 校验（Trees API 本身即"文件存在"的权威证据）。
+ *  - GitHub Trees API 分步获取（根 → geo → geo/geosite），避免全仓库递归被 truncated 截断，
+ *    最终 geosite 子目录树返回全部 *.mrs 文件名，无需对每条规则单独 HEAD 校验
+ *    （Trees API 本身即"文件存在"的权威证据）。
  *  - 失败兜底：保留旧库，meta.status='stale'。
  */
 import { Repositories } from '@/storage/kv';
@@ -25,11 +26,8 @@ import { META_DAT_BASE } from '@/generator/rule-providers';
 import catalogRaw from '@/data/metacubex-catalog.json';
 
 /** 上游仓库信息 */
-export const META_DAT_GITHUB_TREE_API =
-  'https://api.github.com/repos/MetaCubeX/meta-rules-dat/git/trees/meta?recursive=1';
-
-/** geosite 文件夹前缀（meta 分支） */
-const GEOSITE_DIR = 'geo/geosite/';
+const META_DAT_GITHUB_API = 'https://api.github.com/repos/MetaCubeX/meta-rules-dat/git/trees';
+const META_DAT_BRANCH = 'meta';
 
 /** 规则目录类型推断（与 CatalogEntry 兼容） */
 function inferType(id: string): RuleCatalogType {
@@ -70,14 +68,30 @@ export function createCatalogSyncService(
   let syncing = false;
 
   async function fetchTree(): Promise<string[]> {
-    const raw = await fetcher(META_DAT_GITHUB_TREE_API);
-    const data = JSON.parse(raw) as { tree?: { path: string }[]; truncated?: boolean };
-    if (!data.tree) throw new Error('GitHub Trees API 返回格式异常');
-    if (data.truncated) throw new Error('GitHub Trees API 返回被截断（truncated）');
-    const mrsFiles = data.tree
+    // 1. 获取根目录树，找 geo 目录的 SHA
+    const rootRaw = await fetcher(`${META_DAT_GITHUB_API}/${META_DAT_BRANCH}`);
+    const rootData = JSON.parse(rootRaw) as { tree?: { path: string; sha: string }[] };
+    if (!rootData.tree) throw new Error('GitHub Trees API: 根目录返回格式异常');
+    const geoEntry = rootData.tree.find((e) => e.path === 'geo');
+    if (!geoEntry) throw new Error('GitHub Trees API: 未找到 geo 目录');
+
+    // 2. 获取 geo 目录树，找 geosite 的 SHA
+    const geoRaw = await fetcher(`${META_DAT_GITHUB_API}/${geoEntry.sha}`);
+    const geoData = JSON.parse(geoRaw) as { tree?: { path: string; sha: string }[] };
+    if (!geoData.tree) throw new Error('GitHub Trees API: geo 目录返回格式异常');
+    const geositeEntry = geoData.tree.find((e) => e.path === 'geosite');
+    if (!geositeEntry) throw new Error('GitHub Trees API: 未找到 geo/geosite 目录');
+
+    // 3. 获取 geosite 目录树（递归，只包含 geosite 下的文件，不会截断）
+    const geositeRaw = await fetcher(`${META_DAT_GITHUB_API}/${geositeEntry.sha}?recursive=1`);
+    const geositeData = JSON.parse(geositeRaw) as { tree?: { path: string }[]; truncated?: boolean };
+    if (!geositeData.tree) throw new Error('GitHub Trees API: geosite 目录返回格式异常');
+    if (geositeData.truncated) throw new Error('GitHub Trees API: geosite 目录被截断（truncated）');
+
+    const mrsFiles = geositeData.tree
       .map((t) => t.path)
-      .filter((p) => p.startsWith(GEOSITE_DIR) && p.endsWith('.mrs'));
-    return mrsFiles.map((p) => p.slice(GEOSITE_DIR.length, -'.mrs'.length).toUpperCase());
+      .filter((p) => p.endsWith('.mrs'));
+    return mrsFiles.map((p) => p.slice(0, -'.mrs'.length).toUpperCase());
   }
 
   /** 静态 seed：内置 catalog.json（首次部署 / KV 为空时兜底） */

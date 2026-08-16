@@ -19,15 +19,29 @@ interface ResData {
   error?: { code: string; message: string };
 }
 
-function treeResponse(paths: string[]): string {
-  return JSON.stringify({ tree: paths.map((p) => ({ path: p })), truncated: false });
+/** 构造一个 URL 感知的 mock fetcher：根→geo→geosite 三步，失败场景可切换 */
+type FetchFn = (url: string) => Promise<string>;
+
+function buildTreeFetcher(geositeFiles: string[], truncated = false): FetchFn {
+  const geoEntry = { path: 'geo', sha: 'sha_geo' };
+  const geositeEntry = { path: 'geosite', sha: 'sha_geosite' };
+  return async (url: string) => {
+    if (url.includes('?recursive=1')) {
+      const names = geositeFiles.map((p) => p.replace('geo/geosite/', ''));
+      return JSON.stringify({ tree: names.map((p) => ({ path: p })), truncated });
+    }
+    if (url.includes('sha_geo')) {
+      return JSON.stringify({ tree: [geositeEntry], truncated: false });
+    }
+    return JSON.stringify({ tree: [geoEntry], truncated: false });
+  };
 }
 
 describe('Catalog API', () => {
   let app: ReturnType<typeof createApp>;
   let kv: MemoryKvAdapter;
   let cookie: string;
-  let fetchState: { fn: () => Promise<string> };
+  let fetchState: { fn: (url: string) => Promise<string>; setFetcher: (f: FetchFn) => void };
 
   beforeEach(async () => {
     kv = new MemoryKvAdapter();
@@ -38,9 +52,13 @@ describe('Catalog API', () => {
       const raw = await kv.get('admin:hash');
       return raw ? (JSON.parse(raw) as { hash: string; salt: string }) : null;
     });
-    // 模拟上游清单（可变容器，便于后续切换失败场景）
-    fetchState = { fn: () => Promise.resolve(treeResponse(['geo/geosite/netflix.mrs', 'geo/geosite/openai.mrs'])) };
-    const catalogSync = createCatalogSyncService(repos, () => fetchState.fn());
+    // 模拟上游清单（可变容器：成功→失败可切换）
+    let currentFetcher: FetchFn = buildTreeFetcher(['geo/geosite/netflix.mrs', 'geo/geosite/openai.mrs']);
+    fetchState = {
+      fn: (url: string) => currentFetcher(url),
+      setFetcher: (f: FetchFn) => { currentFetcher = f; },
+    };
+    const catalogSync = createCatalogSyncService(repos, (url) => fetchState.fn(url));
     app = createApp({
       repos,
       auth,
