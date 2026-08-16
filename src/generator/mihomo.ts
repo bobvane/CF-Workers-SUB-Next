@@ -134,20 +134,23 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
 }
 
 /**
- * 生成代理组配置（参考 ACL4SSR_Online_Full.ini 排序与结构）
+ * 生成代理组配置（参考 ACL4SSR/参考配置 sub.bobvane.top 排序与结构）
  *
- * 分组排序（参考 Bob 的 V1 项目 sub.bobvane.top）：
+ * 分组排序（zashboard 面板显示顺序 = GLOBAL 组的 proxies 引用顺序）：
  *   1. 节点选择（select：自动选择 + 地理组 + 手动切换 + DIRECT）
- *   2. 手动切换（select：所有节点扁平列表，逐节点选）
- *   3. 自动选择（url-test：所有节点，自动测速最优）
+ *   2. 手动切换（select：具体节点扁平列表，逐节点选）
+ *   3. 自动选择（url-test：具体节点，自动测速）
  *   4. 国外媒体（流媒体 PROXY，默认 自动选择）
  *   5. 国内媒体（默认 DIRECT）
  *   6. 广告拦截（默认 REJECT）
  *   7. 应用净化（默认 REJECT）
  *   8. 规则分类组（AI服务/加密货币/游戏/社交/云服务/开发/其他，默认 节点选择）
  *   9. 漏网之鱼（MATCH 兜底，默认 节点选择）
- *   10. GLOBAL（顶层全局，默认 DIRECT）
- *   11. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，url-test 类型，自动测速选最优节点）
+ *   10. GLOBAL（显式定义，完整列出所有组，决定面板显示顺序，默认 DIRECT）
+ *   11. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，url-test 类型，自动测速选该地区最优节点）
+ *
+ * 关键：GLOBAL 组必须显式、完整地按期望顺序引用所有策略组，
+ *       因 zashboard/metacubexd 面板的节点组排序 = GLOBAL 组 proxies 引用顺序。
  *
  * 始终生成：节点选择, 手动切换, 自动选择, 国外媒体, 国内媒体, 广告拦截, 应用净化, 漏网之鱼, GLOBAL, 地理组
  * 条件生成（勾选规则才出现）：AI服务, 加密货币, 游戏, 社交, 云服务, 开发工具, 其他常用
@@ -174,14 +177,14 @@ export function generateProxyGroups(
     proxies: ['自动选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
 
-  // 3. 手动切换（所有节点扁平列表，逐节点选）
+  // 3. 手动切换（select：具体节点扁平列表，逐节点选）
   groups.push({
     name: '手动切换',
     type: 'select',
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
-  // 4. 自动选择（url-test 测速，全局自动最优）
+  // 4. 自动选择（url-test：具体节点，自动测速最优）
   groups.push({
     name: '自动选择',
     type: 'url-test',
@@ -240,11 +243,25 @@ export function generateProxyGroups(
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
-  // 11. GLOBAL（Clash 顶层全局组，默认 DIRECT）
+  // 11. GLOBAL（显式定义，完整按期望顺序引用所有策略组，
+  //     因 zashboard/metacubexd 面板排序 = GLOBAL 组 proxies 引用顺序。默认 DIRECT）
+  const globalOrder: string[] = [
+    '节点选择',
+    '手动切换',
+    '自动选择',
+    '国外媒体',
+    '国内媒体',
+    '广告拦截',
+    '应用净化',
+    ...ruleClassGroupNames,
+    '漏网之鱼',
+    ...geoGroupNames,
+    'DIRECT',
+  ];
   groups.push({
     name: 'GLOBAL',
     type: 'select',
-    proxies: ['节点选择', '国外媒体', '国内媒体', ...ruleClassGroupNames, '漏网之鱼', 'DIRECT'],
+    proxies: globalOrder,
   });
 
   // 12. 地理组（url-test 类型，自动测速选该地区最优节点）
