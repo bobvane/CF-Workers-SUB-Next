@@ -77,3 +77,10 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           SESSION_SECRET: ${{ secrets.SESSION_SECRET || '' }}
+
+      - name: Set GITHUB_TOKEN secret（规则目录同步用，可选）
+        if: env.WORKER_GITHUB_TOKEN != '' && env.WORKER_GITHUB_TOKEN != 'none'
+        run: printf '%s' "${WORKER_GITHUB_TOKEN}" | npx wrangler secret put GITHUB_TOKEN
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          WORKER_GITHUB_TOKEN: ${{ secrets.WORKER_GITHUB_TOKEN || '' }}

@@ -53,6 +53,24 @@ Fork [bobvane/CF-Workers-SUB-Next](https://github.com/bobvane/CF-Workers-SUB-Nex
 | `KV_NAMESPACE_ID` | 上一步创建的 KV 命名空间 ID | ✅ |
 | `ADMIN_PASSWORD` | 管理界面登录密码 | ✅ |
 | `SESSION_SECRET` | Session 加密密钥（可用 `openssl rand -hex 32` 生成） | ✅ |
+| `WORKER_GITHUB_TOKEN` | GitHub Personal Access Token（规则目录同步用，避免 403 限流） | ❌ |
+
+> **WORKER_GITHUB_TOKEN 说明**（可选，推荐设置）
+>
+> 规则库的「立即刷新」按钮会调用 GitHub API 拉取 MetaCubeX 规则分类清单。未认证的 GitHub API 每小时限 60 次，
+> 多人使用或频繁刷新容易触发 403 错误。设置此 Token 可将限流提升至 5000 次/小时。
+>
+> **申请步骤：**
+> 1. 登录 GitHub → 右上角头像 → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens**
+> 2. 点击 **Generate new token**
+> 3. 设置：
+>    - Token name: `CF-Workers-SUB-Next`
+>    - Expiration: 选 **No expiration**（长期有效）
+>    - Repository access: **Public repositories (read-only)**
+>    - Permissions: 不需要额外权限（只读公开仓库，无需勾选）
+> 4. 点击 **Generate token**，复制生成的 token
+> 5. 在仓库 **Settings → Secrets and variables → Actions** 中新增 `WORKER_GITHUB_TOKEN`，填入复制的 token
+> 6. 后续每次部署时，CI/CD 会自动将此 token 注入 Cloudflare Worker 的 Secrets，无需手动配置 Worker
 
 ### 第四步：启用 GitHub Actions
 
