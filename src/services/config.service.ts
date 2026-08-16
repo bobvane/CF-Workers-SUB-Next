@@ -13,6 +13,7 @@ import { generateSurgeConfig } from '@/generator/surge';
 import { generateQuantumultXConfig } from '@/generator/quantumultx';
 import { nodeToUrl } from '@/generator/node-to-url';
 import { MetaCubeXRule, RULE_GROUPS, CustomRule, mergeCustomRules, findRuleInGroups } from '@/data/metacubex-rules';
+import { createIpGeoResolver } from './ip-geo.service';
 
 export type OutputFormat =
   | 'mihomo'
@@ -161,7 +162,16 @@ export function createConfigService(repos: Repositories): ConfigService {
       const nodes = all.filter((n) => !disabled.has(nodeFingerprint(n)));
       switch (format) {
         case 'mihomo':
-          return generateMihomoConfig(nodes, undefined, await this.getSelectedRules(), await this.getMergedGroups());
+          return generateMihomoConfig(
+            nodes,
+            undefined,
+            await this.getSelectedRules(),
+            await this.getMergedGroups(),
+            createIpGeoResolver({
+              get: (k) => repos.settings.get(k),
+              set: (k, v) => repos.settings.set(k, v),
+            })
+          );
         case 'singbox':
           return generateSingboxConfig(nodes);
         case 'surge':

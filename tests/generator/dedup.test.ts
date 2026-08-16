@@ -15,19 +15,19 @@ function makeNode(name: string): Node {
 }
 
 describe('makeUniqueNames', () => {
-  it('should keep unique names unchanged', () => {
+  it('should keep unique names unchanged', async () => {
     const nodes = [makeNode('JP'), makeNode('US'), makeNode('HK')];
     const result = makeUniqueNames(nodes);
     expect(result.map(n => n.name)).toEqual(['JP', 'US', 'HK']);
   });
 
-  it('should append suffix to duplicate names', () => {
+  it('should append suffix to duplicate names', async () => {
     const nodes = [makeNode('US'), makeNode('US'), makeNode('US')];
     const result = makeUniqueNames(nodes);
     expect(result.map(n => n.name)).toEqual(['US', 'US-1', 'US-2']);
   });
 
-  it('should handle mixed duplicates', () => {
+  it('should handle mixed duplicates', async () => {
     const nodes = [makeNode('JP'), makeNode('US'), makeNode('US'), makeNode('JP')];
     const result = makeUniqueNames(nodes);
     expect(result.map(n => n.name)).toEqual(['JP', 'US', 'US-1', 'JP-1']);
@@ -35,8 +35,8 @@ describe('makeUniqueNames', () => {
 });
 
 describe('generators with duplicate names', () => {
-  it('should not produce duplicate proxy names in mihomo', () => {
-    const yaml = generateMihomoConfig([makeNode('US'), makeNode('US')]);
+  it('should not produce duplicate proxy names in mihomo', async () => {
+    const yaml = await generateMihomoConfig([makeNode('US'), makeNode('US')]);
     expect(yaml).toContain('US');
     expect(yaml).toContain('US-1');
     // 确保只有 US-1，没有重复
@@ -44,18 +44,18 @@ describe('generators with duplicate names', () => {
     expect(yaml.match(/^\s+- name: US-1$/m)).toBeTruthy();
   });
 
-  it('should not produce duplicate tags in singbox', () => {
+  it('should not produce duplicate tags in singbox', async () => {
     const json = generateSingboxConfig([makeNode('US'), makeNode('US')]);
     expect(json).toContain('"US"');
     expect(json).toContain('"US-1"');
   });
 
-  it('should not produce duplicate names in surge', () => {
+  it('should not produce duplicate names in surge', async () => {
     const config = generateSurgeConfig([makeNode('US'), makeNode('US')]);
     expect(config).toContain('US-1');
   });
 
-  it('should not produce duplicate names in quantumultx', () => {
+  it('should not produce duplicate names in quantumultx', async () => {
     const config = generateQuantumultXConfig([makeNode('US'), makeNode('US')]);
     expect(config).toContain('US-1');
   });
