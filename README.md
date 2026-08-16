@@ -81,20 +81,20 @@ https://cf-workers-sub-next.<你的子域名>.workers.dev
 
 ### 规则系统
 
-规则页面预置了 10 个大类分组，覆盖日常使用场景：
+规则页面预置了 10 个大类分组，按优先级（自上而下）覆盖日常使用场景：
 
 | 分组 | 包含规则 |
 |------|---------|
-| 🛡️ 安全/隐私 | 广告拦截、恶意网站、钓鱼、加密货币挖矿 |
-| 🤖 AI 服务 | OpenAI、Anthropic、Gemini、Midjourney 等 |
-| 🎬 流媒体 | Netflix、YouTube、Disney+、HBO、Spotify 等 |
+| 🔥 广告拦截 | 广告拦截通用合集（REJECT） |
+| 🇨🇳 国内直连 | 私有地址、中国直连域名、百度/阿里/腾讯/京东、Bilibili/爱奇艺/优酷（DIRECT） |
+| 🎬 国外媒体 | Netflix、YouTube、Disney+、HBO、Spotify、TikTok 等 |
+| 🪙 加密货币 | Binance、Coinbase、Uniswap 等 |
+| 🤖 AI 服务 | OpenAI、Anthropic、Gemini 等 |
 | 💬 社交 | Telegram、Twitter、Instagram、Discord 等 |
 | 🎮 游戏 | Steam、Epic、PlayStation、Xbox 等 |
 | 🏢 云服务 | Cloudflare、AWS、Google Cloud、Azure 等 |
 | 💻 开发 | GitHub、GitLab、NPMJS、Docker 等 |
-| 🪙 加密货币 | Binance、Coinbase、Uniswap 等 |
-| 🇨🇳 中国直连 | 百度、阿里、腾讯、京东、Bilibili 等 |
-| 其他 | 未分类的常用规则兜底 |
+| 👑 用户规则 | Adobe、Apple、Zoom 等 + 用户自定义兜底 |
 
 **规则库扩展**：设置页内置规则库扫描功能，可搜索 1546 个 MetaCubeX 全量分类，挑选加入任意分组，支持自定义显示名称和目标策略（代理/直连/拦截）。
 
