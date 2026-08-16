@@ -303,14 +303,6 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
           <label>目标分组</label>
           <select id="addRuleGroup"></select>
         </div>
-        <div class="form-group">
-          <label>目标策略</label>
-          <select id="addRuleTarget">
-            <option value="PROXY">🚀 走代理 (PROXY)</option>
-            <option value="DIRECT">🟢 直连 (DIRECT)</option>
-            <option value="REJECT">🚫 拦截 (REJECT)</option>
-          </select>
-        </div>
         <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="confirmAddRule()">✅ 加入规则</button>
       </div>
     </div>
@@ -1123,10 +1115,8 @@ async function showAllCatalog() {
 function openAddRule(id, label) {
   document.getElementById('addRuleId').value = id;
   document.getElementById('addRuleLabel').value = label || id;
-  // 重置分组和目标为默认
   const groupSel = document.getElementById('addRuleGroup');
   groupSel.value = 'other';
-  document.getElementById('addRuleTarget').value = 'PROXY';
   document.getElementById('addRuleModal').classList.add('show');
 }
 
@@ -1134,7 +1124,8 @@ async function confirmAddRule() {
   const id = document.getElementById('addRuleId').value.trim();
   const label = document.getElementById('addRuleLabel').value.trim() || id;
   const groupKey = document.getElementById('addRuleGroup').value;
-  const target = document.getElementById('addRuleTarget').value;
+  // 根据分组自动推断目标策略：广告拦截→REJECT，国内直连→DIRECT，其余→PROXY
+  const target = groupKey === 'ads' ? 'REJECT' : groupKey === 'china-direct' ? 'DIRECT' : 'PROXY';
   if (!id) { toast('分类 ID 无效', 'error'); return; }
   try {
     await api('/rules/custom', {
