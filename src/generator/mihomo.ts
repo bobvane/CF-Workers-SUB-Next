@@ -6,7 +6,7 @@
 
 import { Node } from '@/models/node';
 import { generateYaml, parseYaml } from './yaml-serializer';
-import { MetaCubeXRule } from '@/data/metacubex-rules';
+import { MetaCubeXRule, RuleGroup } from '@/data/metacubex-rules';
 import { buildRuleProviders, buildRules } from './rule-providers';
 
 /**
@@ -134,14 +134,29 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
 }
 
 /**
- * 生成代理组配置（含地理分组）
+ * 生成代理组配置（含规则分类分组 + 地理分组）
+ *
+ * 结构（参考标准 Mihomo 配置）：
+ *   - 每个规则大类（AI 服务/流媒体/安全隐私...）→ 独立 select 组，
+ *     组成员是地理节点组 + AUTO + DIRECT
+ *   - 每个地理组 → 独立 select 组，组成员是该地区的节点
+ *   - AUTO → url-test 全节点
+ *   - GLOBAL → 顶层全局 select，包含所有地理组 + AUTO（供未归类的兜底）
+ *
+ * 规则通过 buildRules() 路由到对应规则大类组名。
+ * @param ruleGroups 预定义规则大类（RULE_GROUPS），用于生成规则分类组
+ * @param selectedRules 用户勾选的规则，判断哪些大类有勾选（生成对应分组）
  */
-export function generateProxyGroups(nodeNames: string[]): Record<string, unknown>[] {
-  // 按地区分组
+export function generateProxyGroups(
+  nodeNames: string[],
+  selectedRules: MetaCubeXRule[] = [],
+  ruleGroups: RuleGroup[] = []
+): Record<string, unknown>[] {
+  // 1. 地理分组
   const geoGroups = groupNodesByGeo(nodeNames);
   const groups: Record<string, unknown>[] = [];
 
-  // 每个地区建一个 select 组
+  // 2. 每个地理组建 select 组（含 AUTO 便于快速切）
   for (const geo of geoGroups) {
     groups.push({
       name: geo.name,
@@ -150,7 +165,7 @@ export function generateProxyGroups(nodeNames: string[]): Record<string, unknown
     });
   }
 
-  // url-test 自动选择组（包含所有地区组的节点）
+  // 3. AUTO：url-test，全节点自动测速
   const allGeoNodes = geoGroups.flatMap(g => g.nodes);
   groups.push({
     name: 'AUTO',
@@ -161,11 +176,33 @@ export function generateProxyGroups(nodeNames: string[]): Record<string, unknown
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
-  // 全局 PROXY 组（包含所有地理组 + AUTO）
+  // 4. 规则分类组：每个大类生成独立 select 组，成员为地理组 + AUTO（可切 DIRECT）
+  //    从 ruleGroups 中找出包含 PROXY 规则的分类（这些是真正会走代理的）
+  const proxyGroupNames = geoGroups.map(g => g.name);
+  const proxyGroupRefs = ['AUTO', ...proxyGroupNames, 'DIRECT'];
+  for (const g of ruleGroups) {
+    const hasProxyRules = selectedRules.some(r => r.target === 'PROXY' && g.items.some(gi => gi.id === r.id));
+    if (!hasProxyRules) continue;
+    groups.push({
+      name: g.name,
+      type: 'select',
+      proxies: proxyGroupRefs,
+    });
+  }
+
+  // 5. 全局 PROXY 兜底组（未通过规则走代理、或 MATCH 兜底），
+  //    成员为所有地理组 + AUTO
   groups.push({
     name: 'PROXY',
     type: 'select',
-    proxies: ['AUTO', ...geoGroups.map(g => g.name)],
+    proxies: ['AUTO', ...proxyGroupNames],
+  });
+
+  // 6. GLOBAL（Clash 客户端固定保留组，列出所有分组 + DIRECT 便于全局切换）
+  groups.push({
+    name: 'GLOBAL',
+    type: 'select',
+    proxies: [...ruleGroups.filter(g => selectedRules.some(r => r.target === 'PROXY' && g.items.some(gi => gi.id === r.id))).map(g => g.name), 'PROXY', 'AUTO', 'DIRECT'],
   });
 
   return groups;
@@ -299,16 +336,18 @@ function groupNodesByGeo(nodeNames: string[]): { name: string; nodes: string[] }
 /**
  * 生成 Mihomo YAML 配置
  * @param selectedRules 用户勾选的 MetaCubeX 分流规则（用于生成 rule-providers + rules）
+ * @param ruleGroups 预定义规则大类（用于生成按规则分类的 proxy-groups）
  */
 export function generateMihomoConfig(
   nodes: Node[],
   template: MihomoTemplate = DEFAULT_MIHOMO_TEMPLATE,
-  selectedRules: MetaCubeXRule[] = []
+  selectedRules: MetaCubeXRule[] = [],
+  ruleGroups: RuleGroup[] = []
 ): string {
   const uniqueNodes = makeUniqueNames(nodes);
   const proxies = uniqueNodes.map(nodeToMihomoProxy);
   const nodeNames = uniqueNodes.map((n) => n.name);
-  const groups = generateProxyGroups(nodeNames);
+  const groups = generateProxyGroups(nodeNames, selectedRules, ruleGroups);
 
   const config: Record<string, unknown> = {
     'mixed-port': template.mixedPort ?? 7890,
@@ -327,7 +366,7 @@ export function generateMihomoConfig(
   // 分流规则：用户勾选了规则才生成 rule-providers + 有序 rules
   if (selectedRules.length > 0) {
     config['rule-providers'] = buildRuleProviders(selectedRules);
-    config.rules = buildRules(selectedRules);
+    config.rules = buildRules(selectedRules, ruleGroups);
   }
 
   return generateYaml(config);

@@ -37,7 +37,7 @@ describe('ConfigService 分流规则注入', () => {
     expect(yaml).toContain('- MATCH,PROXY');
   });
 
-  it('保存规则后，mihomo 配置包含 rule-providers + 有序 rules', async () => {
+  it('保存规则后，mihomo 配置包含 rule-providers + 有序 rules + 规则分组', async () => {
     const svc = await setup();
     await svc.setSelectedRuleIds(['NETFLIX', 'OPENAI', 'CATEGORY-ADS-ALL']);
     const yaml = await svc.generate('mihomo');
@@ -47,9 +47,12 @@ describe('ConfigService 分流规则注入', () => {
     expect(yaml).toContain('netflix.yaml');
     expect(yaml).toContain('geosite-openai');
     expect(yaml).toContain('geosite-category-ads-all');
-    // 有序 rules
+    // 规则分类分组出现（PROXY 规则路由到所属大类分组名）
+    expect(yaml).toContain('AI 服务');
+    expect(yaml).toContain('流媒体');
+    // 有序 rules：REJECT 在最前，OPENAI 路由到 AI 服务组
     expect(yaml.indexOf('RULE-SET,geosite-category-ads-all,REJECT')).toBeLessThan(
-      yaml.indexOf('RULE-SET,geosite-openai,PROXY')
+      yaml.indexOf('RULE-SET,geosite-openai,AI 服务')
     );
     expect(yaml.indexOf('GEOIP,CN,DIRECT')).toBeLessThan(
       yaml.indexOf('MATCH,PROXY')

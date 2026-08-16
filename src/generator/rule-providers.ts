@@ -9,7 +9,7 @@
  *   - 单个分类规则集在 `meta` 分支 `geo/geosite/<name>.yaml`（含 payload 列表）。
  *   - 该 yaml 可经 raw.githubusercontent 和 cdn.jsdelivr.net 访问，已验证 200。
  */
-import { MetaCubeXRule } from '@/data/metacubex-rules';
+import { MetaCubeXRule, RuleGroup } from '@/data/metacubex-rules';
 
 /** 规则文件 CDN 镜像前缀（meta 分支，国内可访问，已验证） */
 export const META_DAT_BASE =
@@ -51,14 +51,18 @@ export function providerUrl(id: string): string {
   return `${META_DAT_BASE}${id.toLowerCase()}.yaml`;
 }
 
-/** 单条规则的 RULE-SET 输出行 */
-export function ruleSetLine(rule: MetaCubeXRule): string {
-  return `RULE-SET,${providerName(rule.id)},${rule.target}`;
+/** 计算规则的出口目标：若是 PROXY，路由到该规则所属的大类分组名；否则 DIRECT/REJECT 原样 */
+export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
+  if (rule.target !== 'PROXY') return rule.target;
+  // 找到所属大类分组
+  const g = groups.find(gr => gr.items.some(i => i.id === rule.id));
+  // 若无归属分组，回退到 PROXY
+  return g ? g.name : 'PROXY';
 }
 
-export interface RuleGenOptions {
-  /** 用户勾选的规则（已按需展开成平铺列表） */
-  selected?: MetaCubeXRule[];
+/** 单条规则的 RULE-SET 输出行（按大类分组路由） */
+export function ruleSetLine(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
+  return `RULE-SET,${providerName(rule.id)},${ruleActionTarget(rule, groups)}`;
 }
 
 /**
@@ -94,7 +98,7 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
  *   - 广告 REJECT 必须放在最前，否则被 PROXY 规则先匹配就漏广告
  *   - AI/加密专用 PROXY 必须放在 DIRECT 规则之前，否则 gemini.google.com 被 GEOSITE,google,PROXY 提前匹配
  */
-export function buildRules(selected: MetaCubeXRule[] = []): string[] {
+export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] = []): string[] {
   const hardcoded: string[] = [
     'GEOIP,private,DIRECT',
     'GEOSITE,cn,DIRECT',
@@ -103,13 +107,13 @@ export function buildRules(selected: MetaCubeXRule[] = []): string[] {
 
   const reject = selected
     .filter((r) => r.target === 'REJECT')
-    .map(ruleSetLine);
+    .map((r) => ruleSetLine(r, groups));
   const proxy = selected
     .filter((r) => r.target === 'PROXY')
-    .map(ruleSetLine);
+    .map((r) => ruleSetLine(r, groups));
   const direct = selected
     .filter((r) => r.target === 'DIRECT')
-    .map(ruleSetLine);
+    .map((r) => ruleSetLine(r, groups));
 
   return [
     ...hardcoded,

@@ -161,7 +161,7 @@ export function createConfigService(repos: Repositories): ConfigService {
       const nodes = all.filter((n) => !disabled.has(nodeFingerprint(n)));
       switch (format) {
         case 'mihomo':
-          return generateMihomoConfig(nodes, undefined, await this.getSelectedRules());
+          return generateMihomoConfig(nodes, undefined, await this.getSelectedRules(), await this.getMergedGroups());
         case 'singbox':
           return generateSingboxConfig(nodes);
         case 'surge':
