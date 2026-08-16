@@ -20,21 +20,21 @@ describe('mergeCustomRules', () => {
     expect(aiGroup!.items.some(i => i.id === 'MY-NEW-SITE')).toBe(true);
   });
 
-  it('自定义规则分组不存在时归入 other', () => {
+  it('自定义规则分组不存在时归入 user', () => {
     const custom: CustomRule[] = [
       { id: 'ORPHAN-RULE', label: '孤儿', groupKey: 'nonexistent', target: 'DIRECT' },
     ];
     const merged = mergeCustomRules(custom);
-    const other = merged.find(g => g.key === 'other');
+    const other = merged.find(g => g.key === 'user');
     expect(other!.items.some(i => i.id === 'ORPHAN-RULE')).toBe(true);
   });
 
   it('自定义规则去重：同分组同id替换', () => {
     const custom: CustomRule[] = [
-      { id: 'NETFLIX', label: '自定义Netflix', groupKey: 'stream', target: 'DIRECT' },
+      { id: 'NETFLIX', label: '自定义Netflix', groupKey: 'media', target: 'DIRECT' },
     ];
     const merged = mergeCustomRules(custom);
-    const stream = merged.find(g => g.key === 'stream');
+    const stream = merged.find(g => g.key === 'media');
     const netflix = stream!.items.find(i => i.id === 'NETFLIX');
     expect(netflix).toBeDefined();
     expect(netflix!.label).toBe('自定义Netflix');

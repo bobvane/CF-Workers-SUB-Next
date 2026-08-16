@@ -55,14 +55,61 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
   catalog: CatalogEntry[];
 };
 
-/** 预定义 9 大常规分组 */
+/**
+ * 预定义规则分组
+ * 规则优先级（自上而下匹配，见 rule-providers.buildRules）：
+ *   1. 广告拦截（REJECT）
+ *   2. 应用净化（REJECT）
+ *   3. 国内直连（DIRECT）——统一收束私有地址/CN域名/CN IP/国内网站/国内流媒体
+ *   4. 国外媒体（PROXY 流媒体）
+ *   5. 规则分类组（AI/加密货币/社交/游戏/云服务/开发/用户规则，PROXY）
+ *   6. 漏网之鱼（MATCH 兜底）
+ */
 export const RULE_GROUPS: RuleGroup[] = [
   {
-    key: 'safe', name: '安全与隐私', icon: '🛡️',
+    key: 'ads', name: '广告拦截', icon: '🔥',
     items: [
-      { id: 'CATEGORY-ADS-ALL', label: '广告拦截', tag: 'geosite', target: 'REJECT' },
+      { id: 'CATEGORY-ADS-ALL', label: '广告拦截通用合集', tag: 'geosite', target: 'REJECT' },
+    ],
+  },
+  {
+    key: 'china-direct', name: '国内直连', icon: '🇨🇳',
+    items: [
+      // 私有/基础直连（原"安全与隐私"并入）
       { id: 'PRIVATE', label: '私有地址', tag: 'geosite', target: 'DIRECT' },
       { id: 'CN', label: '中国直连域名', tag: 'geosite', target: 'DIRECT' },
+      // 国内常用网站（原"中国内地常用"并入）
+      { id: 'BAIDU', label: '百度', tag: 'geosite', target: 'DIRECT' },
+      { id: 'ALIBABA', label: '阿里巴巴(含淘宝/支付宝)', tag: 'geosite', target: 'DIRECT' },
+      { id: 'TENCENT', label: '腾讯(含微信/QQ)', tag: 'geosite', target: 'DIRECT' },
+      { id: 'JD', label: '京东', tag: 'geosite', target: 'DIRECT' },
+      { id: 'XIAOMI', label: '小米', tag: 'geosite', target: 'DIRECT' },
+      { id: 'HUAWEI', label: '华为', tag: 'geosite', target: 'DIRECT' },
+      { id: 'UNIONPAY', label: '银联', tag: 'geosite', target: 'DIRECT' },
+      { id: 'MEITUAN', label: '美团', tag: 'geosite', target: 'DIRECT' },
+      { id: 'KUAISHOU', label: '快手', tag: 'geosite', target: 'DIRECT' },
+      { id: 'XIAOHONGSHU', label: '小红书', tag: 'geosite', target: 'DIRECT' },
+      { id: 'SUNING', label: '苏宁', tag: 'geosite', target: 'DIRECT' },
+      { id: 'XUNLEI', label: '迅雷', tag: 'geosite', target: 'DIRECT' },
+      { id: 'CATEGORY-ENTERTAINMENT-CN', label: '中国娱乐聚合', tag: 'geosite', target: 'DIRECT' },
+      // 国内流媒体（原"流媒体"组的国内项并入）
+      { id: 'BILIBILI', label: '哔哩哔哩', tag: 'geosite', target: 'DIRECT' },
+      { id: 'IQIYI', label: '爱奇艺', tag: 'geosite', target: 'DIRECT' },
+      { id: 'YOUKU', label: '优酷', tag: 'geosite', target: 'DIRECT' },
+    ],
+  },
+  {
+    key: 'media', name: '国外媒体', icon: '🎬',
+    items: [
+      { id: 'NETFLIX', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
+      { id: 'YOUTUBE', label: 'YouTube', tag: 'geosite', target: 'PROXY' },
+      { id: 'DISNEY', label: 'Disney+', tag: 'geosite', target: 'PROXY' },
+      { id: 'HBO', label: 'HBO Max', tag: 'geosite', target: 'PROXY' },
+      { id: 'PRIMEVIDEO', label: 'Amazon Prime', tag: 'geosite', target: 'PROXY' },
+      { id: 'TIKTOK', label: 'TikTok', tag: 'geosite', target: 'PROXY' },
+      { id: 'SPOTIFY', label: 'Spotify', tag: 'geosite', target: 'PROXY' },
+      { id: 'TWITCH', label: 'Twitch', tag: 'geosite', target: 'PROXY' },
+      { id: 'CATEGORY-MEDIA', label: '媒体聚合', tag: 'geosite', target: 'PROXY' },
     ],
   },
   {
@@ -87,23 +134,6 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'PERPLEXITY', label: 'Perplexity', tag: 'geosite', target: 'PROXY' },
       { id: 'GITHUB-COPILOT', label: 'GitHub Copilot', tag: 'geosite', target: 'PROXY' },
       { id: 'CATEGORY-AI-CHAT-!CN', label: 'AI 对话(非中国)', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
-    key: 'stream', name: '流媒体', icon: '🎬',
-    items: [
-      { id: 'NETFLIX', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
-      { id: 'YOUTUBE', label: 'YouTube', tag: 'geosite', target: 'PROXY' },
-      { id: 'DISNEY', label: 'Disney+', tag: 'geosite', target: 'PROXY' },
-      { id: 'HBO', label: 'HBO Max', tag: 'geosite', target: 'PROXY' },
-      { id: 'PRIMEVIDEO', label: 'Amazon Prime', tag: 'geosite', target: 'PROXY' },
-      { id: 'TIKTOK', label: 'TikTok', tag: 'geosite', target: 'PROXY' },
-      { id: 'SPOTIFY', label: 'Spotify', tag: 'geosite', target: 'PROXY' },
-      { id: 'TWITCH', label: 'Twitch', tag: 'geosite', target: 'PROXY' },
-      { id: 'BILIBILI', label: '哔哩哔哩', tag: 'geosite', target: 'DIRECT' },
-      { id: 'IQIYI', label: '爱奇艺', tag: 'geosite', target: 'DIRECT' },
-      { id: 'YOUKU', label: '优酷', tag: 'geosite', target: 'DIRECT' },
-      { id: 'CATEGORY-MEDIA', label: '媒体聚合', tag: 'geosite', target: 'PROXY' },
     ],
   },
   {
@@ -164,25 +194,7 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'china', name: '中国内地常用', icon: '🇨🇳',
-    items: [
-      { id: 'BAIDU', label: '百度', tag: 'geosite', target: 'DIRECT' },
-      { id: 'ALIBABA', label: '阿里巴巴(含淘宝/支付宝)', tag: 'geosite', target: 'DIRECT' },
-      { id: 'TENCENT', label: '腾讯(含微信/QQ)', tag: 'geosite', target: 'DIRECT' },
-      { id: 'JD', label: '京东', tag: 'geosite', target: 'DIRECT' },
-      { id: 'XIAOMI', label: '小米', tag: 'geosite', target: 'DIRECT' },
-      { id: 'HUAWEI', label: '华为', tag: 'geosite', target: 'DIRECT' },
-      { id: 'UNIONPAY', label: '银联', tag: 'geosite', target: 'DIRECT' },
-      { id: 'MEITUAN', label: '美团', tag: 'geosite', target: 'DIRECT' },
-      { id: 'KUAISHOU', label: '快手', tag: 'geosite', target: 'DIRECT' },
-      { id: 'XIAOHONGSHU', label: '小红书', tag: 'geosite', target: 'DIRECT' },
-      { id: 'SUNING', label: '苏宁', tag: 'geosite', target: 'DIRECT' },
-      { id: 'XUNLEI', label: '迅雷', tag: 'geosite', target: 'DIRECT' },
-      { id: 'CATEGORY-ENTERTAINMENT-CN', label: '中国娱乐聚合', tag: 'geosite', target: 'DIRECT' },
-    ],
-  },
-  {
-    key: 'other', name: '其他常用', icon: '👑',
+    key: 'user', name: '用户规则', icon: '👑',
     items: [
       { id: 'ADOBE', label: 'Adobe', tag: 'geosite', target: 'PROXY' },
       { id: 'APPLE', label: 'Apple', tag: 'geosite', target: 'DIRECT' },
@@ -226,8 +238,8 @@ export function mergeCustomRules(custom: CustomRule[]): RuleGroup[] {
       if (idx >= 0) group.items[idx] = item;
       else group.items.push(item);
     } else {
-      // 分组不存在则放到"其他常用"，不存在就建一个
-      const other = groups.find(g => g.key === 'other');
+      // 分组不存在则放到"用户规则"，不存在就建一个
+      const other = groups.find(g => g.key === 'user');
       if (other && !other.items.some(i => i.id === c.id)) other.items.push(item);
     }
   }

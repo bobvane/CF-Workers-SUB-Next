@@ -88,9 +88,8 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('手动切换');
     expect(yaml).toContain('自动选择');
     expect(yaml).toContain('国外媒体');
-    expect(yaml).toContain('国内媒体');
+    expect(yaml).toContain('国内直连');
     expect(yaml).toContain('广告拦截');
-    expect(yaml).toContain('应用净化');
     expect(yaml).toContain('GLOBAL');
     // MATCH 兜底到漏网之鱼
     expect(yaml).toContain('MATCH,漏网之鱼');

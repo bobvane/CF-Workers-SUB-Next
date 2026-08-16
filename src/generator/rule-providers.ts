@@ -55,15 +55,15 @@ export function providerUrl(id: string): string {
 export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
   // REJECT → 广告拦截
   if (rule.target === 'REJECT') return '广告拦截';
-  // DIRECT → 国内媒体（用户可在国内媒体组内选择直连或代理）
-  if (rule.target === 'DIRECT') return '国内媒体';
+  // DIRECT → 国内直连（全部直连规则统一走国内直连组，默认 DIRECT）
+  if (rule.target === 'DIRECT') return '国内直连';
   // PROXY：找到所属规则大类
   const g = groups.find(gr => gr.items.some(i => i.id === rule.id));
   if (!g) return '漏网之鱼'; // 无归属分组，兜底到漏网之鱼
-  // 流媒体 PROXY → 国外媒体
-  if (g.key === 'stream') return '国外媒体';
-  // 安全与隐私 — 不应该有 PROXY 规则，但如有则走到漏网之鱼
-  if (g.key === 'safe') return '漏网之鱼';
+  // 国外媒体（media 组）PROXY → 国外媒体
+  if (g.key === 'media') return '国外媒体';
+  // 用户规则（user 组）PROXY → 用户规则组
+  if (g.key === 'user') return g.name;
   // 其他大类 → 使用大类名作为分组名
   return g.name;
 }
@@ -107,27 +107,39 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
  *   - AI/加密专用 PROXY 必须放在 DIRECT 规则之前，否则 gemini.google.com 被 GEOSITE,google,PROXY 提前匹配
  */
 export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] = []): string[] {
-  const hardcoded: string[] = [
+  const selectedSet = new Set(selected.map(r => r.id));
+  const lines: string[] = [];
+
+  // 按 RULE_GROUPS 既定顺序（即分组优先级）逐个输出勾选的规则。
+  // 分组顺序已定义：广告拦截 → 国内直连 → 国外媒体 → ... 规则分类组。
+  for (const g of groups) {
+    for (const item of g.items) {
+      if (selectedSet.has(item.id)) {
+        lines.push(ruleSetLine(item, groups));
+      }
+    }
+  }
+
+  // 兜底：未被任何分组匹配到的勾选规则（防御性）
+  // matchedIds 记录 rule id（大写），避免重复
+  const matchedIds = new Set(lines.map(l => {
+    // RULE-SET,geosite-xxx,策略 -> 提取 xxx 作为 rule id (大写)
+    const parts = l.split(',');
+    if (parts[0] === 'RULE-SET' && parts[1].startsWith('geosite-')) {
+      return parts[1].slice(8).toUpperCase(); // 去掉 'geosite-' 前缀并转大写
+    }
+    return parts[1] || parts[0];
+  }));
+  const orphanSelected = selected.filter(r => !matchedIds.has(r.id));
+  for (const r of orphanSelected) {
+    lines.push(ruleSetLine(r, groups));
+  }
+
+  // 硬编码兜底（放在用户规则之后，作为最终防线）
+  return [
+    ...lines,
     'GEOIP,private,DIRECT',
     'GEOSITE,cn,DIRECT',
-    'GEOSITE,category-ads-all,广告拦截',
-  ];
-
-  const reject = selected
-    .filter((r) => r.target === 'REJECT')
-    .map((r) => ruleSetLine(r, groups));
-  const proxy = selected
-    .filter((r) => r.target === 'PROXY')
-    .map((r) => ruleSetLine(r, groups));
-  const direct = selected
-    .filter((r) => r.target === 'DIRECT')
-    .map((r) => ruleSetLine(r, groups));
-
-  return [
-    ...hardcoded,
-    ...reject,
-    ...proxy,
-    ...direct,
     'GEOIP,CN,DIRECT',
     'MATCH,漏网之鱼',
   ];

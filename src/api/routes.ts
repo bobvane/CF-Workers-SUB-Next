@@ -396,7 +396,7 @@ export function createApp(deps: AppDeps): Hono {
     if (!id) {
       return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'id 不能为空' } }, 400);
     }
-    const groupKey = (body.groupKey || 'other').trim();
+    const groupKey = (body.groupKey || 'user').trim();
     const target = (['PROXY', 'DIRECT', 'REJECT'].includes(body.target || '') ? body.target : 'PROXY') as 'PROXY' | 'DIRECT' | 'REJECT';
     const label = (body.label || id).trim();
     await config.upsertCustomRule({ id, label, groupKey, target });

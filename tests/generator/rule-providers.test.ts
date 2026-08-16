@@ -43,8 +43,8 @@ describe('providerName / providerUrl', () => {
     expect(ruleActionTarget(rule('CATEGORY-ADS-ALL', 'REJECT'), RULE_GROUPS)).toBe('广告拦截');
   });
 
-  it('ruleActionTarget DIRECT → 国内媒体', () => {
-    expect(ruleActionTarget(rule('BILIBILI', 'DIRECT'), RULE_GROUPS)).toBe('国内媒体');
+  it('ruleActionTarget DIRECT → 国内直连', () => {
+    expect(ruleActionTarget(rule('BILIBILI', 'DIRECT'), RULE_GROUPS)).toBe('国内直连');
   });
 
   it('ruleActionTarget 流媒体 PROXY → 国外媒体', () => {
@@ -75,19 +75,19 @@ describe('buildRuleProviders', () => {
 });
 
 describe('buildRules 优先级', () => {
-  it('输出顺序：硬编码直连 → REJECT → PROXY → DIRECT → GEOIP,CN → MATCH', () => {
+  it('输出顺序：按 RULE_GROUPS 分组优先级（ads → china-direct → ai...）', () => {
     const rules = buildRules([
       rule('BILIBILI', 'DIRECT'),
       rule('OPENAI', 'PROXY'),
       rule('CATEGORY-ADS-ALL', 'REJECT'),
     ], RULE_GROUPS);
     expect(rules).toEqual([
+      'RULE-SET,geosite-category-ads-all,广告拦截', // ads 组 REJECT 优先
+      'RULE-SET,geosite-bilibili,国内直连',        // china-direct 组 DIRECT 次之
+      'RULE-SET,geosite-openai,AI 服务',           // ai 组 PROXY
+      // 硬编码兜底
       'GEOIP,private,DIRECT',
       'GEOSITE,cn,DIRECT',
-      'GEOSITE,category-ads-all,广告拦截',
-      'RULE-SET,geosite-category-ads-all,广告拦截',
-      'RULE-SET,geosite-openai,AI 服务',
-      'RULE-SET,geosite-bilibili,国内媒体',
       'GEOIP,CN,DIRECT',
       'MATCH,漏网之鱼',
     ]);

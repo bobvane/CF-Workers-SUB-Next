@@ -299,14 +299,13 @@ export interface GeoResolver {
  *   1. 节点选择（select：自动选择 + 地理组 + 手动切换 + DIRECT）
  *   2. 手动切换（select：具体节点扁平列表，逐节点选）
  *   3. 自动选择（url-test：具体节点，自动测速）
- *   4. 国外媒体（流媒体 PROXY，默认 自动选择）
- *   5. 国内媒体（默认 DIRECT）
- *   6. 广告拦截（默认 REJECT）
- *   7. 应用净化（默认 REJECT）
- *   8. 规则分类组（AI服务/加密货币/游戏/社交/云服务/开发/其他，默认 节点选择）
- *   9. 漏网之鱼（MATCH 兜底，默认 节点选择）
- *   10. GLOBAL（显式定义，完整列出所有组，决定面板显示顺序，默认 DIRECT）
- *   11. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，url-test 类型，自动测速选该地区最优节点）
+ *   4. 广告拦截（默认 REJECT）
+ *   5. 国内直连（默认 DIRECT，收束私有地址/CN域名/CN IP/国内网站/国内流媒体）
+ *   6. 国外媒体（流媒体 PROXY，默认 自动选择）
+ *   7. 规则分类组（AI服务/加密货币/游戏/社交/云服务/开发/用户规则，默认 节点选择）
+ *   8. 漏网之鱼（MATCH 兜底，默认 节点选择）
+ *   9. GLOBAL（显式定义，完整列出所有组，决定面板显示顺序，默认 DIRECT）
+ *   10. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，url-test 类型，自动测速选该地区最优节点）
  *
  * 关键：GLOBAL 组必须显式、完整地按期望顺序引用所有策略组，
  *       因 zashboard/metacubexd 面板的节点组排序 = GLOBAL 组 proxies 引用顺序。
@@ -358,9 +357,9 @@ export async function generateProxyGroups(
     proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
 
-  // 6. 国内媒体（默认直连，按需可切节点）
+  // 6. 国内直连（默认 DIRECT，涵盖私有地址/CN域名/CN IP/国内网站/国内流媒体）
   groups.push({
-    name: '国内媒体',
+    name: '国内直连',
     type: 'select',
     proxies: ['DIRECT', '节点选择', ...geoGroupNames, '手动切换', '自动选择'],
   });
@@ -372,15 +371,9 @@ export async function generateProxyGroups(
     proxies: ['REJECT', 'DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
   });
 
-  // 8. 应用净化（默认 REJECT）
-  groups.push({
-    name: '应用净化',
-    type: 'select',
-    proxies: ['REJECT', 'DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
-  });
-
-  // 9. 规则分类组（仅当勾选该大类规则时才生成）
-  const independentGroupKeys = ['crypto', 'ai', 'social', 'game', 'cloud', 'dev', 'other'];
+  // 8. 规则分类组（仅当勾选该大类规则时才生成）。
+  //    ads / media / china-direct 已由上面固化策略组承接，不在此重复生成独立组。
+  const independentGroupKeys = ['crypto', 'ai', 'social', 'game', 'cloud', 'dev', 'user'];
   const ruleClassGroupNames: string[] = [];
   for (const key of independentGroupKeys) {
     const g = ruleGroups.find(gr => gr.key === key);
@@ -393,23 +386,22 @@ export async function generateProxyGroups(
     });
   }
 
-  // 10. 漏网之鱼（MATCH 兜底，默认节点选择）
+  // 9. 漏网之鱼（MATCH 兜底，默认节点选择）
   groups.push({
     name: '漏网之鱼',
     type: 'select',
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
-  // 11. GLOBAL（显式定义，完整按期望顺序引用所有策略组，
+  // 10. GLOBAL（显式定义，完整按期望顺序引用所有策略组，
   //     因 zashboard/metacubexd 面板排序 = GLOBAL 组 proxies 引用顺序。默认 DIRECT）
   const globalOrder: string[] = [
     '节点选择',
     '手动切换',
     '自动选择',
-    '国外媒体',
-    '国内媒体',
     '广告拦截',
-    '应用净化',
+    '国内直连',
+    '国外媒体',
     ...ruleClassGroupNames,
     '漏网之鱼',
     ...geoGroupNames,
