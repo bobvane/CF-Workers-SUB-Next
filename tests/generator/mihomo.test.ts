@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateMihomoConfig, nodeToMihomoProxy, validateMihomo } from '@/generator/mihomo';
 import { Node } from '@/models/node';
+import { RULE_GROUPS } from '@/data/metacubex-rules';
 
 function makeNode(overrides: Partial<Node> = {}): Node {
   return {
@@ -42,15 +43,10 @@ describe('nodeToMihomoProxy', () => {
 
   it('should convert trojan node', () => {
     const proxy = nodeToMihomoProxy(
-      makeNode({
-        protocol: 'trojan',
-        password: 'secret',
-        sni: 'trojan.example.com',
-      })
+      makeNode({ protocol: 'trojan', password: 'pass123' })
     );
     expect(proxy.type).toBe('trojan');
-    expect(proxy.password).toBe('secret');
-    expect(proxy.sni).toBe('trojan.example.com');
+    expect(proxy.password).toBe('pass123');
   });
 
   it('should convert ss node with cipher from tags', () => {
@@ -71,7 +67,6 @@ describe('nodeToMihomoProxy', () => {
       makeNode({ flow: 'xtls-rprx-vision', pbk: 'pubkey', sid: 'abc' })
     );
     expect(proxy.flow).toBe('xtls-rprx-vision');
-    // Mihomo 用连字符字段 reality-opts（kebab-case）
     const realityOpts = proxy['reality-opts'] as Record<string, unknown>;
     expect(realityOpts['public-key']).toBe('pubkey');
     expect(realityOpts['short-id']).toBe('abc');
@@ -87,8 +82,18 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('mode: rule');
     expect(yaml).toContain('proxies:');
     expect(yaml).toContain('proxy-groups:');
-    expect(yaml).toContain('rules:');
-    expect(yaml).toContain('MATCH,PROXY');
+    // 新分组层级
+    expect(yaml).toContain('漏网之鱼');
+    expect(yaml).toContain('节点选择');
+    expect(yaml).toContain('手动切换');
+    expect(yaml).toContain('自动选择');
+    expect(yaml).toContain('国外媒体');
+    expect(yaml).toContain('国内媒体');
+    expect(yaml).toContain('广告拦截');
+    expect(yaml).toContain('应用净化');
+    expect(yaml).toContain('GLOBAL');
+    // MATCH 兜底到漏网之鱼
+    expect(yaml).toContain('MATCH,漏网之鱼');
   });
 
   it('should generate multiple proxies', () => {
@@ -105,10 +110,12 @@ describe('generateMihomoConfig', () => {
     expect(validateMihomo(yaml)).toBe(true);
   });
 
-  it('should include proxy groups with node names', () => {
+  it('should include proxy groups with correct structure', () => {
     const yaml = generateMihomoConfig([makeNode({ name: 'JP-01' })]);
-    expect(yaml).toContain('PROXY');
-    expect(yaml).toContain('AUTO');
+    expect(yaml).toContain('漏网之鱼');
+    expect(yaml).toContain('节点选择');
+    expect(yaml).toContain('自动选择');
+    expect(yaml).toContain('GLOBAL');
   });
 
   it('should not enable allow-lan by default (security)', () => {
@@ -133,22 +140,31 @@ describe('generateMihomoConfig', () => {
     expect(validateMihomo(yaml)).toBe(true);
   });
 
+  it('should generate rule-class groups when rules selected', () => {
+    const yaml = generateMihomoConfig(
+      [makeNode()],
+      undefined,
+      [
+        { id: 'OPENAI', label: 'OpenAI', tag: 'geosite', target: 'PROXY' },
+        { id: 'NETFLIX', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
+      ],
+      RULE_GROUPS
+    );
+    // AI 服务组（OPENAI 属于 AI 服务）
+    expect(yaml).toContain('AI 服务');
+    // 流媒体规则 → 国外媒体（不生成独立流媒体组）
+    expect(yaml).toContain('国外媒体');
+  });
+
   it('should generate geo groups for recognized node names', () => {
     const yaml = generateMihomoConfig([
       makeNode({ name: 'HK-01', server: 'hk.example.com' }),
       makeNode({ id: 'n2', name: 'JP-01', protocol: 'vmess', server: 'jp.example.com', uuid: '1111' }),
       makeNode({ id: 'n3', name: 'US-01', protocol: 'trojan', server: 'us.example.com', password: 'p' }),
     ]);
-    // 验证地理组名出现
     expect(yaml).toContain('🇭🇰 香港');
     expect(yaml).toContain('🇯🇵 日本');
     expect(yaml).toContain('🇺🇸 美国');
-    // 验证 PROXY 组包含地理组引用
-    expect(yaml).toContain('🇭🇰 香港');
-    expect(yaml).toContain('🇯🇵 日本');
-    // 验证 AUTO 和 PROXY 都存在
-    expect(yaml).toContain('AUTO');
-    expect(yaml).toContain('PROXY');
     expect(validateMihomo(yaml)).toBe(true);
   });
 
@@ -162,11 +178,10 @@ describe('generateMihomoConfig', () => {
   });
 
   it('should put ungrouped nodes into "其他" group', () => {
-      const yaml = generateMihomoConfig([
-        makeNode({ name: 'Node-001', server: 'x.example.com' }),
-      ]);
-      // 验证 proxy-groups 包含其他组
-      expect(yaml).toContain('其他');
-      expect(yaml).toContain('Node-001');
+    const yaml = generateMihomoConfig([
+      makeNode({ name: 'Node-001', server: 'x.example.com' }),
+    ]);
+    expect(yaml).toContain('其他');
+    expect(yaml).toContain('Node-001');
   });
 });

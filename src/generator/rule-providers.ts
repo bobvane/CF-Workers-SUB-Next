@@ -51,13 +51,21 @@ export function providerUrl(id: string): string {
   return `${META_DAT_BASE}${id.toLowerCase()}.yaml`;
 }
 
-/** 计算规则的出口目标：若是 PROXY，路由到该规则所属的大类分组名；否则 DIRECT/REJECT 原样 */
+/** 计算规则的出口目标（按新分组层级路由） */
 export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
-  if (rule.target !== 'PROXY') return rule.target;
-  // 找到所属大类分组
+  // REJECT → 广告拦截
+  if (rule.target === 'REJECT') return '广告拦截';
+  // DIRECT → 国内媒体（用户可在国内媒体组内选择直连或代理）
+  if (rule.target === 'DIRECT') return '国内媒体';
+  // PROXY：找到所属规则大类
   const g = groups.find(gr => gr.items.some(i => i.id === rule.id));
-  // 若无归属分组，回退到 PROXY
-  return g ? g.name : 'PROXY';
+  if (!g) return '漏网之鱼'; // 无归属分组，兜底到漏网之鱼
+  // 流媒体 PROXY → 国外媒体
+  if (g.key === 'stream') return '国外媒体';
+  // 安全与隐私 — 不应该有 PROXY 规则，但如有则走到漏网之鱼
+  if (g.key === 'safe') return '漏网之鱼';
+  // 其他大类 → 使用大类名作为分组名
+  return g.name;
 }
 
 /** 单条规则的 RULE-SET 输出行（按大类分组路由） */
@@ -102,7 +110,7 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   const hardcoded: string[] = [
     'GEOIP,private,DIRECT',
     'GEOSITE,cn,DIRECT',
-    'GEOSITE,category-ads-all,REJECT',
+    'GEOSITE,category-ads-all,广告拦截',
   ];
 
   const reject = selected
@@ -121,6 +129,6 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     ...proxy,
     ...direct,
     'GEOIP,CN,DIRECT',
-    'MATCH,PROXY',
+    'MATCH,漏网之鱼',
   ];
 }

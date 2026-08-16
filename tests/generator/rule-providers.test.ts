@@ -8,9 +8,10 @@ import {
   providerName,
   providerUrl,
   ruleSetLine,
+  ruleActionTarget,
   META_DAT_BASE,
 } from '@/generator/rule-providers';
-import { MetaCubeXRule } from '@/data/metacubex-rules';
+import { MetaCubeXRule, RULE_GROUPS } from '@/data/metacubex-rules';
 
 function rule(id: string, target: 'PROXY' | 'DIRECT' | 'REJECT' = 'PROXY'): MetaCubeXRule {
   return { id, label: id, tag: 'geosite', target };
@@ -25,8 +26,33 @@ describe('providerName / providerUrl', () => {
     expect(providerUrl('NETFLIX')).toBe(`${META_DAT_BASE}netflix.yaml`);
   });
 
-  it('ruleSetLine 输出 RULE-SET 行', () => {
-    expect(ruleSetLine(rule('NETFLIX'))).toBe('RULE-SET,geosite-netflix,PROXY');
+  it('ruleSetLine 路由到分组名（无分组时回退到漏网之鱼）', () => {
+    const line = ruleSetLine(rule('NETFLIX'));
+    expect(line.startsWith('RULE-SET,geosite-netflix,')).toBe(true);
+    // 无分组时 PROXY 规则回退到漏网之鱼
+    expect(line.endsWith('漏网之鱼')).toBe(true);
+  });
+
+  it('ruleSetLine 使用分组路由', () => {
+    // NETFLIX 在流媒体组 → 国外媒体
+    const line = ruleSetLine(rule('NETFLIX'), RULE_GROUPS);
+    expect(line).toBe('RULE-SET,geosite-netflix,国外媒体');
+  });
+
+  it('ruleActionTarget REJECT → 广告拦截', () => {
+    expect(ruleActionTarget(rule('CATEGORY-ADS-ALL', 'REJECT'), RULE_GROUPS)).toBe('广告拦截');
+  });
+
+  it('ruleActionTarget DIRECT → 国内媒体', () => {
+    expect(ruleActionTarget(rule('BILIBILI', 'DIRECT'), RULE_GROUPS)).toBe('国内媒体');
+  });
+
+  it('ruleActionTarget 流媒体 PROXY → 国外媒体', () => {
+    expect(ruleActionTarget(rule('NETFLIX'), RULE_GROUPS)).toBe('国外媒体');
+  });
+
+  it('ruleActionTarget AI 服务 PROXY → AI 服务', () => {
+    expect(ruleActionTarget(rule('OPENAI'), RULE_GROUPS)).toBe('AI 服务');
   });
 });
 
@@ -54,16 +80,16 @@ describe('buildRules 优先级', () => {
       rule('BILIBILI', 'DIRECT'),
       rule('OPENAI', 'PROXY'),
       rule('CATEGORY-ADS-ALL', 'REJECT'),
-    ]);
+    ], RULE_GROUPS);
     expect(rules).toEqual([
       'GEOIP,private,DIRECT',
       'GEOSITE,cn,DIRECT',
-      'GEOSITE,category-ads-all,REJECT',
-      'RULE-SET,geosite-category-ads-all,REJECT',
-      'RULE-SET,geosite-openai,PROXY',
-      'RULE-SET,geosite-bilibili,DIRECT',
+      'GEOSITE,category-ads-all,广告拦截',
+      'RULE-SET,geosite-category-ads-all,广告拦截',
+      'RULE-SET,geosite-openai,AI 服务',
+      'RULE-SET,geosite-bilibili,国内媒体',
       'GEOIP,CN,DIRECT',
-      'MATCH,PROXY',
+      'MATCH,漏网之鱼',
     ]);
   });
 
@@ -71,15 +97,15 @@ describe('buildRules 优先级', () => {
     const rules = buildRules([
       rule('OPENAI', 'PROXY'),
       rule('CATEGORY-ADS-ALL', 'REJECT'),
-    ]);
-    const rejectIdx = rules.indexOf('RULE-SET,geosite-category-ads-all,REJECT');
-    const proxyIdx = rules.indexOf('RULE-SET,geosite-openai,PROXY');
+    ], RULE_GROUPS);
+    const rejectIdx = rules.indexOf('RULE-SET,geosite-category-ads-all,广告拦截');
+    const proxyIdx = rules.indexOf('RULE-SET,geosite-openai,AI 服务');
     expect(rejectIdx).toBeLessThan(proxyIdx);
   });
 
-  it('最后两行始终是 GEOIP,CN,DIRECT 和 MATCH,PROXY', () => {
-    const rules = buildRules([rule('NETFLIX')]);
+  it('最后两行始终是 GEOIP,CN,DIRECT 和 MATCH,漏网之鱼', () => {
+    const rules = buildRules([rule('NETFLIX')], RULE_GROUPS);
     expect(rules[rules.length - 2]).toBe('GEOIP,CN,DIRECT');
-    expect(rules[rules.length - 1]).toBe('MATCH,PROXY');
+    expect(rules[rules.length - 1]).toBe('MATCH,漏网之鱼');
   });
 });

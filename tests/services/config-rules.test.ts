@@ -30,14 +30,20 @@ async function setup() {
 }
 
 describe('ConfigService 分流规则注入', () => {
-  it('未保存规则时，mihomo 配置只有默认 MATCH,PROXY', async () => {
+  it('未保存规则时，mihomo 配置只有默认规则 + 始终生成的分组', async () => {
     const svc = await setup();
     const yaml = await svc.generate('mihomo');
+    // 无 rule-providers（因为没有勾选规则）
     expect(yaml).not.toContain('rule-providers');
-    expect(yaml).toContain('- MATCH,PROXY');
+    // 始终生成的分组都在
+    expect(yaml).toContain('漏网之鱼');
+    expect(yaml).toContain('节点选择');
+    expect(yaml).toContain('GLOBAL');
+    // 默认 MATCH 到漏网之鱼
+    expect(yaml).toContain('MATCH,漏网之鱼');
   });
 
-  it('保存规则后，mihomo 配置包含 rule-providers + 有序 rules + 规则分组', async () => {
+  it('保存规则后，mihomo 配置包含 rule-providers + 规则分类分组', async () => {
     const svc = await setup();
     await svc.setSelectedRuleIds(['NETFLIX', 'OPENAI', 'CATEGORY-ADS-ALL']);
     const yaml = await svc.generate('mihomo');
@@ -47,15 +53,17 @@ describe('ConfigService 分流规则注入', () => {
     expect(yaml).toContain('netflix.yaml');
     expect(yaml).toContain('geosite-openai');
     expect(yaml).toContain('geosite-category-ads-all');
-    // 规则分类分组出现（PROXY 规则路由到所属大类分组名）
+    // 规则分类分组出现
     expect(yaml).toContain('AI 服务');
-    expect(yaml).toContain('流媒体');
-    // 有序 rules：REJECT 在最前，OPENAI 路由到 AI 服务组
-    expect(yaml.indexOf('RULE-SET,geosite-category-ads-all,REJECT')).toBeLessThan(
+    expect(yaml).toContain('国外媒体');
+    // 流媒体不生成独立分组（合并到国外媒体）
+    expect(yaml).not.toContain('- 流媒体\n');
+    // 有序 rules：REJECT 路由到广告拦截，OPENAI 路由到 AI 服务
+    expect(yaml.indexOf('RULE-SET,geosite-category-ads-all,广告拦截')).toBeLessThan(
       yaml.indexOf('RULE-SET,geosite-openai,AI 服务')
     );
     expect(yaml.indexOf('GEOIP,CN,DIRECT')).toBeLessThan(
-      yaml.indexOf('MATCH,PROXY')
+      yaml.indexOf('MATCH,漏网之鱼')
     );
   });
 
