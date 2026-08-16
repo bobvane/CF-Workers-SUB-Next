@@ -134,25 +134,166 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
 }
 
 /**
- * 生成代理组配置
+ * 生成代理组配置（含地理分组）
  */
 export function generateProxyGroups(nodeNames: string[]): Record<string, unknown>[] {
-  return [
-    {
-      name: 'PROXY',
+  // 按地区分组
+  const geoGroups = groupNodesByGeo(nodeNames);
+  const groups: Record<string, unknown>[] = [];
+
+  // 每个地区建一个 select 组
+  for (const geo of geoGroups) {
+    groups.push({
+      name: geo.name,
       type: 'select',
-      proxies: ['AUTO', ...nodeNames],
-    },
-    // V1 不执行真实测速，但提供 url-test 作为可用自动选择组
-    {
-      name: 'AUTO',
-      type: 'url-test',
-      url: 'http://www.gstatic.com/generate_204',
-      interval: 300,
-      tolerance: 50,
-      proxies: nodeNames.length > 0 ? nodeNames : ['DIRECT'],
-    },
-  ];
+      proxies: ['AUTO', ...geo.nodes],
+    });
+  }
+
+  // url-test 自动选择组（包含所有地区组的节点）
+  const allGeoNodes = geoGroups.flatMap(g => g.nodes);
+  groups.push({
+    name: 'AUTO',
+    type: 'url-test',
+    url: 'http://www.gstatic.com/generate_204',
+    interval: 300,
+    tolerance: 50,
+    proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
+  });
+
+  // 全局 PROXY 组（包含所有地理组 + AUTO）
+  groups.push({
+    name: 'PROXY',
+    type: 'select',
+    proxies: ['AUTO', ...geoGroups.map(g => g.name)],
+  });
+
+  return groups;
+}
+
+/** 地区代码 → 中文名映射 */
+const GEO_NAMES: Record<string, string> = {
+  HK: '🇭🇰 香港',
+  JP: '🇯🇵 日本',
+  US: '🇺🇸 美国',
+  SG: '🇸🇬 新加坡',
+  TW: '🇹🇼 台湾',
+  KR: '🇰🇷 韩国',
+  UK: '🇬🇧 英国',
+  GB: '🇬🇧 英国',
+  DE: '🇩🇪 德国',
+  FR: '🇫🇷 法国',
+  CA: '🇨🇦 加拿大',
+  AU: '🇦🇺 澳大利亚',
+  IN: '🇮🇳 印度',
+  RU: '🇷🇺 俄罗斯',
+  BR: '🇧🇷 巴西',
+  NL: '🇳🇱 荷兰',
+  SE: '🇸🇪 瑞典',
+  NO: '🇳🇴 挪威',
+  FI: '🇫🇮 芬兰',
+  DK: '🇩🇰 丹麦',
+  IT: '🇮🇹 意大利',
+  ES: '🇪🇸 西班牙',
+  CH: '🇨🇭 瑞士',
+  AE: '🇦🇪 阿联酋',
+  TR: '🇹🇷 土耳其',
+  TH: '🇹🇭 泰国',
+  VN: '🇻🇳 越南',
+  MY: '🇲🇾 马来西亚',
+  PH: '🇵🇭 菲律宾',
+  ID: '🇮🇩 印尼',
+  NZ: '🇳🇿 新西兰',
+  MO: '🇲🇴 澳门',
+  // 中文别名
+  香港: '🇭🇰 香港',
+  日本: '🇯🇵 日本',
+  美国: '🇺🇸 美国',
+  新加坡: '🇸🇬 新加坡',
+  台湾: '🇹🇼 台湾',
+  韩国: '🇰🇷 韩国',
+  英国: '🇬🇧 英国',
+  德国: '🇩🇪 德国',
+  法国: '🇫🇷 法国',
+  加拿大: '🇨🇦 加拿大',
+  澳大利亚: '🇦🇺 澳大利亚',
+  印度: '🇮🇳 印度',
+  俄罗斯: '🇷🇺 俄罗斯',
+  巴西: '🇧🇷 巴西',
+  荷兰: '🇳🇱 荷兰',
+  瑞典: '🇸🇪 瑞典',
+  挪威: '🇳🇴 挪威',
+  芬兰: '🇫🇮 芬兰',
+  丹麦: '🇩🇰 丹麦',
+  意大利: '🇮🇹 意大利',
+  西班牙: '🇪🇸 西班牙',
+  瑞士: '🇨🇭 瑞士',
+  泰国: '🇹🇭 泰国',
+  越南: '🇻🇳 越南',
+  马来西亚: '🇲🇾 马来西亚',
+  菲律宾: '🇵🇭 菲律宾',
+  印尼: '🇮🇩 印尼',
+};
+
+/** 从节点名中提取地区代码，返回 (地区代码, 中文名) 或 null */
+function detectGeo(nodeName: string): { code: string; geoName: string } | null {
+  const chinese = nodeName;
+
+  // 先匹配英文代码（如 HK-01, JP-2, [US] 等）
+  // 必须是边界分隔（前后是 -_.()[]空格 或字符串起点终点），避免误匹配子串
+  for (const code of ['HK','JP','US','SG','TW','KR','UK','GB','DE','FR','CA','AU','IN','RU','BR','NL','SE','NO','FI','DK','IT','ES','CH','AE','TR','TH','VN','MY','PH','ID','NZ','MO']) {
+    const re = new RegExp(`(^|[\\s\\-_\\.\\(\\)\\[\\]]{1})${code}($|[\\s\\-_\\.\\(\\)\\[\\]]{1}|\\d)`, 'i');
+    if (re.test(nodeName)) {
+      return { code, geoName: GEO_NAMES[code]! };
+    }
+  }
+
+  // 再匹配中文名（如"香港 01", "日本节点"）
+  for (const cn of ['香港', '日本', '美国', '新加坡', '台湾', '韩国', '英国', '德国', '法国', '加拿大', '澳大利亚', '印度', '俄罗斯', '巴西', '荷兰', '瑞典', '挪威', '芬兰', '丹麦', '意大利', '西班牙', '瑞士', '泰国', '越南', '马来西亚', '菲律宾', '印尼']) {
+    if (chinese.includes(cn)) {
+      return { code: cn, geoName: GEO_NAMES[cn] };
+    }
+  }
+
+  return null;
+}
+
+/** 按地区对节点分组 */
+function groupNodesByGeo(nodeNames: string[]): { name: string; nodes: string[] }[] {
+  const groups = new Map<string, string[]>();
+  const ungrouped: string[] = [];
+
+  for (const name of nodeNames) {
+    const geo = detectGeo(name);
+    if (geo) {
+      const list = groups.get(geo.geoName) || [];
+      list.push(name);
+      groups.set(geo.geoName, list);
+    } else {
+      ungrouped.push(name);
+    }
+  }
+
+  const result: { name: string; nodes: string[] }[] = [];
+  // 按常见顺序排列
+  const order = ['🇭🇰 香港', '🇯🇵 日本', '🇺🇸 美国', '🇸🇬 新加坡', '🇹🇼 台湾', '🇰🇷 韩国', '🇬🇧 英国', '🇩🇪 德国', '🇫🇷 法国', '🇨🇦 加拿大', '🇦🇺 澳大利亚', '🇮🇳 印度', '🇷🇺 俄罗斯', '🇧🇷 巴西', '🇳🇱 荷兰', '🇸🇪 瑞典', '🇳🇴 挪威', '🇫🇮 芬兰', '🇩🇰 丹麦', '🇮🇹 意大利', '🇪🇸 西班牙', '🇨🇭 瑞士', '🇦🇪 阿联酋', '🇹🇷 土耳其', '🇹🇭 泰国', '🇻🇳 越南', '🇲🇾 马来西亚', '🇵🇭 菲律宾', '🇮🇩 印尼', '🇳🇿 新西兰', '🇲🇴 澳门'];
+  for (const key of order) {
+    if (groups.has(key)) {
+      result.push({ name: key, nodes: groups.get(key)! });
+      groups.delete(key);
+    }
+  }
+  // 剩余的按字母序
+  for (const [name, nodes] of [...groups.entries()].sort()) {
+    result.push({ name, nodes });
+  }
+
+  // 无法归类的放到"其他"组
+  if (ungrouped.length > 0) {
+    result.push({ name: '其他', nodes: ungrouped });
+  }
+
+  return result;
 }
 
 /**

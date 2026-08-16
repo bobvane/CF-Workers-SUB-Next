@@ -132,4 +132,41 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('proxies: []');
     expect(validateMihomo(yaml)).toBe(true);
   });
+
+  it('should generate geo groups for recognized node names', () => {
+    const yaml = generateMihomoConfig([
+      makeNode({ name: 'HK-01', server: 'hk.example.com' }),
+      makeNode({ id: 'n2', name: 'JP-01', protocol: 'vmess', server: 'jp.example.com', uuid: '1111' }),
+      makeNode({ id: 'n3', name: 'US-01', protocol: 'trojan', server: 'us.example.com', password: 'p' }),
+    ]);
+    // 验证地理组名出现
+    expect(yaml).toContain('🇭🇰 香港');
+    expect(yaml).toContain('🇯🇵 日本');
+    expect(yaml).toContain('🇺🇸 美国');
+    // 验证 PROXY 组包含地理组引用
+    expect(yaml).toContain('🇭🇰 香港');
+    expect(yaml).toContain('🇯🇵 日本');
+    // 验证 AUTO 和 PROXY 都存在
+    expect(yaml).toContain('AUTO');
+    expect(yaml).toContain('PROXY');
+    expect(validateMihomo(yaml)).toBe(true);
+  });
+
+  it('should handle Chinese node names', () => {
+    const yaml = generateMihomoConfig([
+      makeNode({ name: '香港 01', server: 'hk.example.com' }),
+      makeNode({ id: 'n2', name: '日本节点', protocol: 'vmess', server: 'jp.example.com', uuid: '1111' }),
+    ]);
+    expect(yaml).toContain('🇭🇰 香港');
+    expect(yaml).toContain('🇯🇵 日本');
+  });
+
+  it('should put ungrouped nodes into "其他" group', () => {
+      const yaml = generateMihomoConfig([
+        makeNode({ name: 'Node-001', server: 'x.example.com' }),
+      ]);
+      // 验证 proxy-groups 包含其他组
+      expect(yaml).toContain('其他');
+      expect(yaml).toContain('Node-001');
+  });
 });
