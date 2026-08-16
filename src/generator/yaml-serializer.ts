@@ -13,6 +13,7 @@ export function generateYaml(data: Record<string, unknown>): string {
   return stringify(data, {
     indent: 2,
     lineWidth: 0, // 不折行
+    aliasDuplicateObjects: false, // 禁用 YAML 锚点引用（Clash 客户端兼容性）
   });
 }
 
