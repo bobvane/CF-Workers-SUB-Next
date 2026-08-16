@@ -72,13 +72,49 @@ describe('nodeToMihomoProxy', () => {
     expect(realityOpts['short-id']).toBe('abc');
     expect(proxy['client-fingerprint']).toBe('chrome');
   });
+
+  it('vless ws + tls 无显式 sni 时用 Host 头兜底作 servername（Cloudflare/CDN 不拒握）', async () => {
+    const proxy = nodeToMihomoProxy(
+      makeNode({
+        tls: true,
+        transport: { type: 'ws', path: '/path', host: 'ai.wenb.dpdns.org' },
+      })
+    );
+    expect(proxy.servername).toBe('ai.wenb.dpdns.org');
+    expect((proxy['ws-opts'] as Record<string, unknown>).headers).toMatchObject({ Host: 'ai.wenb.dpdns.org' });
+  });
+
+  it('vless ws + tls 有显式 sni 时用 sni，不用 Host 覆盖', async () => {
+    const proxy = nodeToMihomoProxy(
+      makeNode({
+        tls: true,
+        sni: 'explicit.sni.dev',
+        transport: { type: 'ws', path: '/path', host: 'other.host.dev' },
+      })
+    );
+    expect((proxy as Record<string, unknown>).servername).toBe('explicit.sni.dev');
+    expect((proxy['ws-opts'] as Record<string, unknown>).headers).toMatchObject({ Host: 'other.host.dev' });
+  });
+
+  it('trojan ws + tls 无显式 sni 时用 Host 头兜底作 sni', async () => {
+    const proxy = nodeToMihomoProxy(
+      makeNode({
+        protocol: 'trojan',
+        password: 'pw',
+        tls: true,
+        transport: { type: 'ws', path: '/ws', host: 'tj.example.com' },
+      })
+    );
+    expect((proxy as Record<string, unknown>).sni).toBe('tj.example.com');
+    expect((proxy['ws-opts'] as Record<string, unknown>).headers).toMatchObject({ Host: 'tj.example.com' });
+  });
 });
 
 describe('generateMihomoConfig', () => {
   it('should generate single node config', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
     expect(yaml).toContain('mixed-port: 7890');
-    expect(yaml).toContain('allow-lan: false');
+    expect(yaml).toContain('allow-lan: true');
     expect(yaml).toContain('mode: rule');
     expect(yaml).toContain('proxies:');
     expect(yaml).toContain('proxy-groups:');
@@ -117,9 +153,9 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('GLOBAL');
   });
 
-  it('should not enable allow-lan by default (security)', async () => {
+  it('should enable allow-lan by default (旁路由/局域网设备走 7890)', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    expect(yaml).toContain('allow-lan: false');
+    expect(yaml).toContain('allow-lan: true');
   });
 
   it('should support custom template', async () => {

@@ -50,7 +50,7 @@ describe('ConfigService 分流规则注入', () => {
     // rule-providers
     expect(yaml).toContain('rule-providers:');
     expect(yaml).toContain('geosite-netflix');
-    expect(yaml).toContain('netflix.yaml');
+    expect(yaml).toContain('netflix.mrs');
     expect(yaml).toContain('geosite-openai');
     expect(yaml).toContain('geosite-category-ads-all');
     // 规则分类分组出现

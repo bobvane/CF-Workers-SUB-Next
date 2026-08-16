@@ -34,13 +34,15 @@ export interface MihomoTemplate {
   mode?: string;
   logLevel?: string;
   externalController?: string;
+  ipv6?: boolean;
 }
 
 export const DEFAULT_MIHOMO_TEMPLATE: MihomoTemplate = {
   mixedPort: 7890,
-  allowLan: false, // 安全默认：不开放局域网
+  allowLan: true, // 旁路由/网关场景：局域网设备需指定 7890 混合端口走代理。仅监听内网 NIC，配合 bind-address 可进一步限制。
   mode: 'rule',
   logLevel: 'info',
+  ipv6: false, // 默认关闭 IPv6，避免 IPv4 走代理 / IPv6 走直连的诡异分流（完整 DNS+TUN+IPv6 路由留待后续版本）
 };
 
 /**
@@ -78,7 +80,10 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
       base.uuid = node.uuid;
       if (node.tls) base.tls = true;
       if (node.flow) base.flow = node.flow;
+      // SNI 优先用显式 sni 参数；若缺省但开启了 TLS 且是 ws 传输（Host 头一般是真实 SNI 域名），
+      // 用 transport.host 兜底——否则 TLS 握手会用 server 的 IP 当 SNI，Cloudflare/CDN 会拒握。
       if (node.sni) base.servername = node.sni;
+      else if (node.tls && node.transport?.type === 'ws' && node.transport.host) base.servername = node.transport.host;
       if (node.allowInsecure) base['skip-cert-verify'] = true;
       if (node.transport?.type === 'ws') {
         base.network = 'ws';
@@ -112,7 +117,15 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
       base.password = node.password;
       if (node.tls) base.tls = true;
       if (node.sni) base.sni = node.sni;
+      else if (node.tls && node.transport?.type === 'ws' && node.transport.host) base.sni = node.transport.host;
       if (node.allowInsecure) base.skipCertVerify = true;
+      if (node.transport?.type === 'ws') {
+        base.network = 'ws';
+        base['ws-opts'] = {
+          path: node.transport.path,
+          headers: node.transport.host ? { Host: node.transport.host } : undefined,
+        };
+      }
       break;
 
     case 'ss':
@@ -379,11 +392,25 @@ export async function generateProxyGroups(
     const g = ruleGroups.find(gr => gr.key === key);
     if (!g || !hasSelected(key)) continue;
     ruleClassGroupNames.push(g.name);
-    groups.push({
-      name: g.name,
-      type: 'select',
-      proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
-    });
+
+    // 各分类组默认 proxies：节点选择 / 手动切换 / 自动选择 / 地理组 / DIRECT
+    let proxies: string[] = ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'];
+
+    // AI 服务：剔除 AI 平台封禁地区（香港/澳门/台湾等），保留 美国/新加坡/日本/英国/加拿大 等可用区，
+    // 否则 OpenAI/Gemini/Claude 会因地区被封返回 403。
+    if (key === 'ai') {
+      const banned = ['香港', '澳门', '台湾'];
+      const allowed = geoGroupNames.filter(n => !banned.some(b => n.includes(b)));
+      proxies = ['节点选择', '手动切换', ...allowed, 'DIRECT'];
+    }
+
+    // 加密货币：剔除【自动选择】——url-test 会因网络波动频繁切换节点 IP，
+    // 币安/OKX/Coinbase 等交易所对 IP 频繁跨国漂移会触发风控锁卡。保留固定地区地理组。
+    if (key === 'crypto') {
+      proxies = ['节点选择', '手动切换', ...geoGroupNames, 'DIRECT'];
+    }
+
+    groups.push({ name: g.name, type: 'select', proxies });
   }
 
   // 9. 漏网之鱼（MATCH 兜底，默认节点选择）
@@ -450,6 +477,7 @@ export async function generateMihomoConfig(
     'allow-lan': template.allowLan ?? false,
     mode: template.mode ?? 'rule',
     'log-level': template.logLevel ?? 'info',
+    'ipv6': template.ipv6 ?? false,
     proxies,
     'proxy-groups': groups,
     rules: ['MATCH,漏网之鱼'],

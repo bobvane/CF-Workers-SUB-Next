@@ -22,8 +22,8 @@ describe('providerName / providerUrl', () => {
     expect(providerName('NETFLIX')).toBe('geosite-netflix');
   });
 
-  it('URL 指向 meta 分支 yaml（小写 id）', () => {
-    expect(providerUrl('NETFLIX')).toBe(`${META_DAT_BASE}netflix.yaml`);
+  it('URL 指向 meta 分支 mrs（小写 id）', () => {
+    expect(providerUrl('NETFLIX')).toBe(`${META_DAT_BASE}netflix.mrs`);
   });
 
   it('ruleSetLine 路由到分组名（无分组时回退到漏网之鱼）', () => {
@@ -64,8 +64,8 @@ describe('buildRuleProviders', () => {
     const p = providers['geosite-netflix'] as Record<string, unknown>;
     expect(p.type).toBe('http');
     expect(p.behavior).toBe('domain');
-    expect(p.format).toBe('yaml');
-    expect(p.url).toBe(`${META_DAT_BASE}netflix.yaml`);
+    expect(p.format).toBe('mrs');
+    expect(p.url).toBe(`${META_DAT_BASE}netflix.mrs`);
     expect(p.interval).toBe(86400);
   });
 

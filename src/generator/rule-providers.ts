@@ -6,8 +6,13 @@
  * ⚠️ 已验证的 URL 事实（2026-08-15）：
  *   - MetaCubeX/meta-rules-dat 的 `release` 分支根目录只有打包大文件
  *     （geosite.dat / geosite.db 等），**没有** geosite-<分类>.dat 单文件。
- *   - 单个分类规则集在 `meta` 分支 `geo/geosite/<name>.yaml`（含 payload 列表）。
- *   - 该 yaml 可经 raw.githubusercontent 和 cdn.jsdelivr.net 访问，已验证 200。
+ *   - 单个分类规则集在 `meta` 分支 `geo/geosite/<name>.mrs`。
+ *   - 该 mrs 可经 raw.githubusercontent / cdn.jsdelivr.net / fastly.jsdelivr.net 访问，已验证 200（2026-08-16）。
+ *
+ * ⚠️ MRS 格式说明（2026-08-16）：
+ *   - MRS 是 Mihomo 原生二进制格式（Clash Meta/OpenClash 也支持），解析更快、内存占用更低。
+ *   - 本项目的 Mihomo 输出面向 Mihomo/Clash Meta/OpenClash/Stash，统一用 mrs。
+ *   - Sing-box/Surge 等其它客户端输出是独立管线，各自用自己的规则格式，不受这里影响。
  */
 import { MetaCubeXRule, RuleGroup } from '@/data/metacubex-rules';
 
@@ -28,14 +33,14 @@ export function buildRuleProvider(rule: MetaCubeXRule): {
   url: string;
   interval: number;
   behavior: 'domain';
-  format: 'yaml';
+  format: 'mrs';
   type: 'http';
 } {
   return {
     name: providerName(rule.id),
     type: 'http',
     behavior: 'domain',
-    format: 'yaml',
+    format: 'mrs',
     url: providerUrl(rule.id),
     interval: 86400,
   };
@@ -46,19 +51,28 @@ export function providerName(id: string): string {
   return `geosite-${id.toLowerCase()}`;
 }
 
-/** 规则文件 CDN URL（meta 分支 yaml，已验证存在） */
+/** 规则文件 CDN URL（meta 分支 mrs，已验证存在） */
 export function providerUrl(id: string): string {
-  return `${META_DAT_BASE}${id.toLowerCase()}.yaml`;
+  return `${META_DAT_BASE}${id.toLowerCase()}.mrs`;
 }
 
 /** 计算规则的出口目标（按新分组层级路由） */
 export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
   // REJECT → 广告拦截
   if (rule.target === 'REJECT') return '广告拦截';
-  // DIRECT → 国内直连（全部直连规则统一走国内直连组，默认 DIRECT）
-  if (rule.target === 'DIRECT') return '国内直连';
-  // PROXY：找到所属规则大类
+  // 定位所属分组
   const g = groups.find(gr => gr.items.some(i => i.id === rule.id));
+  // 国内直连组：无论 DIRECT/PROXY 都进"国内直连"（私有/CN域名/CN IP/国内网站/国内流媒体）
+  if (g?.key === 'china-direct') return '国内直连';
+  // DIRECT 目标跟随所属分组（避免 Cloudflare/jsDelivr/Fastly 等 CDN 被误收进国内直连）
+  if (rule.target === 'DIRECT') {
+    // 无归属的 DIRECT 规则 → 国内直连（安全默认）
+    if (!g) return '国内直连';
+    // 有归属 → 走所属分组（如 cloud 组的 Cloudflare DIRECT → 云服务组）
+    if (g.key === 'media') return '国外媒体';
+    return g.name;
+  }
+  // PROXY：找到所属规则大类
   if (!g) return '漏网之鱼'; // 无归属分组，兜底到漏网之鱼
   // 国外媒体（media 组）PROXY → 国外媒体
   if (g.key === 'media') return '国外媒体';
