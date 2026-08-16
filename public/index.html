@@ -507,11 +507,14 @@ function renderRulesTree() {
     const checkedCount = g.items.filter(it => ruleSelected[it.id]).length;
     const cls = ruleExpanded[g.key] ? 'open' : '';
     // 大类 checkbox：全选时打勾，部分选时半选（CSS 用 indeterminate）
-    const itemsHTML = g.items.map(it => `
-      <label class="rules-item">
+    const itemsHTML = g.items.map(it => {
+      const isCustom = window._customRules && window._customRules.includes(it.id);
+      return `<label class="rules-item">
         <input type="checkbox" data-rule-check data-g="${gi}" data-id="${it.id}" ${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
         <span>${it.label} <span style="color:var(--text2);font-size:11px">${it.tag}:${it.id}</span></span>
-      </label>`).join('');
+        ${isCustom ? `<span style="cursor:pointer;color:var(--red);font-size:14px;margin-left:4px" onclick="event.stopPropagation();deleteCustomRule('${it.id}')" title="删除此规则">✕</span>` : ''}
+      </label>`;
+    }).join('');
     return `
       <div class="rules-group">
         <div class="rules-group-head ${cls}" data-g="${gi}" onclick="toggleRuleGroup(${gi})">
@@ -579,17 +582,19 @@ function resetRulesExpanded() {
 }
 
 function loadRules() {
-  // 首次加载时从后端拉取规则大类 + 已保存的选择，同时显示加载状态
+  // 首次加载时从后端拉取规则大类 + 已保存的选择 + 自定义规则，同时显示加载状态
   const container = document.getElementById('rulesTree');
   if (RULE_GROUPS.length === 0) {
     container.innerHTML = '<div class="rules-loading">⏳ 正在加载规则…</div>';
     Promise.all([
       fetch('/api/rules/groups').then(r => r.json()),
       fetch('/api/rules/selection').then(r => r.json()),
+      fetch('/api/rules/custom').then(r => r.json()),
     ])
-      .then(([groupsRes, selRes]) => {
+      .then(([groupsRes, selRes, customRes]) => {
         if (groupsRes.success && groupsRes.data && groupsRes.data.groups) {
           RULE_GROUPS = groupsRes.data.groups;
+          window._customRules = (customRes.data?.rules || []).map(r => r.id);
           initRuleState();
           // 应用已保存的选择
           if (selRes.success && selRes.data && Array.isArray(selRes.data.ids)) {
@@ -1146,6 +1151,18 @@ async function confirmAddRule() {
     if (typeof RULE_GROUPS !== 'undefined') { RULE_GROUPS = []; }
     if (window.pageRules) { /* no-op */ }
   } catch (e) { toast('加入失败: ' + e.message, 'error'); }
+}
+
+async function deleteCustomRule(id) {
+  if (!id) return;
+  if (!confirm('确定要从分流规则中删除「' + id + '」吗？')) return;
+  try {
+    await api('/rules/custom/' + encodeURIComponent(id), { method: 'DELETE' });
+    toast('✅ 已删除规则: ' + id);
+    // 刷新规则页，移除该规则
+    if (typeof RULE_GROUPS !== 'undefined') { RULE_GROUPS = []; }
+    loadRules();
+  } catch (e) { toast('删除失败: ' + e.message, 'error'); }
 }
 
 // ============ Utils ============
