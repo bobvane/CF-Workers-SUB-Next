@@ -115,10 +115,14 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
 
     case 'trojan':
       base.password = node.password;
-      if (node.tls) base.tls = true;
+      // trojan 协议强制 TLS，Mihomo trojan 类型没有 tls 字段，不需显式设置
       if (node.sni) base.sni = node.sni;
       else if (node.tls && node.transport?.type === 'ws' && node.transport.host) base.sni = node.transport.host;
-      if (node.allowInsecure) base.skipCertVerify = true;
+      if (node.allowInsecure) base['skip-cert-verify'] = true;
+      // 推荐字段：提升兼容性
+      base.udp = true;
+      base.alpn = ['h2', 'http/1.1'];
+      base['client-fingerprint'] = node.metadata?.fingerprint ?? 'chrome';
       if (node.transport?.type === 'ws') {
         base.network = 'ws';
         base['ws-opts'] = {
