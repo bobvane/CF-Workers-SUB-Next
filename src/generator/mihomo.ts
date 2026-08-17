@@ -15,6 +15,11 @@ import {
   countryDisplayName,
 } from '@/data/country-codes';
 
+/** 判断是否为 IPv4 地址 */
+function isIPAddress(host: string): boolean {
+  return /^\d{1,3}(\.\d{1,3}){3}$/.test(host);
+}
+
 /**
  * 节点名去重：同名节点追加数字后缀
  */
@@ -118,11 +123,9 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
       // trojan 协议强制 TLS，Mihomo trojan 类型没有 tls 字段，不需显式设置
       if (node.sni) base.sni = node.sni;
       else if (node.tls && node.transport?.type === 'ws' && node.transport.host) base.sni = node.transport.host;
-      if (node.allowInsecure) base['skip-cert-verify'] = true;
-      // 推荐字段：提升兼容性
-      base.udp = true;
-      base.alpn = ['h2', 'http/1.1'];
-      base['client-fingerprint'] = node.metadata?.fingerprint ?? 'chrome';
+      // 仅当 server 是 IP 时跳过证书校验（IP 直连 CF 证书必然不匹配）
+      // 域名节点保持严格校验，先做最小化 A/B 测试（不动 TLS 握手行为）
+      if (node.allowInsecure || isIPAddress(node.server)) base['skip-cert-verify'] = true;
       if (node.transport?.type === 'ws') {
         base.network = 'ws';
         base['ws-opts'] = {
