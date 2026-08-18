@@ -5,7 +5,11 @@
  */
 
 import { Node } from '@/models/node';
+import { MetaCubeXRule } from '@/data/metacubex-rules';
 import { makeUniqueNames } from './mihomo';
+import { providerName, ruleActionTarget } from './rule-providers';
+import { RuleGroup } from '@/data/metacubex-rules';
+import { metacubexSrsUrl } from '@/data/rule-format-mapping';
 
 export interface SingboxTemplate {
   logLevel?: string;
@@ -121,7 +125,9 @@ function formatPluginOpts(opts: Record<string, string>): string {
  */
 export function generateSingboxConfig(
   nodes: Node[],
-  template: SingboxTemplate = DEFAULT_SINGBOX_TEMPLATE
+  template: SingboxTemplate = DEFAULT_SINGBOX_TEMPLATE,
+  selectedRules: MetaCubeXRule[] = [],
+  ruleGroups: RuleGroup[] = []
 ): string {
   const uniqueNodes = makeUniqueNames(nodes);
   const outbounds: Record<string, unknown>[] = [
@@ -151,21 +157,65 @@ export function generateSingboxConfig(
     },
   ];
 
+  // 构建 rule_set 引用列表 + route rules
+  const ruleSetRefs: Record<string, unknown>[] = [];
+  const routeRules: Record<string, unknown>[] = [];
+
+  // DNS 规则优先
+  routeRules.push({ protocol: 'dns', outbound: 'dns-out' });
+
+  // 用户勾选的规则
+  if (selectedRules.length > 0) {
+    for (const rule of selectedRules) {
+      const name = providerName(rule.id);
+      ruleSetRefs.push({
+        tag: name,
+        type: 'remote',
+        format: 'source',
+        url: metacubexSrsUrl(rule.id),
+      });
+      const target = ruleActionTarget(rule, ruleGroups);
+      // 按 Mihomo 规则映射找到对应的 outbound 策略
+      const outbound = mapTargetToOutbound(target);
+      routeRules.push({ rule_set: [name], outbound });
+    }
+  }
+
+  // 兜底规则
+  routeRules.push({ ip_cidr: ['0.0.0.0/0'], outbound: 'proxy' });
+  routeRules.push({ ip_cidr: ['::/0'], outbound: 'proxy' });
+
   const config: Record<string, unknown> = {
     log: { level: template.logLevel ?? 'info' },
     outbounds,
     route: {
       final: 'proxy',
-      rules: [
-        {
-          protocol: 'dns',
-          outbound: 'dns-out',
-        },
-      ],
+      rules: routeRules,
     },
   };
 
+  if (ruleSetRefs.length > 0) {
+    (config.route as Record<string, unknown>).rule_set = ruleSetRefs;
+  }
+
   return JSON.stringify(config, null, 2);
+}
+
+/**
+ * 将 Mihomo 策略组名映射到 Sing-box outbound tag
+ */
+function mapTargetToOutbound(target: string): string {
+  switch (target) {
+    case 'DIRECT':
+    case '国内直连':
+      return 'direct';
+    case 'REJECT':
+    case '广告拦截':
+      return 'block';
+    default:
+      // PROXY、国外媒体、AI服务、加密货币等 → proxy 组
+      return 'proxy';
+  }
 }
 
 /**

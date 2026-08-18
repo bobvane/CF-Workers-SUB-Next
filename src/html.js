@@ -946,7 +946,7 @@ const CONFIG_FILE_NAMES = {
   v2ray:         'v2ray.txt',
   v2rayn:        'v2rayn.txt',
   nekoray:       'nekoray.txt',
-  shadowrocket:  'shadowrocket.txt',
+  shadowrocket:  'shadowrocket.conf',
   loon:          'loon.conf',
   surge:         'surge.conf',
   quantumultx:   'quantumultx.conf',

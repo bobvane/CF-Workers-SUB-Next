@@ -5,7 +5,10 @@
  */
 
 import { Node } from '@/models/node';
+import { MetaCubeXRule, RuleGroup } from '@/data/metacubex-rules';
 import { makeUniqueNames } from './mihomo';
+import { ruleActionTarget } from './rule-providers';
+import { getBlackmatrix7Name, blackmatrix7QXUrl } from '@/data/rule-format-mapping';
 
 /**
  * 将 Node 转换为 Quantumult X server_local 行
@@ -63,7 +66,11 @@ export function nodeToQXServer(node: Node): string {
 /**
  * 生成 Quantumult X 配置
  */
-export function generateQuantumultXConfig(nodes: Node[]): string {
+export function generateQuantumultXConfig(
+  nodes: Node[],
+  selectedRules: MetaCubeXRule[] = [],
+  ruleGroups: RuleGroup[] = []
+): string {
   const uniqueNodes = makeUniqueNames(nodes);
   const lines: string[] = [];
 
@@ -75,10 +82,30 @@ export function generateQuantumultXConfig(nodes: Node[]): string {
   }
   lines.push('');
 
-  lines.push('[filter_local]');
-  lines.push('Final,Proxy');
+  // [filter_remote] 段 — 远程分流规则订阅
+  lines.push('[filter_remote]');
+  let skippedCount = 0;
+  for (const rule of selectedRules) {
+    const bmName = getBlackmatrix7Name(rule.id);
+    if (!bmName) {
+      skippedCount++;
+      continue;
+    }
+    const url = blackmatrix7QXUrl(bmName);
+    const target = ruleActionTarget(rule, ruleGroups);
+    // QX 策略名映射：DIRECT → direct, REJECT → reject, 其余 → proxy
+    const policy = target === 'DIRECT' ? 'direct' : target === 'REJECT' ? 'reject' : 'proxy';
+    lines.push(`${url}, tag=${bmName}, policy=${policy}, enabled=true`);
+  }
   lines.push('');
 
+  // [filter_local] 段 — 本地兜底规则
+  lines.push('[filter_local]');
+  lines.push('geoip, cn, direct');
+  lines.push('final, proxy');
+  lines.push('');
+
+  // [policy] 段
   lines.push('[policy]');
   lines.push('static=Proxy, DIRECT, ' + (uniqueNodes.map((n) => n.name).join(', ') || 'DIRECT'));
 

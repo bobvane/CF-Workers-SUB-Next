@@ -5,7 +5,10 @@
  */
 
 import { Node } from '@/models/node';
+import { MetaCubeXRule, RuleGroup } from '@/data/metacubex-rules';
 import { makeUniqueNames } from './mihomo';
+import { ruleActionTarget } from './rule-providers';
+import { getBlackmatrix7Name, blackmatrix7Url } from '@/data/rule-format-mapping';
 
 /**
  * 将 Node 转换为 Surge proxy section 配置
@@ -66,7 +69,11 @@ export function nodeToSurgeProxy(node: Node): string {
 /**
  * 生成 Surge 配置
  */
-export function generateSurgeConfig(nodes: Node[]): string {
+export function generateSurgeConfig(
+  nodes: Node[],
+  selectedRules: MetaCubeXRule[] = [],
+  ruleGroups: RuleGroup[] = []
+): string {
   const uniqueNodes = makeUniqueNames(nodes);
   const lines: string[] = [];
 
@@ -88,6 +95,22 @@ export function generateSurgeConfig(nodes: Node[]): string {
 
   // [Rule] 段
   lines.push('[Rule]');
+  // 用户勾选的规则
+  let skippedCount = 0;
+  for (const rule of selectedRules) {
+    const bmName = getBlackmatrix7Name(rule.id);
+    if (!bmName) {
+      skippedCount++;
+      continue;
+    }
+    const url = blackmatrix7Url(bmName);
+    const target = ruleActionTarget(rule, ruleGroups);
+    // Surge 策略名映射：DIRECT → Direct, REJECT → REJECT, 其余 → PROXY
+    const policy = target === 'DIRECT' ? 'Direct' : target === 'REJECT' ? 'REJECT' : 'PROXY';
+    lines.push(`RULE-SET,${url},${policy}`);
+  }
+  // 兜底规则
+  lines.push('GEOIP,CN,Direct');
   lines.push('FINAL,PROXY');
   lines.push('');
 
