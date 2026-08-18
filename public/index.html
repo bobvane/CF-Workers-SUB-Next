@@ -368,6 +368,7 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
           <option value="quantumultx">🍁 Quantumult X</option>
         </select>
         <button class="btn btn-primary btn-sm" onclick="previewSelect(true)" style="margin-left:8px">👉 加载</button>
+        <button class="btn btn-sm" onclick="downloadConfigByFormat()" style="margin-left:8px">💾 下载配置文件</button>
       </div>
       <pre id="configPreview" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;overflow:auto;max-height:60vh;white-space:pre-wrap;word-break:break-all">选择格式查看预览</pre>
     </div>
@@ -932,6 +933,26 @@ async function downloadConfig(format, filename) {
     URL.revokeObjectURL(a.href);
     toast('下载完成');
   } catch { toast('下载失败', 'error'); }
+}
+
+/** 各格式对应的标准配置文件名后缀（客户端直接识别的文件名和类型） */
+const CONFIG_FILE_NAMES = {
+  mihomo:        'mihomo.yaml',
+  singbox:       'sing-box.json',
+  v2ray:         'v2ray.txt',
+  v2rayn:        'v2rayn.txt',
+  nekoray:       'nekoray.txt',
+  shadowrocket:  'shadowrocket.txt',
+  loon:          'loon.conf',
+  surge:         'surge.conf',
+  quantumultx:   'quantumultx.conf',
+};
+
+/** 读取预览弹窗当前选中的格式，按客户端标准文件名下载 */
+function downloadConfigByFormat() {
+  const format = document.getElementById('previewFormatSelect').value;
+  const filename = CONFIG_FILE_NAMES[format] || `subscription.${format}`;
+  downloadConfig(format, filename);
 }
 
 async function downloadMihomo() { downloadConfig('mihomo', 'mihomo.yaml'); }
