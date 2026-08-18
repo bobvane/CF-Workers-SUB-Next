@@ -198,12 +198,19 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 .rules-group-title { font-weight: 600; font-size: 15px; flex: 1; }
 .rules-group-count { font-size: 12px; color: var(--text2); background: rgba(0,0,0,0.05); padding: 2px 10px; border-radius: 999px; }
 [data-theme="dark"] .rules-group-count { background: rgba(255,255,255,0.1); }
-.rules-items { display: none; padding: 4px 16px 14px 40px; flex-wrap: wrap; gap: 4px 0; }
-.rules-group-head.open + .rules-items { display: flex; }
-.rules-item { display: inline-flex; align-items: center; gap: 6px; min-width: 160px; padding: 5px 12px 5px 8px; margin: 2px; border-radius: 8px; cursor: pointer; font-size: 13px; }
+.rules-items { display: none; padding: 6px 20px 16px 48px; gap: 8px 12px; }
+.rules-group-head.open + .rules-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); }
+.rules-item {
+  display: flex; align-items: flex-start; gap: 8px;
+  padding: 8px 12px; border-radius: 10px;
+  cursor: pointer; font-size: 13px;
+  min-width: 0; line-height: 1.35;
+}
 .rules-item:hover { background: rgba(0,0,0,0.04); }
 [data-theme="dark"] .rules-item:hover { background: rgba(255,255,255,0.06); }
-.rules-item input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; }
+.rules-item input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; margin-top: 2px; flex-shrink: 0; }
+.rules-item .rule-label { flex: 1; min-width: 0; overflow-wrap: break-word; }
+.rules-item .rule-id { display: block; font-size: 11px; color: var(--text2); margin-top: 1px; letter-spacing: 0; }
 .rules-group-head input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; width: 16px; height: 16px; }
 /* ===== Scroll to Top ===== */
 .scroll-top { position: fixed; bottom: 60px; right: 20px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; border: none; cursor: pointer; font-size: 18px; display: none; box-shadow: 0 4px 12px rgba(0,113,227,0.3); }
@@ -582,7 +589,7 @@ function renderRulesTree() {
       const isCustom = window._customRules && window._customRules.includes(it.id);
       return `<label class="rules-item">
         <input type="checkbox" data-rule-check data-g="${gi}" data-id="${it.id}" ${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
-        <span>${it.label} <span style="color:var(--text2);font-size:11px">${it.tag}:${it.id}</span></span>
+        <span class="rule-label">${it.label}<span class="rule-id">${it.tag}:${it.id}</span></span>
         ${isCustom ? `<span style="cursor:pointer;color:var(--red);font-size:14px;margin-left:4px" onclick="event.stopPropagation();deleteCustomRule('${it.id}')" title="删除此规则">✕</span>` : ''}
       </label>`;
     }).join('');
