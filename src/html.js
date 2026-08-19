@@ -205,18 +205,27 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 .rules-items { display: none; padding: 6px 20px 16px 48px; gap: 8px 14px; }
 .rules-group-head.open + .rules-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
 .rules-item {
-  display: flex; align-items: center; gap: 9px;
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  align-items: center;
+  gap: 9px;
   padding: 9px 12px; border-radius: 10px;
   cursor: pointer; font-size: 13px;
   min-width: 0; line-height: 1.3;
-  height: 48px; /* 固定高度，确保所有格子等高 */
+  height: 48px;
 }
-.rules-item:hover { background: rgba(0,0,0,0.04); }
-[data-theme="dark"] .rules-item:hover { background: rgba(255,255,255,0.06); }
-.rules-item input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; flex-shrink: 0; }
-.rules-item .rule-label { flex: 1; min-width: 0; overflow: hidden; }
-.rules-item .rule-name { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rules-item .rule-id { display: block; font-size: 11px; color: var(--text2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; letter-spacing: 0; }
+.rules-item .rule-label {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.rules-item .rule-name {
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.rules-item .rule-id {
+  font-size: 11px; color: var(--text2);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .rules-group-head input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; width: 16px; height: 16px; }
 /* ===== Scroll to Top ===== */
 .scroll-top { position: fixed; bottom: 60px; right: 20px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; border: none; cursor: pointer; font-size: 18px; display: none; box-shadow: 0 4px 12px rgba(0,113,227,0.3); }
