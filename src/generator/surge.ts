@@ -96,11 +96,9 @@ export function generateSurgeConfig(
   // [Rule] 段
   lines.push('[Rule]');
   // 用户勾选的规则
-  let skippedCount = 0;
   for (const rule of selectedRules) {
     const bmName = getBlackmatrix7Name(rule.id);
     if (!bmName) {
-      skippedCount++;
       continue;
     }
     const url = blackmatrix7Url(bmName);

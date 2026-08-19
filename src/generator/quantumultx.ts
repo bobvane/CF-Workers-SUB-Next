@@ -84,11 +84,9 @@ export function generateQuantumultXConfig(
 
   // [filter_remote] 段 — 远程分流规则订阅
   lines.push('[filter_remote]');
-  let skippedCount = 0;
   for (const rule of selectedRules) {
     const bmName = getBlackmatrix7Name(rule.id);
     if (!bmName) {
-      skippedCount++;
       continue;
     }
     const url = blackmatrix7QXUrl(bmName);
