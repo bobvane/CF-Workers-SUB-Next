@@ -247,12 +247,12 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
     </div>
   </header>
   <nav class="nav-tabs" id="navTabs">
-    <div class="nav-tab active" data-page="dashboard" onclick="switchPage('dashboard')">📊 仪表盘</div>
-    <div class="nav-tab" data-page="subscribe" onclick="switchPage('subscribe')">📥 订阅管理</div>
+    <div class="nav-tab active" data-page="subscribe" onclick="switchPage('subscribe')">📥 订阅管理</div>
     <div class="nav-tab" data-page="nodes" onclick="switchPage('nodes')">🔗 节点列表</div>
-    <div class="nav-tab" data-page="rules" onclick="switchPage('rules')">🌐 分流规则</div>
     <div class="nav-tab" data-page="output" onclick="switchPage('output')">📦 输出配置</div>
+    <div class="nav-tab" data-page="rules" onclick="switchPage('rules')">🌐 分流规则</div>
     <div class="nav-tab" data-page="settings" onclick="switchPage('settings')">⚙️ 设置</div>
+    <div class="nav-tab" data-page="dashboard" onclick="switchPage('dashboard')">📊 仪表盘</div>
   </nav>
 
   <!-- Dashboard -->
@@ -315,15 +315,30 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 
   <!-- Output -->
   <div class="page" id="page-output">
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-      <h2>📦 输出配置</h2>
-      <span style="font-size:13px;color:var(--text2)" id="outputNodeCount">0 个节点</span>
+    <!-- 格式选择器 + 主操作（A：提到主流程） -->
+    <div class="card" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-bottom:16px">
+      <div style="flex:1;min-width:220px">
+        <label for="outputFormatSelect" style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500">选择客户端格式</label>
+        <select id="outputFormatSelect" onchange="onOutputFormatChange()">
+          <option value="mihomo">🐱 Mihomo / Clash / Stash</option>
+          <option value="singbox">📦 Sing-box</option>
+          <option value="v2ray">📄 V2ray (Base64)</option>
+          <option value="v2rayn">📱 V2RayNG</option>
+          <option value="nekoray">🪐 NekoRay</option>
+          <option value="shadowrocket">🚀 Shadowrocket</option>
+          <option value="loon">🌙 Loon</option>
+          <option value="surge">⚡ Surge</option>
+          <option value="quantumultx">🍁 Quantumult X</option>
+        </select>
+      </div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn btn-primary" onclick="copyOutputFormatUrl()">📋 复制订阅链接</button>
+        <button class="btn btn-primary" onclick="downloadOutputFormat()">💾 下载配置文件</button>
+        <button class="btn" onclick="showQrOutputFormat()">📱 二维码</button>
+        <button class="btn" onclick="previewOutputFormat()">👁️ 预览配置</button>
+      </div>
     </div>
-    <div style="margin-bottom:16px;display:flex;gap:8px;flex-wrap:wrap">
-      <button class="btn btn-primary" onclick="downloadMihomo()">📥 下载 Mihomo YAML</button>
-      <button class="btn btn-primary" onclick="downloadSingbox()">📥 下载 Sing-box JSON</button>
-      <button class="btn" onclick="refreshNodeCount()">🔄 刷新节点数</button>
-    </div>
+    <div id="outputNodeCount" style="font-size:13px;color:var(--text2);margin-bottom:16px">0 个节点</div>
     <div id="outputLinks"></div>
   </div>
 
@@ -1035,6 +1050,33 @@ function downloadConfigByFormat() {
 async function downloadMihomo() { downloadConfig('mihomo', 'mihomo.yaml'); }
 async function downloadSingbox() { downloadConfig('singbox', 'sing-box.json'); }
 
+// ============ 输出页主操作条（A：格式选择器驱动） ============
+function getOutputFormat() {
+  return document.getElementById('outputFormatSelect').value;
+}
+
+function copyOutputFormatUrl() {
+  copyFormatUrl(getOutputFormat());
+}
+
+function downloadOutputFormat() {
+  const format = getOutputFormat();
+  const filename = CONFIG_FILE_NAMES[format] || `subscription.${format}`;
+  downloadConfig(format, filename);
+}
+
+function showQrOutputFormat() {
+  showQrModal(getOutputFormat(), document.getElementById('outputFormatSelect').selectedOptions[0].textContent);
+}
+
+function previewOutputFormat() {
+  showConfigModal(getOutputFormat(), document.getElementById('outputFormatSelect').selectedOptions[0].textContent);
+}
+
+function onOutputFormatChange() {
+  // 预留：将来可联动刷新节点数或自动预加载
+}
+
 // ============ Settings ============
 async function loadSettings() {
   try {
@@ -1293,7 +1335,7 @@ async function loadMeta() {
 // ============ Init ============
 window.addEventListener('DOMContentLoaded', async () => {
   // 从 hash 恢复页面
-  const savedPage = window.location.hash.replace('#', '') || 'dashboard';
+  const savedPage = window.location.hash.replace('#', '') || 'subscribe';
   if (['dashboard','subscribe','nodes','rules','output','settings'].includes(savedPage)) {
     state.currentPage = savedPage;
   }
