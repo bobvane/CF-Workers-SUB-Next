@@ -11,7 +11,7 @@
 项目预设的规则分组（`RULE_GROUPS`）和全量分类目录（`metacubex-catalog.json`）都是**静态数据**：
 
 - `src/data/metacubex-catalog.json`：2026-08-15 手动抓取的 MetaCubeX 全量清单（1546 分类），**不会自动更新**。
-- `RULE_GROUPS`（代码硬编码）：预置 10 个分组、几十条常用规则，id 全部写死。
+- `RULE_GROUPS`（代码硬编码）：预置 11 个分组、几十条常用规则，id 全部写死。
 
 ### 1.2 静态数据的风险
 

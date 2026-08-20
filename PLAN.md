@@ -1,6 +1,6 @@
 # CF-Workers-SUB-Next — 当前状态与后续计划
 
-> 最后更新：2026-08-16
+> 最后更新：2026-08-21
 > 本文档是项目实际状态的"单一事实来源"，取代或补充 17_ROADMAP.md（原始规划，未反映当前进度）。
 
 ---
@@ -15,15 +15,16 @@
 | 节点解析 | ✅ | VMess / VLESS / Trojan / Shadowsocks 四协议 |
 | 节点去重 | ✅ | 指纹去重 + 启用/禁用持久化 |
 | Mihomo 配置生成 | ✅ | 完整 YAML，含 proxy-groups + rules |
+| Mihomo P0 策略组 | ✅ | 显式默认策略：节点/手动/自动/广告拦截/应用净化/国内媒体/国外媒体/漏网之鱼/GLOBAL |
 | Sing-box / 其他格式 | ⚠️ 部分 | 见"待办" |
 | 自动部署 CI | ✅ | GitHub Actions → Cloudflare Workers |
 
 ### 分流规则系统（近两天新增）
 | 功能 | 状态 |
 |------|:---:|
-| 规则页：10 大类 86 规则 | ✅ |
+| 规则页：11 大类 87 规则 | ✅ |
 | 勾选规则写入 Mihomo 配置（rule-providers + 有序 rules） | ✅ |
-| rule-providers URL（jsDelivr CDN，已验证 86 分类全部存在） | ✅ |
+| rule-providers URL（jsDelivr CDN，已验证 87 分类全部存在） | ✅ |
 | 规则库扫描（设置页搜索 1546 全量分类） | ✅ |
 | 自定义规则加入（分组/标签/策略） | ✅ |
 | 规则选择持久化（KV selected_rules + custom_rules） | ✅ |
@@ -42,7 +43,8 @@
 
 ## 🚧 待办清单（按优先级）
 
-### P0 — 必要修正（建议尽快）
+### P0 — 必要修正（策略组已完成，剩余真实部署验证）
+- [x] **Mihomo/OpenClash 策略组重构**：补齐应用净化与国内媒体，所有核心 select 组写入 `default-selected`
 - [ ] **勾选规则写进 Mihomo 后真实验证**：部署后实际下载一份 Mihomo 配置，导入客户端验证分流是否生效（不是 100% 确定 86 条规则的 rule-providers 在 Mihomo 里都能正常拉取）
 - [ ] **输出页面订阅链接**:Mihomo 的 `/sub/mihomo/:token` 订阅端点是否真实可用（节点实时更新）
 - [ ] **KV 持久化验证**：部署后刷新/重启是否记住规则选择、节点启用、自定义规则
@@ -92,7 +94,7 @@ npm run build          # 类型检查 + 前端构建（内嵌 html）
 npm run deploy         # 构建 + 部署 CF
 ```
 
-当前测试覆盖：**245 项**（单元 + 集成 + 生成器 + 数据层），全部通过。
+当前测试覆盖：**288 项**（单元 + 集成 + 生成器 + 数据层），全部通过。
 
 ---
 

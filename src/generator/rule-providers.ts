@@ -58,16 +58,18 @@ export function providerUrl(id: string): string {
 
 /** 计算规则的出口目标（按新分组层级路由） */
 export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
-  // REJECT → 广告拦截
-  if (rule.target === 'REJECT') return '广告拦截';
   // 定位所属分组
   const g = groups.find(gr => gr.items.some(i => i.id === rule.id));
-  // 国内直连组：无论 DIRECT/PROXY 都进"国内直连"（私有/CN域名/CN IP/国内网站/国内流媒体）
-  if (g?.key === 'china-direct') return '国内直连';
-  // DIRECT 目标跟随所属分组（避免 Cloudflare/jsDelivr/Fastly 等 CDN 被误收进国内直连）
+  // REJECT 按规则大类拆分，避免广告拦截与应用净化共用出口。
+  if (rule.target === 'REJECT') {
+    return g?.key === 'app-clean' ? '应用净化' : '广告拦截';
+  }
+  // 国内直连规则统一进入"国内媒体"策略组。
+  if (g?.key === 'china-direct') return '国内媒体';
+  // DIRECT 目标跟随所属分组（避免 Cloudflare/jsDelivr/Fastly 等 CDN 被误收进国内媒体）
   if (rule.target === 'DIRECT') {
-    // 无归属的 DIRECT 规则 → 国内直连（安全默认）
-    if (!g) return '国内直连';
+    // 无归属的 DIRECT 规则 → 国内媒体（安全默认）
+    if (!g) return '国内媒体';
     // 有归属 → 走所属分组（如 cloud 组的 Cloudflare DIRECT → 云服务组）
     if (g.key === 'media') return '国外媒体';
     return g.name;
@@ -125,7 +127,7 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   const lines: string[] = [];
 
   // 按 RULE_GROUPS 既定顺序（即分组优先级）逐个输出勾选的规则。
-  // 分组顺序已定义：广告拦截 → 国内直连 → 国外媒体 → ... 规则分类组。
+  // 分组顺序已定义：广告拦截 → 应用净化 → 国内直连规则 → 国外媒体 → ... 规则分类组。
   for (const g of groups) {
     for (const item of g.items) {
       if (selectedSet.has(item.id)) {

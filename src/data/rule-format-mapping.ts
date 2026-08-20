@@ -26,6 +26,7 @@ export const METACUBEX_SING_BASE = 'https://cdn.jsdelivr.net/gh/MetaCubeX/meta-r
 export const BLACKMATRIX7_MAP: Record<string, string> = {
   // 广告拦截
   'CATEGORY-ADS-ALL': 'Advertising',
+  'CATEGORY-ADS': 'Advertising', // 应用净化与广告拦截共用官方广告规则源
 
   // 国内直连（PRIVATE、CN 由硬编码 GEOIP 兜底处理，不走 RULE-SET）
   'BAIDU': 'Baidu',

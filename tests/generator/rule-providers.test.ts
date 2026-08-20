@@ -43,8 +43,12 @@ describe('providerName / providerUrl', () => {
     expect(ruleActionTarget(rule('CATEGORY-ADS-ALL', 'REJECT'), RULE_GROUPS)).toBe('广告拦截');
   });
 
-  it('ruleActionTarget DIRECT → 国内直连', () => {
-    expect(ruleActionTarget(rule('BILIBILI', 'DIRECT'), RULE_GROUPS)).toBe('国内直连');
+  it('ruleActionTarget CATEGORY-ADS → 应用净化', () => {
+    expect(ruleActionTarget(rule('CATEGORY-ADS', 'REJECT'), RULE_GROUPS)).toBe('应用净化');
+  });
+
+  it('ruleActionTarget DIRECT → 国内媒体', () => {
+    expect(ruleActionTarget(rule('BILIBILI', 'DIRECT'), RULE_GROUPS)).toBe('国内媒体');
   });
 
   it('ruleActionTarget 流媒体 PROXY → 国外媒体', () => {
@@ -83,7 +87,7 @@ describe('buildRules 优先级', () => {
     ], RULE_GROUPS);
     expect(rules).toEqual([
       'RULE-SET,geosite-category-ads-all,广告拦截', // ads 组 REJECT 优先
-      'RULE-SET,geosite-bilibili,国内直连',        // china-direct 组 DIRECT 次之
+      'RULE-SET,geosite-bilibili,国内媒体',         // china-direct 组 DIRECT 次之
       'RULE-SET,geosite-openai,AI 服务',           // ai 组 PROXY
       // 硬编码兜底
       'GEOIP,private,DIRECT',

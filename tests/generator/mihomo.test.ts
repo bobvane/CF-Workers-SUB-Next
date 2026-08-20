@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateMihomoConfig, nodeToMihomoProxy, validateMihomo } from '@/generator/mihomo';
+import { generateMihomoConfig, generateProxyGroups, nodeToMihomoProxy, validateMihomo } from '@/generator/mihomo';
 import { Node } from '@/models/node';
 import { RULE_GROUPS } from '@/data/metacubex-rules';
 
@@ -111,6 +111,30 @@ describe('nodeToMihomoProxy', () => {
 });
 
 describe('generateMihomoConfig', () => {
+  it('should generate P0 policy groups with explicit defaults', async () => {
+    const groups = await generateProxyGroups(
+      [makeNode({ name: 'JP-01' }), makeNode({ id: 'n2', name: 'US-01', server: 'us.example.com' })],
+      [],
+      RULE_GROUPS
+    );
+    const byName = new Map(groups.map(group => [group.name, group]));
+
+    expect([...byName.keys()]).toEqual(expect.arrayContaining([
+      '节点选择', '手动切换', '自动选择', '广告拦截', '应用净化',
+      '国内媒体', '国外媒体', '漏网之鱼', 'GLOBAL',
+    ]));
+    expect(byName.get('节点选择')?.['default-selected']).toBe('自动选择');
+    expect(byName.get('广告拦截')?.['default-selected']).toBe('REJECT');
+    expect(byName.get('应用净化')?.['default-selected']).toBe('REJECT');
+    expect(byName.get('国内媒体')?.['default-selected']).toBe('DIRECT');
+    expect(byName.get('国外媒体')?.['default-selected']).toBe('自动选择');
+    expect(byName.get('GLOBAL')?.['default-selected']).toBe('DIRECT');
+    for (const name of ['节点选择', '广告拦截', '应用净化', '国内媒体', '国外媒体', 'GLOBAL']) {
+      const group = byName.get(name);
+      expect(group?.proxies).toContain(group?.['default-selected']);
+    }
+  });
+
   it('should generate single node config', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
     expect(yaml).toContain('mixed-port: 7890');
@@ -124,8 +148,9 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('手动切换');
     expect(yaml).toContain('自动选择');
     expect(yaml).toContain('国外媒体');
-    expect(yaml).toContain('国内直连');
+    expect(yaml).toContain('国内媒体');
     expect(yaml).toContain('广告拦截');
+    expect(yaml).toContain('应用净化');
     expect(yaml).toContain('GLOBAL');
     // MATCH 兜底到漏网之鱼
     expect(yaml).toContain('MATCH,漏网之鱼');

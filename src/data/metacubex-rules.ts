@@ -58,17 +58,24 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
 /**
  * 预定义规则分组
  * 规则优先级（自上而下匹配，见 rule-providers.buildRules）：
- *   1. 广告拦截（REJECT）
- *   2. 国内直连（DIRECT）——统一收束私有地址/CN域名/CN IP/国内网站/国内流媒体
- *   3. 国外媒体（PROXY 流媒体）
- *   4. 规则分类组（AI/加密货币/社交/游戏/云服务/开发/用户规则，PROXY）
- *   5. 漏网之鱼（MATCH 兜底）
+ *   1. 广告拦截（CATEGORY-ADS-ALL → REJECT）
+ *   2. 应用净化（CATEGORY-ADS → REJECT）
+ *   3. 国内直连规则（路由到国内媒体策略组）
+ *   4. 国外媒体（PROXY 流媒体）
+ *   5. 规则分类组（AI/加密货币/社交/游戏/云服务/开发/用户规则，PROXY）
+ *   6. 漏网之鱼（MATCH 兜底）
  */
 export const RULE_GROUPS: RuleGroup[] = [
   {
     key: 'ads', name: '广告拦截', icon: '🔥',
     items: [
       { id: 'CATEGORY-ADS-ALL', label: '广告拦截通用合集', tag: 'geosite', target: 'REJECT' },
+    ],
+  },
+  {
+    key: 'app-clean', name: '应用净化', icon: '🧹',
+    items: [
+      { id: 'CATEGORY-ADS', label: '应用净化通用合集', tag: 'geosite', target: 'REJECT' },
     ],
   },
   {

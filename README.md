@@ -15,8 +15,8 @@
 | 📥 **订阅管理** | 添加 / 删除 / 手动更新订阅 URL |
 | 🔗 **节点解析** | VMess / VLESS / Trojan / Shadowsocks 四协议 |
 | 🧹 **节点去重** | 自动去重 + 关键字过滤 + 节点指纹 |
-| 🚀 **Mihomo 配置生成** | 完整 YAML 输出（rule-providers + 有序 rules） |
-| 🌐 **分流规则系统** | 预置 10 大类 80+ 规则 + 自定义规则库（全量 1546 分类） |
+| 🚀 **Mihomo 配置生成** | 完整 YAML 输出（策略组 + rule-providers + 有序 rules） |
+| 🌐 **分流规则系统** | 预置 11 大类 80+ 规则 + 自定义规则库（全量 1546 分类） |
 | 🛡️ **安全防护** | SSRF 防护 / XSS 转义 / 登录限流 / PBKDF2 密码哈希 |
 | 📊 **Web 管理面板** | 仪表盘 / 订阅管理 / 节点列表 / 分流规则 / 输出配置 / 设置 |
 | 📚 **规则库扩展** | 从 1546 个 MetaCubeX 分类中搜索挑选，自定义加入分流规则 |
@@ -99,12 +99,13 @@ https://cf-workers-sub-next.<你的子域名>.workers.dev
 
 ### 规则系统
 
-规则页面预置了 10 个大类分组，按优先级（自上而下）覆盖日常使用场景：
+规则页面预置了 11 个大类分组，按优先级（自上而下）覆盖日常使用场景：
 
 | 分组 | 包含规则 |
 |------|---------|
 | 🔥 广告拦截 | 广告拦截通用合集（REJECT） |
-| 🇨🇳 国内直连 | 私有地址、中国直连域名、百度/阿里/腾讯/京东、Bilibili/爱奇艺/优酷（DIRECT） |
+| 🧹 应用净化 | 应用净化通用合集（REJECT） |
+| 🇨🇳 国内直连规则 | 私有地址、中国直连域名、百度/阿里/腾讯/京东、Bilibili/爱奇艺/优酷（路由到国内媒体，默认 DIRECT） |
 | 🎬 国外媒体 | Netflix、YouTube、Disney+、HBO、Spotify、TikTok 等 |
 | 🪙 加密货币 | Binance、Coinbase、Uniswap 等 |
 | 🤖 AI 服务 | OpenAI、Anthropic、Gemini 等 |
@@ -113,6 +114,19 @@ https://cf-workers-sub-next.<你的子域名>.workers.dev
 | 🏢 云服务 | Cloudflare、AWS、Google Cloud、Azure 等 |
 | 💻 开发 | GitHub、GitLab、NPMJS、Docker 等 |
 | 👑 用户规则 | Adobe、Apple、Zoom 等 + 用户自定义兜底 |
+
+Mihomo/OpenClash 输出中的核心策略组默认关系：
+
+| 策略组 | 类型 | 默认策略 |
+|--------|------|----------|
+| 节点选择 | select | 自动选择 |
+| 手动切换 | select | 第一个节点 |
+| 自动选择 | url-test | 自动测速 |
+| 广告拦截 / 应用净化 | select | REJECT |
+| 国内媒体 | select | DIRECT |
+| 国外媒体 | select | 自动选择 |
+| 漏网之鱼 | select | 节点选择 |
+| GLOBAL | select | DIRECT |
 
 **规则库扩展**：设置页内置规则库扫描功能，可搜索 1546 个 MetaCubeX 全量分类，挑选加入任意分组，支持自定义显示名称和目标策略（代理/直连/拦截）。
 
@@ -185,7 +199,7 @@ src/
 ├── models/
 │   └── node.ts        # 节点数据模型
 ├── data/
-│   ├── metacubex-rules.ts   # 预定义规则分组（10 大类 80+ 规则）
+│   ├── metacubex-rules.ts   # 预定义规则分组（11 大类 80+ 规则）
 │   └── metacubex-catalog.json  # 全量 1546 分类目录
 ├── storage/
 │   └── kv.ts          # KV 仓储层（Repository Pattern）
