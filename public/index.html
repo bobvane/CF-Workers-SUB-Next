@@ -223,6 +223,18 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .rules-group-head input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; width: 16px; height: 16px; }
+/* ===== Catalog Type Filter Chips ===== */
+.catalog-chip {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 14px; border-radius: 980px;
+  border: 1px solid var(--border); background: var(--bg2);
+  color: var(--text2); font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: all .2s;
+}
+.catalog-chip:hover { background: var(--bg3); }
+.catalog-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+.catalog-chip-count { font-size: 11px; background: rgba(0,0,0,0.08); padding: 1px 7px; border-radius: 999px; }
+.catalog-chip.active .catalog-chip-count { background: rgba(255,255,255,0.22); }
 /* ===== Scroll to Top ===== */
 .scroll-top { position: fixed; bottom: 60px; right: 20px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; border: none; cursor: pointer; font-size: 18px; display: none; box-shadow: 0 4px 12px rgba(0,113,227,0.3); }
 .scroll-top.show { display: flex; align-items: center; justify-content: center; }
@@ -381,6 +393,13 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
           <span style="font-size:12px;color:var(--text2)">失效分类历史 (<span id="catalogRemovedCount">0</span>)</span>
         </div>
         <div id="catalogRemovedList" style="display:none;margin-top:8px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:8px;font-size:13px"></div>
+      </div>
+      <!-- 分类筛选 chips（方案 A：缩小范围再挑，避免平铺几千条） -->
+      <div id="catalogTypeFilter" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <button class="catalog-chip active" data-type="" onclick="setCatalogType(this)">全部</button>
+        <button class="catalog-chip" data-type="aggregate" onclick="setCatalogType(this)">🎯 聚合 <span class="catalog-chip-count" data-count="aggregate">0</span></button>
+        <button class="catalog-chip" data-type="site" onclick="setCatalogType(this)">🌐 站点 <span class="catalog-chip-count" data-count="site">0</span></button>
+        <button class="catalog-chip" data-type="tld" onclick="setCatalogType(this)">🌍 顶级域 <span class="catalog-chip-count" data-count="tld">0</span></button>
       </div>
       <div class="form-group">
         <input id="catalogSearch" placeholder="🔍 输入分类名或搜索（如 netflix、openai、ads）…" oninput="debouncedSearchCatalog()">
@@ -1192,7 +1211,17 @@ function toggleRemovedHistory() {
 // ============ 规则库（设置页） ============
 let catalogAll = [];      // 全量 1546 分类
 let catalogSearchTimer = null;
+let catalogType = '';     // 当前分类筛选：'' | 'aggregate' | 'site' | 'tld'
 let addRuleGroupOptions = []; // 目标分组下拉选项
+
+/** 点击分类筛选 chip */
+function setCatalogType(btn) {
+  catalogType = btn.dataset.type || '';
+  document.querySelectorAll('.catalog-chip').forEach(c => {
+    c.classList.toggle('active', (c.dataset.type || '') === catalogType);
+  });
+  searchCatalog();
+}
 
 // 首次进入设置页时加载 catalog 和分组下拉（只加载一次，后续复用）
 async function ensureCatalogLoaded() {
@@ -1223,11 +1252,22 @@ async function searchCatalog() {
   const list = document.getElementById('catalogList');
   list.innerHTML = '<div style="color:var(--text2);padding:16px;text-align:center">⏳ 搜索中…</div>';
   try {
-    const limit = q ? 200 : 100;
-    const url = q ? `/rules/catalog?q=${encodeURIComponent(q)}&limit=${limit}` : `/rules/catalog?limit=${limit}`;
-    const res = await api(url);
+    const limit = q ? 200 : 200;
+    const params = new URLSearchParams();
+    if (catalogType) params.set('type', catalogType);
+    if (q) params.set('q', q);
+    params.set('limit', String(limit));
+    const res = await api(`/rules/catalog?${params.toString()}`);
     const items = res.data?.catalog || [];
     const total = res.data?.meta?.total || 0;
+    // 更新各分类计数徽标（首次加载后也填充）
+    const typeCounts = res.data?.meta?.typeCounts;
+    if (typeCounts) {
+      document.querySelectorAll('.catalog-chip-count').forEach(badge => {
+        const key = badge.dataset.count;
+        badge.textContent = typeCounts[key] ?? badge.textContent;
+      });
+    }
     if (items.length === 0) {
       list.innerHTML = `<div style="color:var(--text2);padding:16px;text-align:center">${q ? '未找到匹配的分类' : '暂无数据，请先同步规则库'}</div>`;
       return;

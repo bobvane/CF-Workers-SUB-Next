@@ -96,6 +96,18 @@ describe('Catalog API', () => {
     expect(data.catalog.every((e) => e.id.includes('NETFLIX'))).toBe(true);
   });
 
+  it('catalog 支持按 type 参数过滤（aggregate / site / tld）', async () => {
+    const res = await app.request('/api/rules/catalog?type=aggregate', {
+      headers: { Cookie: cookie },
+    });
+    const json = (await res.json()) as ResData;
+    expect(json.success).toBe(true);
+    const data = json.data as { catalog: { type: string }[]; meta: { typeCounts: Record<string, number> } };
+    expect(data.catalog.every((e) => e.type === 'aggregate')).toBe(true);
+    expect(data.meta.typeCounts).toHaveProperty('aggregate');
+    expect(data.meta.typeCounts).toHaveProperty('site');
+  });
+
   it('catalog/meta 需登录', async () => {
     const res = await app.request('/api/rules/catalog/meta');
     expect(res.status).toBe(401);

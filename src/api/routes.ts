@@ -364,19 +364,29 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   // 获取规则分类目录（动态：KV 优先，KV 空回退内置 seed）
-  // 供扫描/搜索/添加。可搜索 q 过滤、limit 截断。
+  // 供扫描/搜索/添加。可搜索 q 过滤、type 过滤、limit 截断。
   app.get('/api/rules/catalog', async (c) => {
     const { entries, fromKv } = await catalogSync.getCatalog();
     const q = (c.req.query('q') || '').trim().toLowerCase();
+    const typeFilter = (c.req.query('type') || '').trim().toLowerCase();
     const limit = Math.min(Number(c.req.query('limit') || 5000), 5000);
     let catalog = entries;
+    if (typeFilter && ['aggregate', 'site', 'tld'].includes(typeFilter)) {
+      catalog = catalog.filter((e) => e.type === typeFilter);
+    }
     if (q) {
       catalog = catalog.filter((e) => e.id.toLowerCase().includes(q));
     }
+    // 返回各类型计数，前端用于渲染 chips 徽标
+    const typeCounts = {
+      aggregate: entries.filter((e) => e.type === 'aggregate').length,
+      site: entries.filter((e) => e.type === 'site').length,
+      tld: entries.filter((e) => e.type === 'tld').length,
+    };
     return c.json({
       success: true,
       data: {
-        meta: { source: 'MetaCubeX/meta-rules-dat', total: entries.length, fromKv },
+        meta: { source: 'MetaCubeX/meta-rules-dat', total: entries.length, fromKv, typeCounts },
         catalog: catalog.slice(0, limit),
       },
     });
