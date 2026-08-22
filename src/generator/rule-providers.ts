@@ -56,31 +56,35 @@ export function providerUrl(id: string): string {
   return `${META_DAT_BASE}${id.toLowerCase()}.mrs`;
 }
 
-/** 计算规则的出口目标（按新分组层级路由） */
+/** 计算规则的出口目标（按 V3.1 三层架构路由） */
 export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
   // 定位所属分组
   const g = groups.find(gr => gr.items.some(i => i.id === rule.id));
-  // REJECT 按规则大类拆分，避免广告拦截与应用净化共用出口。
+
+  // REJECT 统一 → 广告拦截（应用净化已移除，ADS⊂ADS-ALL 93% 重叠）
   if (rule.target === 'REJECT') {
-    return g?.key === 'app-clean' ? '应用净化' : '广告拦截';
+    return '广告拦截';
   }
-  // 国内直连规则统一进入"国内媒体"策略组。
-  if (g?.key === 'china-direct') return '国内媒体';
-  // DIRECT 目标跟随所属分组（避免 Cloudflare/jsDelivr/Fastly 等 CDN 被误收进国内媒体）
+
+  // 国内直连/国内媒体规则 → 直接 DIRECT（不建策略组）
+  if (g && (g.key === 'china-direct' || g.key === 'china-media')) {
+    return 'DIRECT';
+  }
+
+  // DIRECT 目标：有归属按归属组，无归属直接 DIRECT
   if (rule.target === 'DIRECT') {
-    // 无归属的 DIRECT 规则 → 国内媒体（安全默认）
-    if (!g) return '国内媒体';
-    // 有归属 → 走所属分组（如 cloud 组的 Cloudflare DIRECT → 云服务组）
-    if (g.key === 'media') return '国外媒体';
+    if (!g) return 'DIRECT';
     return g.name;
   }
+
   // PROXY：找到所属规则大类
-  if (!g) return '漏网之鱼'; // 无归属分组，兜底到漏网之鱼
-  // 国外媒体（media 组）PROXY → 国外媒体
+  if (!g) return '漏网之鱼'; // 无归属分组，兜底
+
+  // 固化策略组
+  if (g.key === 'ads') return '广告拦截';
   if (g.key === 'media') return '国外媒体';
-  // 用户规则（user 组）PROXY → 用户规则组
-  if (g.key === 'user') return g.name;
-  // 其他大类 → 使用大类名作为分组名
+
+  // 业务条件组 → 使用分组名
   return g.name;
 }
 
@@ -109,26 +113,46 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
 }
 
 /**
- * 生成完整 rules 数组（有序）
+ * 生成完整 rules 数组（有序，V3.1 冻结版）
  * 优先级（自上而下匹配）：
- *   1. 硬编码直连：private → cn → ads（REJECT）
- *   2. 用户勾选的 REJECT 规则（广告拦截最优先，避免被 PROXY 抢先）
- *   3. 用户勾选的 PROXY 规则（AI/加密/流媒体等必须置顶，避免被泛直连/google 抢先）
- *   4. 用户勾选的 DIRECT 规则
- *   5. GEOIP,CN,DIRECT
- *   6. MATCH,PROXY（兜底）
+ *   ① PRIVATE / LAN (GEOIP,private,DIRECT)           ← 必须最前，防内网误代理
+ *   ② 用户自定义规则（按用户定义顺序，高于 CN/GEOIP）
+ *   ③ 广告拦截 (CATEGORY-ADS-ALL) → REJECT
+ *   ④ 业务分类（细分在前、宽泛在后）：
+ *       谷歌FCM/微软Bing/微软云盘/微软服务/苹果服务/游戏平台/网易音乐/AI/开发/社交/云/加密货币/用户规则
+ *   ⑤ 国内直连规则 (RULE-SET,xxx,DIRECT) —— china-direct / china-media 组内规则
+ *   ⑥ GEOSITE,cn,DIRECT
+ *   ⑦ GEOIP,CN,DIRECT
+ *   ⑧ MATCH,漏网之鱼
  *
  * 依据：Mihomo 规则自上而下匹配，先命中的生效。
- *   - 广告 REJECT 必须放在最前，否则被 PROXY 规则先匹配就漏广告
- *   - AI/加密专用 PROXY 必须放在 DIRECT 规则之前，否则 gemini.google.com 被 GEOSITE,google,PROXY 提前匹配
+ *   - PRIVATE 必须最前（防用户把 192.168.x.x 误代理出去）
+ *   - 细分规则（GEMINI/FCM/Apple-Music）必须在宽泛规则（GOOGLE/APPLE）之前
+ *   - 国内规则统一 RULE-SET,xxx,DIRECT，不建策略组
+ *   - 应用净化已移除（CATEGORY-ADS⊂CATEGORY-ADS-ALL，93% 重叠，并入广告拦截）
  */
 export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] = []): string[] {
   const selectedSet = new Set(selected.map(r => r.id));
   const lines: string[] = [];
 
-  // 按 RULE_GROUPS 既定顺序（即分组优先级）逐个输出勾选的规则。
-  // 分组顺序已定义：广告拦截 → 应用净化 → 国内直连规则 → 国外媒体 → ... 规则分类组。
+  // === ① PRIVATE/LAN 硬编码最前 ===
+  lines.push('GEOIP,private,DIRECT');
+
+  // === ② 用户自定义规则（高于 CN/GEOIP，可覆盖业务分类和 CN） ===
+  // 这里假设用户自定义规则会作为单独的 rule-provider 传入，暂不在此处处理
+
+  // === ③ 广告拦截（REJECT，最高业务优先级）===
+  // 在业务分类前输出 CATEGORY-ADS-ALL（若勾选）
+  if (selectedSet.has('CATEGORY-ADS-ALL')) {
+    lines.push(ruleSetLine({ id: 'CATEGORY-ADS-ALL', target: 'REJECT' } as MetaCubeXRule, groups));
+  }
+
+  // === ④ 业务分类：按 RULE_GROUPS 顺序输出（细分在前、宽泛在后）===
+  // 关键：跳过 china-direct / china-media（它们直接 DIRECT，不生成规则行）
+  // 跳过 ads（已在第③步处理）
+  const skipKeys = new Set(['ads', 'china-direct', 'china-media']);
   for (const g of groups) {
+    if (skipKeys.has(g.key)) continue;
     for (const item of g.items) {
       if (selectedSet.has(item.id)) {
         lines.push(ruleSetLine(item, groups));
@@ -136,25 +160,34 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     }
   }
 
-  // 兜底：未被任何分组匹配到的勾选规则（防御性）
-  // matchedIds 记录 rule id（大写），避免重复
+  // === ⑤ 国内直连规则（china-direct / china-media 组内规则 → 直接 DIRECT）===
+  for (const g of groups) {
+    if (g.key !== 'china-direct' && g.key !== 'china-media') continue;
+    for (const item of g.items) {
+      if (selectedSet.has(item.id)) {
+        // 国内规则直接写 RULE-SET,xxx,DIRECT（不走策略组）
+        lines.push(`RULE-SET,${providerName(item.id)},DIRECT`);
+      }
+    }
+  }
+
+  // === ⑥ 兜底去重：防止孤儿规则重复 ===
   const matchedIds = new Set(lines.map(l => {
-    // RULE-SET,geosite-xxx,策略 -> 提取 xxx 作为 rule id (大写)
     const parts = l.split(',');
     if (parts[0] === 'RULE-SET' && parts[1].startsWith('geosite-')) {
-      return parts[1].slice(8).toUpperCase(); // 去掉 'geosite-' 前缀并转大写
+      return parts[1].slice(8).toUpperCase();
     }
-    return parts[1] || parts[0];
+    // 处理 GEOIP,private,DIRECT 等硬编码行
+    return parts[0];
   }));
   const orphanSelected = selected.filter(r => !matchedIds.has(r.id));
   for (const r of orphanSelected) {
     lines.push(ruleSetLine(r, groups));
   }
 
-  // 硬编码兜底（放在用户规则之后，作为最终防线）
+  // === ⑦⑧⑨ 硬编码最终防线 ===
   return [
     ...lines,
-    'GEOIP,private,DIRECT',
     'GEOSITE,cn,DIRECT',
     'GEOIP,CN,DIRECT',
     'MATCH,漏网之鱼',

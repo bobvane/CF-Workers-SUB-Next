@@ -81,7 +81,7 @@ describe('Rules API', () => {
       expect(g.items.length).toBeGreaterThan(0);
     }
     const names = groupList.map((g) => g.key);
-    for (const k of ['ads', 'china-direct', 'media', 'crypto', 'ai', 'social', 'game', 'cloud', 'dev', 'user']) {
+    for (const k of ['ads', 'china-direct', 'china-media', 'google-fcm', 'bing', 'onedrive', 'microsoft', 'apple', 'netease', 'media', 'crypto', 'ai', 'social', 'game', 'cloud', 'dev', 'user']) {
       expect(names).toContain(k);
     }
   });

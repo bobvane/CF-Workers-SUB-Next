@@ -57,13 +57,20 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
 
 /**
  * 预定义规则分组
- * 规则优先级（自上而下匹配，见 rule-providers.buildRules）：
- *   1. 广告拦截（CATEGORY-ADS-ALL → REJECT）
- *   2. 应用净化（CATEGORY-ADS → REJECT）
- *   3. 国内直连规则（路由到国内媒体策略组）
- *   4. 国外媒体（PROXY 流媒体）
- *   5. 规则分类组（AI/加密货币/社交/游戏/云服务/开发/用户规则，PROXY）
- *   6. 漏网之鱼（MATCH 兜底）
+ * 规则优先级（自上而下匹配，见 rule-providers.buildRules，V3.1 冻结版）：
+ *   1. PRIVATE / LAN（GEOIP,private → DIRECT，必须最前，防内网误代理）
+ *   2. 用户自定义规则（可覆盖业务分类和 CN，但不能覆盖 LAN）
+ *   3. 广告拦截（CATEGORY-ADS-ALL → REJECT）
+ *   4. 业务分类（细分在前，宽泛在后；AI/开发/社交/加密/云/FCM/微软/苹果/游戏/国内媒体/国外媒体）
+ *   5. 国内直连规则（RULE-SET,xxx → DIRECT，不建策略组）
+ *   6. GEOSITE,cn → DIRECT
+ *   7. GEOIP,CN → DIRECT
+ *   8. MATCH → 漏网之鱼
+ *
+ * 分组顺序即策略组生成顺序（generateProxyGroups 按此数组输出）。
+ * 注意：`china-direct` / `china-media` 内规则统一 RULE-SET,xxx,DIRECT，
+ *       不生成「全球直连」「国内媒体」策略组（国内直连用 DIRECT 本身）。
+ *       应用净化（CATEGORY-ADS）已合并进广告拦截（ADS⊂ADS-ALL，93% 重叠）。
  */
 export const RULE_GROUPS: RuleGroup[] = [
   {
@@ -73,15 +80,9 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'app-clean', name: '应用净化', icon: '🧹',
-    items: [
-      { id: 'CATEGORY-ADS', label: '应用净化通用合集', tag: 'geosite', target: 'REJECT' },
-    ],
-  },
-  {
     key: 'china-direct', name: '国内直连', icon: '🇨🇳',
     items: [
-      // 私有/基础直连（原"安全与隐私"并入）
+      // 私有/基础直连（LAN 必须最先放行，防内网误代理）
       { id: 'PRIVATE', label: '私有地址', tag: 'geosite', target: 'DIRECT' },
       { id: 'CN', label: '中国直连域名', tag: 'geosite', target: 'DIRECT' },
       // 国内常用网站（原"中国内地常用"并入）
@@ -97,15 +98,64 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'XIAOHONGSHU', label: '小红书', tag: 'geosite', target: 'DIRECT' },
       { id: 'SUNING', label: '苏宁', tag: 'geosite', target: 'DIRECT' },
       { id: 'XUNLEI', label: '迅雷', tag: 'geosite', target: 'DIRECT' },
+    ],
+  },
+  {
+    key: 'china-media', name: '国内媒体', icon: '🎬',
+    items: [
+      // 国内流媒体（从原"国内直连"拆出，前端分开展示，后端都 DIRECT）
       { id: 'CATEGORY-ENTERTAINMENT-CN', label: '中国娱乐聚合', tag: 'geosite', target: 'DIRECT' },
-      // 国内流媒体（原"流媒体"组的国内项并入）
       { id: 'BILIBILI', label: '哔哩哔哩', tag: 'geosite', target: 'DIRECT' },
       { id: 'IQIYI', label: '爱奇艺', tag: 'geosite', target: 'DIRECT' },
       { id: 'YOUKU', label: '优酷', tag: 'geosite', target: 'DIRECT' },
     ],
   },
   {
-    key: 'media', name: '国外媒体', icon: '🎬',
+    key: 'netease', name: '网易音乐', icon: '🎵',
+    items: [
+      // 网易音乐默认 DIRECT（国内服务）。APPLE-MUSIC 不在此组（仅在苹果服务，避免重复）。
+      { id: 'NETEASE', label: '网易音乐', tag: 'geosite', target: 'DIRECT' },
+    ],
+  },
+  {
+    key: 'google-fcm', name: '谷歌FCM', icon: '📲',
+    items: [
+      // 细分规则（FCM）放在宽泛规则（GOOGLE）之前，防被先命中
+      { id: 'GOOGLEFCM', label: '谷歌推送(GoogFCM)', tag: 'geosite', target: 'PROXY' },
+    ],
+  },
+  {
+    key: 'bing', name: '微软Bing', icon: '🔍',
+    items: [
+      { id: 'BING', label: '微软必应(含国际版)', tag: 'geosite', target: 'PROXY' },
+    ],
+  },
+  {
+    key: 'onedrive', name: '微软云盘', icon: '☁️',
+    items: [
+      { id: 'ONEDRIVE', label: '微软 OneDrive', tag: 'geosite', target: 'PROXY' },
+    ],
+  },
+  {
+    key: 'microsoft', name: '微软服务', icon: '🪟',
+    items: [
+      // 微软服务整体（cn.* 子域会被国内直连先命中走 DIRECT，更稳）
+      { id: 'MICROSOFT', label: '微软服务', tag: 'geosite', target: 'PROXY' },
+    ],
+  },
+  {
+    key: 'apple', name: '苹果服务', icon: '🍎',
+    items: [
+      // 苹果服务默认 DIRECT（中国区直连更稳）。APPLE-MUSIC 只放本组，不在网易音乐。
+      { id: 'APPLE', label: '苹果服务', tag: 'geosite', target: 'DIRECT' },
+      { id: 'APPLE-MUSIC', label: 'Apple Music', tag: 'geosite', target: 'DIRECT' },
+      { id: 'APPLE-UPDATE', label: 'Apple 系统更新', tag: 'geosite', target: 'DIRECT' },
+      { id: 'APPLE-PODCASTS', label: 'Apple 播客', tag: 'geosite', target: 'DIRECT' },
+      { id: 'APPLE-TVPLUS', label: 'Apple TV+', tag: 'geosite', target: 'DIRECT' },
+    ],
+  },
+  {
+    key: 'media', name: '国外媒体', icon: '🌍',
     items: [
       { id: 'NETFLIX', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
       { id: 'YOUTUBE', label: 'YouTube', tag: 'geosite', target: 'PROXY' },
@@ -119,20 +169,23 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'crypto', name: '加密货币', icon: '💰',
+    key: 'game', name: '游戏平台', icon: '🎮',
     items: [
-      { id: 'CATEGORY-CRYPTOCURRENCY', label: '加密货币通用合集', tag: 'geosite', target: 'PROXY' },
-      { id: 'BINANCE', label: '币安 Binance', tag: 'geosite', target: 'PROXY' },
-      { id: 'HUOBI', label: '火币 Huobi', tag: 'geosite', target: 'PROXY' },
-      { id: 'BYBIT', label: 'Bybit', tag: 'geosite', target: 'PROXY' },
-      { id: 'GATEIO', label: 'Gate.io', tag: 'geosite', target: 'PROXY' },
-      { id: 'COINONE', label: 'CoinOne', tag: 'geosite', target: 'PROXY' },
-      { id: 'LOCALBITCOINS', label: 'LocalBitcoins', tag: 'geosite', target: 'PROXY' },
-      { id: '8BTC', label: '巴比特', tag: 'geosite', target: 'PROXY' },
+      { id: 'STEAM', label: 'Steam', tag: 'geosite', target: 'PROXY' },
+      { id: 'EPICGAMES', label: 'Epic Games', tag: 'geosite', target: 'PROXY' },
+      { id: 'UBISOFT', label: '育碧', tag: 'geosite', target: 'PROXY' },
+      { id: 'BLIZZARD', label: '暴雪战网', tag: 'geosite', target: 'PROXY' },
+      { id: 'NINTENDO', label: '任天堂', tag: 'geosite', target: 'PROXY' },
+      { id: 'ROCKSTAR', label: 'R星', tag: 'geosite', target: 'PROXY' },
+      { id: 'ORIGIN', label: 'Origin/EA', tag: 'geosite', target: 'PROXY' },
+      { id: 'PLAYSTATION', label: 'PlayStation', tag: 'geosite', target: 'PROXY' },
+      { id: 'XBOX', label: 'Xbox', tag: 'geosite', target: 'PROXY' },
+      { id: 'CATEGORY-GAMES-CN', label: '游戏中国区', tag: 'geosite', target: 'DIRECT' },
+      { id: 'CATEGORY-GAMES-!CN', label: '游戏聚合(非中国)', tag: 'geosite', target: 'PROXY' },
     ],
   },
   {
-    key: 'ai', name: 'AI 服务', icon: '🤖',
+    key: 'ai', name: 'AI 平台', icon: '🤖',
     items: [
       { id: 'OPENAI', label: 'OpenAI / ChatGPT', tag: 'geosite', target: 'PROXY' },
       { id: 'ANTHROPIC', label: 'Claude (Anthropic)', tag: 'geosite', target: 'PROXY' },
@@ -140,6 +193,22 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'PERPLEXITY', label: 'Perplexity', tag: 'geosite', target: 'PROXY' },
       { id: 'GITHUB-COPILOT', label: 'GitHub Copilot', tag: 'geosite', target: 'PROXY' },
       { id: 'CATEGORY-AI-CHAT-!CN', label: 'AI 对话(非中国)', tag: 'geosite', target: 'PROXY' },
+    ],
+  },
+  {
+    key: 'dev', name: '开发工具', icon: '💻',
+    items: [
+      // GitHub 并入开发工具（不独立成组）
+      { id: 'GITHUB', label: 'GitHub', tag: 'geosite', target: 'PROXY' },
+      { id: 'GITLAB', label: 'GitLab', tag: 'geosite', target: 'PROXY' },
+      { id: 'NPMJS', label: 'npm', tag: 'geosite', target: 'PROXY' },
+      { id: 'STACKEXCHANGE', label: 'StackExchange', tag: 'geosite', target: 'PROXY' },
+      { id: 'NOTION', label: 'Notion', tag: 'geosite', target: 'PROXY' },
+      { id: 'FIGMA', label: 'Figma', tag: 'geosite', target: 'PROXY' },
+      { id: 'CANVA', label: 'Canva', tag: 'geosite', target: 'PROXY' },
+      { id: 'MEDIUM', label: 'Medium', tag: 'geosite', target: 'PROXY' },
+      { id: 'JSDELIVR', label: 'jsDelivr', tag: 'geosite', target: 'DIRECT' },
+      { id: 'CATEGORY-DEV', label: '开发聚合', tag: 'geosite', target: 'PROXY' },
     ],
   },
   {
@@ -156,25 +225,10 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'game', name: '游戏平台', icon: '🎮',
-    items: [
-      { id: 'STEAM', label: 'Steam', tag: 'geosite', target: 'PROXY' },
-      { id: 'EPICGAMES', label: 'Epic Games', tag: 'geosite', target: 'PROXY' },
-      { id: 'BLIZZARD', label: '暴雪战网', tag: 'geosite', target: 'PROXY' },
-      { id: 'NINTENDO', label: '任天堂', tag: 'geosite', target: 'PROXY' },
-      { id: 'ROCKSTAR', label: 'R星', tag: 'geosite', target: 'PROXY' },
-      { id: 'ORIGIN', label: 'Origin/EA', tag: 'geosite', target: 'PROXY' },
-      { id: 'UBISOFT', label: '育碧', tag: 'geosite', target: 'PROXY' },
-      { id: 'PLAYSTATION', label: 'PlayStation', tag: 'geosite', target: 'PROXY' },
-      { id: 'XBOX', label: 'Xbox', tag: 'geosite', target: 'PROXY' },
-      { id: 'CATEGORY-GAMES-!CN', label: '游戏聚合(非中国)', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
     key: 'cloud', name: '云服务', icon: '☁️',
     items: [
+      // 移除 MICROSOFT（已拆到"微软服务"组）。GOOGLE 保留（细分 GEMINI/FCM 已在前置组）
       { id: 'CLOUDFLARE', label: 'Cloudflare', tag: 'geosite', target: 'DIRECT' },
-      { id: 'MICROSOFT', label: 'Microsoft', tag: 'geosite', target: 'PROXY' },
       { id: 'GOOGLE', label: 'Google', tag: 'geosite', target: 'PROXY' },
       { id: 'AMAZON', label: 'Amazon/AWS', tag: 'geosite', target: 'PROXY' },
       { id: 'DIGITALOCEAN', label: 'DigitalOcean', tag: 'geosite', target: 'PROXY' },
@@ -185,25 +239,23 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'dev', name: '开发工具', icon: '💻',
+    key: 'crypto', name: '加密货币', icon: '💰',
     items: [
-      { id: 'GITHUB', label: 'GitHub', tag: 'geosite', target: 'PROXY' },
-      { id: 'GITLAB', label: 'GitLab', tag: 'geosite', target: 'PROXY' },
-      { id: 'NPMJS', label: 'npm', tag: 'geosite', target: 'PROXY' },
-      { id: 'STACKEXCHANGE', label: 'StackExchange', tag: 'geosite', target: 'PROXY' },
-      { id: 'NOTION', label: 'Notion', tag: 'geosite', target: 'PROXY' },
-      { id: 'FIGMA', label: 'Figma', tag: 'geosite', target: 'PROXY' },
-      { id: 'CANVA', label: 'Canva', tag: 'geosite', target: 'PROXY' },
-      { id: 'MEDIUM', label: 'Medium', tag: 'geosite', target: 'PROXY' },
-      { id: 'JSDELIVR', label: 'jsDelivr', tag: 'geosite', target: 'DIRECT' },
-      { id: 'CATEGORY-DEV', label: '开发聚合', tag: 'geosite', target: 'PROXY' },
+      { id: 'CATEGORY-CRYPTOCURRENCY', label: '加密货币通用合集', tag: 'geosite', target: 'PROXY' },
+      { id: 'BINANCE', label: '币安 Binance', tag: 'geosite', target: 'PROXY' },
+      { id: 'HUOBI', label: '火币 Huobi', tag: 'geosite', target: 'PROXY' },
+      { id: 'BYBIT', label: 'Bybit', tag: 'geosite', target: 'PROXY' },
+      { id: 'GATEIO', label: 'Gate.io', tag: 'geosite', target: 'PROXY' },
+      { id: 'COINONE', label: 'CoinOne', tag: 'geosite', target: 'PROXY' },
+      { id: 'LOCALBITCOINS', label: 'LocalBitcoins', tag: 'geosite', target: 'PROXY' },
+      { id: '8BTC', label: '巴比特', tag: 'geosite', target: 'PROXY' },
     ],
   },
   {
     key: 'user', name: '用户规则', icon: '👑',
     items: [
+      // 移除 APPLE（已拆到"苹果服务"组）
       { id: 'ADOBE', label: 'Adobe', tag: 'geosite', target: 'PROXY' },
-      { id: 'APPLE', label: 'Apple', tag: 'geosite', target: 'DIRECT' },
       { id: 'ZOOM', label: 'Zoom', tag: 'geosite', target: 'DIRECT' },
       { id: 'SLACK', label: 'Slack', tag: 'geosite', target: 'PROXY' },
       { id: 'SPEEDTEST', label: 'Speedtest', tag: 'geosite', target: 'DIRECT' },

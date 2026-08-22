@@ -119,17 +119,20 @@ describe('generateMihomoConfig', () => {
     );
     const byName = new Map(groups.map(group => [group.name, group]));
 
+    // V3.1: 核心层(3) + 固化业务层(2) + 条件业务层(0,因无规则) + 兜底层(2) + 地理组
     expect([...byName.keys()]).toEqual(expect.arrayContaining([
-      '节点选择', '手动切换', '自动选择', '广告拦截', '应用净化',
-      '国内媒体', '国外媒体', '漏网之鱼', 'GLOBAL',
+      '节点选择', '手动切换', '自动选择',
+      '广告拦截', '国外媒体',
+      '漏网之鱼', 'GLOBAL',
     ]));
     expect(byName.get('节点选择')?.['default-selected']).toBe('自动选择');
     expect(byName.get('广告拦截')?.['default-selected']).toBe('REJECT');
-    expect(byName.get('应用净化')?.['default-selected']).toBe('REJECT');
-    expect(byName.get('国内媒体')?.['default-selected']).toBe('DIRECT');
     expect(byName.get('国外媒体')?.['default-selected']).toBe('自动选择');
-    expect(byName.get('GLOBAL')?.['default-selected']).toBe('DIRECT');
-    for (const name of ['节点选择', '广告拦截', '应用净化', '国内媒体', '国外媒体', 'GLOBAL']) {
+    expect(byName.get('GLOBAL')?.['default-selected']).toBe('节点选择'); // V3.1: GLOBAL默认节点选择
+    // V3.1: 不再有 应用净化、国内媒体 策略组
+    expect(byName.has('应用净化')).toBe(false);
+    expect(byName.has('国内媒体')).toBe(false);
+    for (const name of ['节点选择', '广告拦截', '国外媒体', '漏网之鱼', 'GLOBAL']) {
       const group = byName.get(name);
       expect(group?.proxies).toContain(group?.['default-selected']);
     }
@@ -142,15 +145,15 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('mode: rule');
     expect(yaml).toContain('proxies:');
     expect(yaml).toContain('proxy-groups:');
-    // 新分组层级
+    // 新分组层级 V3.1
     expect(yaml).toContain('漏网之鱼');
     expect(yaml).toContain('节点选择');
     expect(yaml).toContain('手动切换');
     expect(yaml).toContain('自动选择');
     expect(yaml).toContain('国外媒体');
-    expect(yaml).toContain('国内媒体');
     expect(yaml).toContain('广告拦截');
-    expect(yaml).toContain('应用净化');
+    expect(yaml).not.toContain('国内媒体'); // V3.1: 移除
+    expect(yaml).not.toContain('应用净化'); // V3.1: 移除
     expect(yaml).toContain('GLOBAL');
     // MATCH 兜底到漏网之鱼
     expect(yaml).toContain('MATCH,漏网之鱼');
@@ -210,8 +213,8 @@ describe('generateMihomoConfig', () => {
       ],
       RULE_GROUPS
     );
-    // AI 服务组（OPENAI 属于 AI 服务）
-    expect(yaml).toContain('AI 服务');
+    // AI 服务组（OPENAI 属于 AI 服务） - V3.1: ai 组条件生成
+    expect(yaml).toContain('AI 平台'); // V3.1: 名称改为"AI 平台"
     // 流媒体规则 → 国外媒体（不生成独立流媒体组）
     expect(yaml).toContain('国外媒体');
   });

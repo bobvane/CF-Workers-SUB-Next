@@ -54,13 +54,13 @@ describe('ConfigService 分流规则注入', () => {
     expect(yaml).toContain('geosite-openai');
     expect(yaml).toContain('geosite-category-ads-all');
     // 规则分类分组出现
-    expect(yaml).toContain('AI 服务');
+    expect(yaml).toContain('AI 平台'); // V3.1: 名称改为"AI 平台"
     expect(yaml).toContain('国外媒体');
     // 流媒体不生成独立分组（合并到国外媒体）
     expect(yaml).not.toContain('- 流媒体\n');
-    // 有序 rules：REJECT 路由到广告拦截，OPENAI 路由到 AI 服务
+    // 有序 rules：REJECT 路由到广告拦截，OPENAI 路由到 AI 平台
     expect(yaml.indexOf('RULE-SET,geosite-category-ads-all,广告拦截')).toBeLessThan(
-      yaml.indexOf('RULE-SET,geosite-openai,AI 服务')
+      yaml.indexOf('RULE-SET,geosite-openai,AI 平台')
     );
     expect(yaml.indexOf('GEOIP,CN,DIRECT')).toBeLessThan(
       yaml.indexOf('MATCH,漏网之鱼')
