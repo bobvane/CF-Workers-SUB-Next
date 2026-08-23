@@ -595,6 +595,12 @@ async function checkSession() {
       state.authenticated = true;
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('app').style.display = 'block';
+      // 刷新页面恢复会话时，同步右上角用户名
+      try {
+        const u = await api('/auth/username');
+        const badge = document.getElementById('userBadge');
+        if (badge && u.data?.username) badge.textContent = u.data.username;
+      } catch {}
       loadDashboard();
       return true;
     }
@@ -613,6 +619,9 @@ async function login() {
     await api('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
     document.getElementById('loginPassword').value = '';
     toast('登录成功');
+    // 右上角用户徽标显示实际登录用户名
+    const badge = document.getElementById('userBadge');
+    if (badge) badge.textContent = username;
     state.authenticated = true;
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('app').style.display = 'block';
