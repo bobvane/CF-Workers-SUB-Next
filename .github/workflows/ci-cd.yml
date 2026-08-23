@@ -36,6 +36,8 @@ jobs:
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     needs: test
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
@@ -84,3 +86,25 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           WORKER_GITHUB_TOKEN: ${{ secrets.WORKER_GITHUB_TOKEN || '' }}
+
+      # 自动发布 GitHub Release：读 package.json 版本号，打 tag + 创建 Release
+      # 版本号未变化的推送会跳过（tag 已存在）
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="v$(grep '"version"' package.json | cut -d'"' -f4)"
+          echo "检测到版本: ${VERSION}"
+          if git ls-remote --tags origin "refs/tags/${VERSION}" | grep -q "${VERSION}"; then
+            echo "标签 ${VERSION} 已存在，跳过 Release 发布"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "${VERSION}" -m "Release ${VERSION}"
+          git push origin "${VERSION}"
+          gh release create "${VERSION}" \
+            --title "${VERSION}" \
+            --notes "自动发布：${VERSION}。变更见 [提交历史](https://github.com/${{ github.repository }}/commits/main)。" \
+            --verify-tag
+          echo "✅ 已发布 Release ${VERSION}"
