@@ -270,12 +270,12 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
     </div>
   </header>
   <nav class="nav-tabs" id="navTabs">
-    <div class="nav-tab active" data-page="subscribe" onclick="switchPage('subscribe')">📥 订阅管理</div>
+    <div class="nav-tab active" data-page="dashboard" onclick="switchPage('dashboard')">📊 仪表盘</div>
+    <div class="nav-tab" data-page="subscribe" onclick="switchPage('subscribe')">📥 订阅管理</div>
     <div class="nav-tab" data-page="nodes" onclick="switchPage('nodes')">🔗 节点列表</div>
-    <div class="nav-tab" data-page="output" onclick="switchPage('output')">📦 输出配置</div>
     <div class="nav-tab" data-page="rules" onclick="switchPage('rules')">🌐 分流规则</div>
+    <div class="nav-tab" data-page="output" onclick="switchPage('output')">📦 输出配置</div>
     <div class="nav-tab" data-page="settings" onclick="switchPage('settings')">⚙️ 设置</div>
-    <div class="nav-tab" data-page="dashboard" onclick="switchPage('dashboard')">📊 仪表盘</div>
   </nav>
 
   <!-- Dashboard -->
@@ -1385,7 +1385,7 @@ async function loadMeta() {
 // ============ Init ============
 window.addEventListener('DOMContentLoaded', async () => {
   // 从 hash 恢复页面
-  const savedPage = window.location.hash.replace('#', '') || 'subscribe';
+  const savedPage = window.location.hash.replace('#', '') || 'dashboard';
   if (['dashboard','subscribe','nodes','rules','output','settings'].includes(savedPage)) {
     state.currentPage = savedPage;
   }
@@ -1396,7 +1396,7 @@ window.addEventListener('DOMContentLoaded', async () => {
 
 window.addEventListener('hashchange', () => {
   const page = window.location.hash.replace('#', '') || 'dashboard';
-  if (['dashboard','subscribe','nodes','output','settings'].includes(page)) {
+  if (['dashboard','subscribe','nodes','rules','output','settings'].includes(page)) {
     switchPage(page);
   }
 });
