@@ -90,6 +90,27 @@ export const DEFAULT_DNS_CONFIG: Record<string, unknown> = {
   },
 };
 
+/**
+ * 默认 Sniffer 配置（fake-ip 最佳搭档）
+ * 嗅探 TLS/HTTP/QUIC 握手中的真实域名，解决 fake-ip 下无法精准分流的问题。
+ * force-dns-mapping: 将嗅探到的域名映射回 fake-ip，确保后续连接走正确规则。
+ */
+export const DEFAULT_SNIFFER_CONFIG: Record<string, unknown> = {
+  enable: true,
+  'force-dns-mapping': true,
+  'parse-pure-ip': true,
+  'override-destination': true,
+  sniff: {
+    TLS: { ports: [443, 8443] },
+    HTTP: { ports: [80, '8080-8880'], 'override-destination': true },
+    QUIC: { ports: [443, 8443] },
+  },
+  'skip-domain': [
+    'Mijia Cloud',
+    '+.push.apple.com',
+  ],
+};
+
 /** 常用国家地理组（url-test 自动测速）；不在集合内的国家建 select 组，不长期测速 */
 export const GEO_URL_TEST_SET: Set<string> = new Set([
   '🇭🇰 香港',
@@ -403,6 +424,7 @@ export async function generateProxyGroups(
   groups.push({
     name: '节点选择',
     type: 'select',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Static.png',
     'default-selected': '自动选择',
     proxies: ['自动选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
@@ -411,6 +433,7 @@ export async function generateProxyGroups(
   groups.push({
     name: '手动切换',
     type: 'select',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Final.png',
     'default-selected': allGeoNodes[0] || 'DIRECT',
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
@@ -419,6 +442,7 @@ export async function generateProxyGroups(
   groups.push({
     name: '自动选择',
     type: 'url-test',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Auto.png',
     url: 'http://www.gstatic.com/generate_204',
     interval: 600,
     tolerance: 50,
@@ -429,6 +453,7 @@ export async function generateProxyGroups(
   groups.push({
     name: '国外媒体',
     type: 'select',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/ForeignMedia.png',
     'default-selected': '自动选择',
     proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
@@ -437,68 +462,67 @@ export async function generateProxyGroups(
   groups.push({
     name: '广告拦截',
     type: 'select',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Advertising.png',
     'default-selected': 'REJECT',
     proxies: ['REJECT', 'DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
   });
 
-  // 7. 业务分类策略组（仅当勾选该大类规则时才生成，条件组）。
+  // 8. 业务分类策略组（仅当勾选该大类规则时才生成，条件组）
   //    ads(广告拦截) / media(国外媒体) 已由上方固化策略组承接；
-  //    china-direct / china-media 内规则在 rule-providers 中直接写 RULE-SET,xxx,DIRECT，
-  //    不生成「全球直连」「国内媒体」策略组（国内直连用 DIRECT 本身）。
-  //    app-clean(应用净化) 已移除：实测 CATEGORY-ADS⊂CATEGORY-ADS-ALL（93% 重叠），并入广告拦截。
-  //    各业务组默认值遵循「最小代理原则」：苹果/网易→DIRECT，其余→节点选择。
-  const groupDefaults: Record<string, string> = {
-    'google-fcm': '节点选择', // 谷歌FCM
-    'bing': '节点选择', // 微软Bing
-    'onedrive': '节点选择', // 微软云盘
-    'microsoft': '节点选择', // 微软服务
-    'apple': 'DIRECT', // 苹果服务：中国区直连更稳
-    'netease': 'DIRECT', // 网易音乐：国内服务
-    'game': '节点选择', // 游戏平台
-    'ai': '节点选择', // AI 平台
-    'dev': '节点选择', // 开发工具
-    'social': '节点选择', // 社交
-    'cloud': '节点选择', // 云服务
-    'crypto': '节点选择', // 加密货币
-    'user': '节点选择', // 用户规则
+  const groupDefaults: Record<string, { name: string; default: string }> = {
+    'google-fcm': { name: '谷歌FCM', default: '节点选择' },
+    'bing': { name: '微软Bing', default: '节点选择' },
+    'onedrive': { name: '微软云盘', default: '节点选择' },
+    'microsoft': { name: '微软服务', default: '节点选择' },
+    'apple': { name: '苹果服务', default: 'DIRECT' },
+    'netease': { name: '网易音乐', default: 'DIRECT' },
+    'game': { name: '游戏平台', default: '节点选择' },
+    'ai': { name: 'AI 平台', default: '节点选择' },
+    'dev': { name: '开发工具', default: '节点选择' },
+    'social': { name: '社交', default: '节点选择' },
+    'cloud': { name: '云服务', default: '节点选择' },
+    'crypto': { name: '加密货币', default: '节点选择' },
+    'user': { name: '用户规则', default: '节点选择' },
   };
   const independentGroupKeys = Object.keys(groupDefaults);
   const ruleClassGroupNames: string[] = [];
+  
   for (const key of independentGroupKeys) {
     const g = ruleGroups.find(gr => gr.key === key);
     if (!g || !hasSelected(key)) continue;
     ruleClassGroupNames.push(g.name);
 
-    // 各分类组默认 proxies：节点选择 / 手动切换 / 自动选择 / 地理组 / DIRECT
     let proxies: string[] = ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'];
 
-    // AI 服务：剔除 AI 平台封禁地区（香港/澳门/台湾等），保留 美国/新加坡/日本/英国/加拿大 等可用区，
-    // 否则 OpenAI/Gemini/Claude 会因地区被封返回 403。
     if (key === 'ai') {
       const banned = ['香港', '澳门', '台湾'];
       const allowed = geoGroupNames.filter(n => !banned.some(b => n.includes(b)));
       proxies = ['节点选择', '手动切换', ...allowed, 'DIRECT'];
     }
 
-    // 加密货币：剔除【自动选择】——url-test 会因网络波动频繁切换节点 IP，
-    // 币安/OKX/Coinbase 等交易所对 IP 频繁跨国漂移会触发风控锁卡。保留固定地区地理组。
     if (key === 'crypto') {
       proxies = ['节点选择', '手动切换', ...geoGroupNames, 'DIRECT'];
     }
 
-    groups.push({ name: g.name, type: 'select', 'default-selected': groupDefaults[key], proxies });
+    groups.push({ 
+      name: g.name, 
+      type: 'select', 
+      'default-selected': groupDefaults[key].default,
+      icon: `https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/${encodeURIComponent(g.name)}.png`,
+      proxies 
+    });
   }
 
-  // 8. 漏网之鱼（MATCH 兜底，默认节点选择）
+  // 9. 漏网之鱼（MATCH 兜底，默认节点选择）
   groups.push({
     name: '漏网之鱼',
     type: 'select',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Other.png',
     'default-selected': '节点选择',
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
-  // 9. GLOBAL（显式定义，完整按期望顺序引用所有策略组，
-  //     因 zashboard/metacubexd 面板排序 = GLOBAL 组 proxies 引用顺序。默认节点选择）
+  // 10. GLOBAL（显式定义所有策略组顺序，默认节点选择）
   const globalOrder: string[] = [
     '节点选择',
     '手动切换',
@@ -513,15 +537,14 @@ export async function generateProxyGroups(
   groups.push({
     name: 'GLOBAL',
     type: 'select',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Final.png',
     'default-selected': '节点选择',
     proxies: globalOrder,
   });
 
-  // 10. 地理组：常用国家（GEO_URL_TEST_SET）url-test 自动测速；
-  //     其他国家 select 手动选择（不长期定时测速，降低旁路由 CPU 占用）
+  // 11. 地理组：常用国家 url-test，其他国家 select
   for (const geo of geoGroups) {
-    const isCommon = GEO_URL_TEST_SET.has(geo.name);
-    groups.push({
+    const isCommon = GEO_URL_TEST_SET.has(geo.name);    groups.push({
       name: geo.name,
       type: isCommon ? 'url-test' : 'select',
       ...(isCommon
@@ -560,6 +583,7 @@ export async function generateMihomoConfig(
     proxies,
     'proxy-groups': groups,
     dns: DEFAULT_DNS_CONFIG,
+    sniffer: DEFAULT_SNIFFER_CONFIG,
     rules: ['MATCH,漏网之鱼'],
   };
 
