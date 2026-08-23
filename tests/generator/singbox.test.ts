@@ -88,7 +88,8 @@ describe('generateSingboxConfig', () => {
     const parsed = JSON.parse(json);
     const tags = parsed.outbounds.map((o: Record<string, unknown>) => o.tag);
     expect(tags).toContain('direct');
-    expect(tags).toContain('block');
+    // block outbound 已在 sing-box 1.11 废弃（改用 rule action reject），不再输出
+    expect(tags).not.toContain('block');
     expect(tags).toContain('proxy');
     expect(tags).toContain('auto');
   });

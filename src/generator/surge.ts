@@ -49,16 +49,9 @@ export function nodeToSurgeProxy(node: Node): string {
     }
 
     case 'vless': {
-      // Surge 不原生支持 VLESS，用 vmess 兼容（部分版本支持）
-      const parts = [name, 'vmess', node.server, String(node.port)];
-      if (node.uuid) parts.push(`username=${node.uuid}`);
-      if (node.tls) parts.push('tls=true');
-      if (node.transport?.type === 'ws') {
-        parts.push('ws=true');
-        if (node.transport.path) parts.push(`ws-path=${node.transport.path}`);
-        if (node.transport.host) parts.push(`ws-headers=Host:${node.transport.host}`);
-      }
-      return parts.join(', ');
+      // Surge 官方不支持 VLESS 协议（manual.nssurge.com 协议列表无 vless）
+      // 输出会认证失败，返回空串跳过该节点
+      return '';
     }
 
     default:

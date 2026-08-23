@@ -130,30 +130,23 @@ export function generateSingboxConfig(
   ruleGroups: RuleGroup[] = []
 ): string {
   const uniqueNodes = makeUniqueNames(nodes);
+  const nodeTags = uniqueNodes.map((n) => n.name);
   const outbounds: Record<string, unknown>[] = [
-    {
-      type: 'dns',
-      tag: 'dns-out',
-    },
-    {
-      type: 'direct',
-      tag: 'direct',
-    },
-    {
-      type: 'block',
-      tag: 'block',
-    },
+    { type: 'direct', tag: 'direct' },
     ...uniqueNodes.map(nodeToSingboxOutbound),
     {
       type: 'selector',
       tag: 'proxy',
-      outbounds: ['auto', ...uniqueNodes.map((n) => n.name)],
-      default: uniqueNodes.length > 0 ? uniqueNodes[0].name : 'direct',
+      outbounds: ['auto', ...nodeTags],
+      default: nodeTags.length > 0 ? 'auto' : 'direct',
     },
     {
       type: 'urltest',
       tag: 'auto',
-      outbounds: uniqueNodes.map((n) => n.name),
+      outbounds: nodeTags.length > 0 ? nodeTags : ['direct'],
+      url: 'https://www.gstatic.com/generate_204',
+      interval: '10m',
+      tolerance: 50,
     },
   ];
 
@@ -161,37 +154,63 @@ export function generateSingboxConfig(
   const ruleSetRefs: Record<string, unknown>[] = [];
   const routeRules: Record<string, unknown>[] = [];
 
-  // DNS 规则优先
-  routeRules.push({ protocol: 'dns', outbound: 'dns-out' });
+  // DNS 劫持（1.11+ 写法：rule action 替代已废弃的 dns outbound）
+  routeRules.push({ action: 'sniff' });
+  routeRules.push({ protocol: 'dns', action: 'hijack-dns' });
 
   // 用户勾选的规则
   if (selectedRules.length > 0) {
     for (const rule of selectedRules) {
       const name = providerName(rule.id);
+      // .srs 是二进制格式，必须用 format: 'binary'
       ruleSetRefs.push({
         tag: name,
         type: 'remote',
-        format: 'source',
+        format: 'binary',
         url: metacubexSrsUrl(rule.id),
+        download_detour: 'direct',
       });
       const target = ruleActionTarget(rule, ruleGroups);
-      // 按 Mihomo 规则映射找到对应的 outbound 策略
-      const outbound = mapTargetToOutbound(target);
-      routeRules.push({ rule_set: [name], outbound });
+      if (target === 'REJECT') {
+        // 广告拦截：1.11+ 用 rule action 替代已废弃的 block outbound
+        routeRules.push({ rule_set: [name], action: 'reject' });
+      } else {
+        const outbound = mapTargetToOutbound(target);
+        routeRules.push({ rule_set: [name], outbound });
+      }
     }
   }
 
   // 兜底规则
-  routeRules.push({ ip_cidr: ['0.0.0.0/0'], outbound: 'proxy' });
-  routeRules.push({ ip_cidr: ['::/0'], outbound: 'proxy' });
+  routeRules.push({ ip_is_private: true, outbound: 'direct' });
+  routeRules.push({ clash_mode: 'Direct', outbound: 'direct' });
+  routeRules.push({ clash_mode: 'Global', outbound: 'proxy' });
 
   const config: Record<string, unknown> = {
     log: { level: template.logLevel ?? 'info' },
+    dns: {
+      servers: [
+        { tag: 'dns-proxy', address: 'https://1.1.1.1/dns-query', detour: 'proxy' },
+        { tag: 'dns-direct', address: 'https://223.5.5.5/dns-query', detour: 'direct' },
+        { tag: 'dns-local', address: 'local' },
+      ],
+      rules: [
+        { rule_set: ruleSetRefs.map((r) => r.tag), server: 'dns-direct' },
+      ].filter((r) => (r.rule_set as string[]).length > 0),
+      final: 'dns-proxy',
+      independent_cache: true,
+    },
+    inbounds: [
+      { type: 'tun', tag: 'tun-in', address: ['172.19.0.1/30'], auto_route: true, strict_route: true },
+      { type: 'mixed', tag: 'mixed-in', listen: '127.0.0.1', listen_port: 7890 },
+    ],
     outbounds,
     route: {
       final: 'proxy',
+      auto_detect_interface: true,
       rules: routeRules,
     },
+    experimental: { cache_file: { enabled: true } },
   };
 
   if (ruleSetRefs.length > 0) {
@@ -209,9 +228,6 @@ function mapTargetToOutbound(target: string): string {
     case 'DIRECT':
     case '国内直连':
       return 'direct';
-    case 'REJECT':
-    case '广告拦截':
-      return 'block';
     default:
       // PROXY、国外媒体、AI服务、加密货币等 → proxy 组
       return 'proxy';

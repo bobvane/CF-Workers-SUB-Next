@@ -37,26 +37,30 @@ export function nodeToQXServer(node: Node): string {
     }
 
     case 'vmess': {
-      // vmess=server:port, method=chacha20-ietf-poly1305, password=uuid, over-tls=true, tls-host=xxx
-      const parts = [`vmess=${node.server}:${node.port}`, 'method=chacha20-ietf-poly1305'];
+      // vmess=server:port, method=xxx, password=uuid, over-tls=…, tls-host=…, obs-path=/ws路径（ws 必须）
+      const method = node.metadata?.tags?.[0] || 'chacha20-ietf-poly1305';
+      const parts = [`vmess=${node.server}:${node.port}`, `method=${method}`];
       if (node.uuid) parts.push(`password=${node.uuid}`);
       if (node.tls) {
         parts.push('over-tls=true');
         parts.push(`tls-host=${node.sni || node.server}`);
+      }
+      if (node.transport?.type === 'ws') {
+        // QX 的 ws 通过 obfs=websocket + fast-open/path 参数实现
+        parts.push('obfs=websocket');
+        if (node.transport.path) parts.push(`obs-path=${node.transport.path}`);
+        if (node.transport.host && !node.tls) parts.push(`obfs-host=${node.transport.host}`);
+      } else if (node.transport?.type === 'grpc') {
+        parts.push('obfs=gRPC');
+        if (node.transport.path) parts.push(`obs-path=${node.transport.path.replace(/^\//, '')}`);
       }
       return `${name} = ${parts.join(', ')}`;
     }
 
-    case 'vless': {
-      // QuantumultX 不原生支持 VLESS，尝试用 vmess 语法（部分版本可用）
-      const parts = [`vmess=${node.server}:${node.port}`, 'method=chacha20-ietf-poly1305'];
-      if (node.uuid) parts.push(`password=${node.uuid}`);
-      if (node.tls) {
-        parts.push('over-tls=true');
-        parts.push(`tls-host=${node.sni || node.server}`);
-      }
-      return `${name} = ${parts.join(', ')}`;
-    }
+    case 'vless':
+      // QuantumultX 不支持 VLESS 协议（无论何种伪装），输出会认证失败
+      // 返回空串跳过该节点，避免生成不可用的死节点
+      return '';
 
     default:
       return '';

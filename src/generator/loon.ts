@@ -89,26 +89,44 @@ function nodeToLoonProxy(node: Node): string {
       return parts.join(', ');
     }
     case 'vmess': {
-      const parts = [name, 'vmess', node.server, String(node.port)];
-      if (node.uuid) parts.push(`username=${node.uuid}`);
-      if (node.tls) parts.push('tls=true');
-      if (node.transport?.type === 'ws') {
-        parts.push('ws=true');
-        if (node.transport.path) parts.push(`ws-path=${node.transport.path}`);
-        if (node.transport.host) parts.push(`ws-headers=Host:${node.transport.host}`);
+      // Loon 原生语法：name = vmess,server,port,method,"uuid",transport=ws,path=…,host=…,over-tls=…
+      const method = node.metadata?.tags?.[0] || 'auto';
+      const parts = [name, 'vmess', node.server, String(node.port), method, `"${node.uuid || ''}"`];
+      const transport = node.transport?.type === 'ws' ? 'ws' : node.transport?.type === 'grpc' ? 'grpc' : 'tcp';
+      parts.push(`transport=${transport}`);
+      if (transport === 'ws') {
+        if (node.transport?.path) parts.push(`path=${node.transport.path}`);
+        if (node.transport?.host) parts.push(`host=${node.transport.host}`);
       }
+      parts.push(`over-tls=${node.tls ? 'true' : 'false'}`);
+      if (node.tls) {
+        parts.push(node.sni ? `sni=${node.sni}` : `sni=${node.server}`);
+      }
+      if (node.allowInsecure) parts.push('skip-cert-verify=true');
       return parts.join(', ');
     }
     case 'vless': {
-      // Loon 不原生支持 VLESS，用 vmess 兼容
-      const parts = [name, 'vmess', node.server, String(node.port)];
-      if (node.uuid) parts.push(`username=${node.uuid}`);
-      if (node.tls) parts.push('tls=true');
-      if (node.transport?.type === 'ws') {
-        parts.push('ws=true');
-        if (node.transport.path) parts.push(`ws-path=${node.transport.path}`);
-        if (node.transport.host) parts.push(`ws-headers=Host:${node.transport.host}`);
+      // Loon 原生支持 VLESS（含 Reality / XTLS Vision）
+      // 格式：name = VLESS,server,port,"uuid",transport=tcp|ws,flow=…,over-tls=…,sni=…
+      const parts = [name, 'VLESS', node.server, String(node.port), `"${node.uuid || ''}"`];
+      const transport = node.transport?.type === 'ws' ? 'ws' : 'tcp';
+      parts.push(`transport=${transport}`);
+      if (node.flow) parts.push(`flow=${node.flow}`);
+      const isReality = !!node.pbk;
+      parts.push(`over-tls=${node.tls || isReality ? 'true' : 'false'}`);
+      if (node.tls || isReality) {
+        parts.push(node.sni ? `sni=${node.sni}` : `sni=${node.server}`);
+        if (isReality) {
+          parts.push(`public-key="${node.pbk}"`);
+          if (node.sid) parts.push(`short-id=${node.sid}`);
+        }
       }
+      if (transport === 'ws') {
+        if (node.transport?.path) parts.push(`path=${node.transport.path}`);
+        if (node.transport?.host) parts.push(`host=${node.transport.host}`);
+      }
+      if (node.allowInsecure) parts.push('skip-cert-verify=true');
+      parts.push('udp=true');
       return parts.join(', ');
     }
     default:
