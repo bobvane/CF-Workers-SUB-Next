@@ -85,21 +85,21 @@ describe('V3.1 验证', () => {
 
   it('ruleActionTarget 路由正确', () => {
     // REJECT → 广告拦截
-    expect(ruleActionTarget({ id: 'CATEGORY-ADS-ALL', target: 'REJECT' } as any, RULE_GROUPS)).toBe('广告拦截');
-    expect(ruleActionTarget({ id: 'CATEGORY-ADS', target: 'REJECT' } as any, RULE_GROUPS)).toBe('广告拦截');
+    expect(ruleActionTarget({ id: 'CATEGORY-ADS-ALL', label: '', tag: 'geosite' as const, target: 'REJECT' as const }, RULE_GROUPS)).toBe('广告拦截');
+    expect(ruleActionTarget({ id: 'CATEGORY-ADS', label: '', tag: 'geosite' as const, target: 'REJECT' as const }, RULE_GROUPS)).toBe('广告拦截');
     
     // 国内规则 → 直接 DIRECT
-    expect(ruleActionTarget({ id: 'BILIBILI', target: 'DIRECT' } as any, RULE_GROUPS)).toBe('DIRECT');
-    expect(ruleActionTarget({ id: 'CN', target: 'DIRECT' } as any, RULE_GROUPS)).toBe('DIRECT');
+    expect(ruleActionTarget({ id: 'BILIBILI', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
+    expect(ruleActionTarget({ id: 'CN', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
     
     // 业务条件组
-    expect(ruleActionTarget({ id: 'GOOGLEFCM', target: 'PROXY' } as any, RULE_GROUPS)).toBe('谷歌FCM');
-    expect(ruleActionTarget({ id: 'BING', target: 'PROXY' } as any, RULE_GROUPS)).toBe('微软Bing');
-    expect(ruleActionTarget({ id: 'ONEDRIVE', target: 'PROXY' } as any, RULE_GROUPS)).toBe('微软云盘');
-    expect(ruleActionTarget({ id: 'MICROSOFT', target: 'PROXY' } as any, RULE_GROUPS)).toBe('微软服务');
-    expect(ruleActionTarget({ id: 'APPLE', target: 'DIRECT' } as any, RULE_GROUPS)).toBe('苹果服务');
-    expect(ruleActionTarget({ id: 'NETEASE', target: 'DIRECT' } as any, RULE_GROUPS)).toBe('网易音乐');
-    expect(ruleActionTarget({ id: 'OPENAI', target: 'PROXY' } as any, RULE_GROUPS)).toBe('AI 平台');
-    expect(ruleActionTarget({ id: 'NETFLIX', target: 'PROXY' } as any, RULE_GROUPS)).toBe('国外媒体');
+    expect(ruleActionTarget({ id: 'GOOGLEFCM', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('谷歌FCM');
+    expect(ruleActionTarget({ id: 'BING', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软Bing');
+    expect(ruleActionTarget({ id: 'ONEDRIVE', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软云盘');
+    expect(ruleActionTarget({ id: 'MICROSOFT', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软服务');
+    expect(ruleActionTarget({ id: 'APPLE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('苹果服务');
+    expect(ruleActionTarget({ id: 'NETEASE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('网易音乐');
+    expect(ruleActionTarget({ id: 'OPENAI', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('AI 平台');
+    expect(ruleActionTarget({ id: 'NETFLIX', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('国外媒体');
   });
 });
