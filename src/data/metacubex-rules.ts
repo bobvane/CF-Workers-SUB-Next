@@ -16,6 +16,8 @@ export interface MetaCubeXRule {
   tag: 'geosite' | 'geoip' | 'ruleset';
   /** 目标策略：PROXY / DIRECT / REJECT */
   target: 'PROXY' | 'DIRECT' | 'REJECT';
+  /** 用户自定义规则（在输出配置中享有最高优先级，紧跟 PRIVATE 之后第一个命中） */
+  custom?: boolean;
 }
 
 export interface RuleGroup {
@@ -289,7 +291,7 @@ export function mergeCustomRules(custom: CustomRule[]): RuleGroup[] {
   const groups = RULE_GROUPS.map(g => ({ key: g.key, name: g.name, icon: g.icon, items: [...g.items] }));
   for (const c of custom) {
     const group = groups.find(g => g.key === c.groupKey);
-    const item: MetaCubeXRule = { id: c.id, label: c.label, tag: 'geosite', target: c.target };
+    const item: MetaCubeXRule = { id: c.id, label: c.label, tag: 'geosite', target: c.target, custom: true };
     if (group) {
       // 去重：同一分组内已存在同 id 则替换
       const idx = group.items.findIndex(i => i.id === c.id);

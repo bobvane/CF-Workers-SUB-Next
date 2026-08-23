@@ -138,8 +138,14 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   // === ① PRIVATE/LAN 硬编码最前 ===
   lines.push('GEOIP,private,DIRECT');
 
-  // === ② 用户自定义规则（高于 CN/GEOIP，可覆盖业务分类和 CN） ===
-  // 这里假设用户自定义规则会作为单独的 rule-provider 传入，暂不在此处处理
+  // === ② 用户自定义规则（最高优先级，紧跟 PRIVATE 之后第一个命中）===
+  // 自定义规则可覆盖一切内置分类（包括 CN/国内直连/广告拦截）——用户显式声明的意图最优先。
+  // 注意：PRIVATE 保持最前（内网流量不应被任何代理规则劫持），其余自定义规则全部置顶。
+  for (const r of selected) {
+    if (r.custom && selectedSet.has(r.id)) {
+      lines.push(ruleSetLine(r, groups));
+    }
+  }
 
   // === ③ 广告拦截（REJECT，最高业务优先级）===
   // 在业务分类前输出 CATEGORY-ADS-ALL（若勾选）
@@ -154,6 +160,7 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   for (const g of groups) {
     if (skipKeys.has(g.key)) continue;
     for (const item of g.items) {
+      if (item.custom) continue; // 自定义规则已在 ② 置顶输出
       if (selectedSet.has(item.id)) {
         lines.push(ruleSetLine(item, groups));
       }
@@ -164,6 +171,7 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   for (const g of groups) {
     if (g.key !== 'china-direct' && g.key !== 'china-media') continue;
     for (const item of g.items) {
+      if (item.custom) continue; // 自定义规则已在 ② 置顶输出
       if (selectedSet.has(item.id)) {
         // 国内规则直接写 RULE-SET,xxx,DIRECT（不走策略组）
         lines.push(`RULE-SET,${providerName(item.id)},DIRECT`);

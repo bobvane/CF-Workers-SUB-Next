@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateProxyGroups } from '@/generator/mihomo';
 import { buildRules, ruleActionTarget } from '@/generator/rule-providers';
-import { RULE_GROUPS } from '@/data/metacubex-rules';
+import { RULE_GROUPS, MetaCubeXRule, RuleGroup } from '@/data/metacubex-rules';
 import { Node } from '@/models/node';
 
 function makeNode(overrides: Partial<Node> = {}): Node {
@@ -101,5 +101,31 @@ describe('V3.1 验证', () => {
     expect(ruleActionTarget({ id: 'NETEASE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('网易音乐');
     expect(ruleActionTarget({ id: 'OPENAI', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('AI 平台');
     expect(ruleActionTarget({ id: 'NETFLIX', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('国外媒体');
+  });
+});
+describe('用户自定义规则置顶', () => {
+  it('自定义规则紧跟 PRIVATE 之后输出，且不重复出现', () => {
+    const customRule: MetaCubeXRule = { id: 'MY-CUSTOM-SITE', label: '我的自定义', tag: 'geosite', target: 'PROXY', custom: true };
+    const selectedRules = [
+      customRule,
+      { id: 'CATEGORY-ADS-ALL', label: '广告拦截', tag: 'geosite' as const, target: 'REJECT' as const },
+      { id: 'OPENAI', label: 'OpenAI', tag: 'geosite' as const, target: 'PROXY' as const },
+      { id: 'CN', label: '中国直连', tag: 'geosite' as const, target: 'DIRECT' as const },
+    ];
+    // 模拟 mergeCustomRules 后自定义规则也存在于分组中
+    const groups: RuleGroup[] = RULE_GROUPS.map(g => ({
+      ...g,
+      items: g.key === 'user' ? [...g.items, customRule] : [...g.items],
+    }));
+
+    const rules = buildRules(selectedRules, groups);
+
+    expect(rules[0]).toBe('GEOIP,private,DIRECT');
+    expect(rules[1]).toContain('geosite-my-custom-site'); // 自定义规则第一命中
+    expect(rules[2]).toContain('CATEGORY-ADS-ALL'.toLowerCase()); // 然后才是广告拦截
+
+    // 不重复：全文只出现一次
+    const count = rules.filter(r => r.includes('geosite-my-custom-site')).length;
+    expect(count).toBe(1);
   });
 });
