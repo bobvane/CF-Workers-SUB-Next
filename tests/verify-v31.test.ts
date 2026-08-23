@@ -152,3 +152,15 @@ describe('AI 审查意见修复（v2.0.9）', () => {
     expect(tr?.type).toBe('select');
   });
 });
+
+describe('AI 审查意见修复（v2.1.0）', () => {
+  it('DNS 含苹果推送排除、default-nameserver、proxy-server-nameserver；测速间隔 600', async () => {
+    const yaml = await generateMihomoConfig([makeNode()]);
+    expect(yaml).toContain('+.push.apple.com');
+    expect(yaml).toContain('+.icloud.com');
+    expect(yaml).toContain('default-nameserver');
+    expect(yaml).toContain('proxy-server-nameserver');
+    expect(yaml).toContain('interval: 600');
+    expect(yaml).not.toContain('interval: 300');
+  });
+});

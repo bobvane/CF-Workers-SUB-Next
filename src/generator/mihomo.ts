@@ -72,9 +72,17 @@ export const DEFAULT_DNS_CONFIG: Record<string, unknown> = {
     'time.windows.com',
     'time.*.apple.com',
     'ntp.*.com',
+    // 苹果推送/服务走特殊长连接，被 fake-ip 劫持会偶发推送延迟（社区已知坑）
+    '+.push.apple.com',
+    '+.apple.com',
+    '+.icloud.com',
   ],
   nameserver: ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
   fallback: ['https://1.1.1.1/dns-query', 'https://8.8.8.8/dns-query'],
+  // default-nameserver：解析 DoH 服务器自身域名用的普通 DNS（鸡生蛋问题）
+  'default-nameserver': ['223.5.5.5', '119.29.29.29'],
+  // proxy-server-nameserver：专门解析节点服务器域名，防污染导致节点连不上
+  'proxy-server-nameserver': ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
   'fallback-filter': {
     geoip: true,
     'geoip-code': 'CN',
@@ -412,7 +420,7 @@ export async function generateProxyGroups(
     name: '自动选择',
     type: 'url-test',
     url: 'http://www.gstatic.com/generate_204',
-    interval: 300,
+    interval: 600,
     tolerance: 50,
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
@@ -517,7 +525,7 @@ export async function generateProxyGroups(
       name: geo.name,
       type: isCommon ? 'url-test' : 'select',
       ...(isCommon
-        ? { url: 'http://www.gstatic.com/generate_204', interval: 300, tolerance: 50 }
+        ? { url: 'http://www.gstatic.com/generate_204', interval: 600, tolerance: 50 }
         : {}),
       proxies: geo.nodes,
     });
