@@ -342,6 +342,10 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
     <div class="card" style="padding:12px 16px;font-size:13px;color:var(--text2)">
       💡 勾选 MetaCubeX 规则集，生成订阅时自动写入对应分流规则。点击大类标题展开子项，可直接勾选整个大类，也可单独勾选其中几项。
     </div>
+    <div class="card" style="padding:12px 16px;margin-bottom:12px">
+      <div style="font-size:13px;font-weight:500;margin-bottom:8px">⚡ 快速预设 <span style="color:var(--text2);font-weight:normal;font-size:12px">点击覆盖当前勾选，配置跟随输出</span></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap" id="presetBar"></div>
+    </div>
     <div id="rulesTree"></div>
     <div style="margin-top:12px;display:flex;gap:8px">
       <button class="btn btn-primary" onclick="selectAllRules(true)">✅ 全选</button>
@@ -706,6 +710,7 @@ function renderRulesTree() {
     if (cb) cb.indeterminate = g.items.some(it => ruleSelected[it.id]) && !g.items.every(it => ruleSelected[it.id]);
   });
   updateRulesCount();
+  renderPresetBar();
 }
 
 function toggleRuleGroup(gi) {
@@ -748,6 +753,65 @@ function selectAllRules(check) {
   RULE_GROUPS.forEach(g => g.items.forEach(it => { ruleSelected[it.id] = check; }));
   renderRulesTree();
   saveRuleSelection();
+}
+
+// ============ 快速预设 ============
+// 以"组"为单位：选中组全组勾选，未选组全组取消；组内规则目标配置不变
+const RULE_PRESETS = [
+  { key: 'mini', label: '🟢 极简', groups: ['ads','china-direct','china-media','netease','media','ai'] },
+  { key: 'mini-crypto', label: '🟢 极简+加密', groups: ['ads','china-direct','china-media','netease','media','ai','crypto'] },
+  { key: 'standard', label: '🔵 标准', groups: ['ads','china-direct','china-media','netease','media','ai','google-fcm','bing','onedrive','microsoft','apple','game'] },
+  { key: 'standard-crypto', label: '🔵 标准+加密', groups: ['ads','china-direct','china-media','netease','media','ai','google-fcm','bing','onedrive','microsoft','apple','game','crypto'] },
+  { key: 'full', label: '🟣 完全体', groups: null },  // null = 除 crypto 外全部
+  { key: 'full-crypto', label: '🟣 完全+加密', groups: 'ALL' },
+];
+
+function presetGroups(p) {
+  if (p.groups === 'ALL') return RULE_GROUPS.map(g => g.key);
+  if (p.groups === null) return RULE_GROUPS.filter(g => g.key !== 'crypto').map(g => g.key);
+  return p.groups;
+}
+
+function applyPreset(key) {
+  const p = RULE_PRESETS.find(x => x.key === key);
+  if (!p) return;
+  const on = new Set(presetGroups(p));
+  RULE_GROUPS.forEach(g => {
+    const checked = on.has(g.key);
+    g.items.forEach(it => {
+      // 只动本分组预置项；用户自定义加入的规则（custom）跟随其所在组的开关
+      ruleSelected[it.id] = checked;
+    });
+  });
+  renderRulesTree();
+  saveRuleSelection();
+  toast(`已应用预设「${p.label.replace(/^\S+\s/, '')}」`);
+}
+
+// 当前勾选状态与某预设完全一致时高亮；用户手动改动后自然失配
+function activePresetKey() {
+  for (const p of RULE_PRESETS) {
+    const keys = new Set(presetGroups(p));
+    let match = true;
+    for (const g of RULE_GROUPS) {
+      const want = keys.has(g.key);
+      for (const it of g.items) {
+        if (ruleSelected[it.id] !== want) { match = false; break; }
+      }
+      if (!match) break;
+    }
+    if (match) return p.key;
+  }
+  return null;  // 自定义状态，无高亮
+}
+
+function renderPresetBar() {
+  const bar = document.getElementById('presetBar');
+  if (!bar || RULE_GROUPS.length === 0) return;
+  const act = activePresetKey();
+  bar.innerHTML = RULE_PRESETS.map(p =>
+    `<button class="btn btn-sm ${p.key === act ? 'btn-primary' : ''}" onclick="applyPreset('${p.key}')">${p.label}</button>`
+  ).join('');
 }
 
 function resetRulesExpanded() {
