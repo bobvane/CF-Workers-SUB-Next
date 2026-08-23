@@ -49,7 +49,7 @@ describe('auth service', () => {
     const sessions = new KvSessionRepository(new MemoryKvAdapter());
     const adminHash = await createPasswordHash('admin123');
     const service = createAuthService(sessions, async () => adminHash);
-    const token = await service.login('admin123');
+    const token = await service.login('admin', 'admin123');
     expect(token).toBeTruthy();
   });
 
@@ -57,14 +57,14 @@ describe('auth service', () => {
     const sessions = new KvSessionRepository(new MemoryKvAdapter());
     const adminHash = await createPasswordHash('admin123');
     const service = createAuthService(sessions, async () => adminHash);
-    expect(await service.login('wrong')).toBeNull();
+    expect(await service.login('admin', 'wrong')).toBeNull();
   });
 
   it('should validate session token', async () => {
     const sessions = new KvSessionRepository(new MemoryKvAdapter());
     const adminHash = await createPasswordHash('admin123');
     const service = createAuthService(sessions, async () => adminHash);
-    const token = await service.login('admin123');
+    const token = await service.login('admin', 'admin123');
     expect(await service.validateSession(token!)).toBe(true);
     expect(await service.validateSession('invalid')).toBe(false);
   });
@@ -73,7 +73,7 @@ describe('auth service', () => {
     const sessions = new KvSessionRepository(new MemoryKvAdapter());
     const adminHash = await createPasswordHash('admin123');
     const service = createAuthService(sessions, async () => adminHash);
-    const token = await service.login('admin123');
+    const token = await service.login('admin', 'admin123');
     await service.logout(token!);
     expect(await service.validateSession(token!)).toBe(false);
   });
@@ -81,7 +81,7 @@ describe('auth service', () => {
   it('should handle missing admin hash', async () => {
     const sessions = new KvSessionRepository(new MemoryKvAdapter());
     const service = createAuthService(sessions, async () => null);
-    expect(await service.login('anything')).toBeNull();
+    expect(await service.login('admin', 'anything')).toBeNull();
   });
 });
 

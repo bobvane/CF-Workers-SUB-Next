@@ -77,9 +77,9 @@ export const SESSION_COOKIE_NAME = 'sub_session';
 
 export interface AuthService {
   /**
-   * 登录：验证密码，创建 session，返回 session token
+   * 登录：验证用户名+密码，创建 session，返回 session token
    */
-  login(password: string): Promise<string | null>;
+  login(username: string, password: string): Promise<string | null>;
   /**
    * 校验 session 是否有效
    */
@@ -88,17 +88,46 @@ export interface AuthService {
    * 登出：删除 session
    */
   logout(token: string): Promise<void>;
+  /**
+   * 获取当前用户名
+   */
+  getUsername(): Promise<string>;
+  /**
+   * 修改用户名（校验当前密码后生效）
+   */
+  setUsername(currentPassword: string, newUsername: string): Promise<boolean>;
+  /**
+   * 修改密码：校验旧密码，成功后写入新哈希并吊销全部 session
+   */
+  changePassword(currentPassword: string, newPassword: string): Promise<boolean>;
 }
+
+/** 用户名 KV key */
+export const ADMIN_USERNAME_KEY = 'admin:username';
+export const DEFAULT_USERNAME = 'admin';
 
 /**
  * 创建认证服务
  */
 export function createAuthService(
   sessions: SessionRepository,
-  getAdminHash: () => Promise<{ hash: string; salt: string } | null>
+  getAdminHash: () => Promise<{ hash: string; salt: string } | null>,
+  kv?: { get(key: string): Promise<string | null>; put(key: string, value: string): Promise<void> }
 ): AuthService {
+  const getUsernameInner = async (): Promise<string> => {
+    if (!kv) return DEFAULT_USERNAME;
+    const raw = await kv.get(ADMIN_USERNAME_KEY);
+    return raw ? raw.trim() || DEFAULT_USERNAME : DEFAULT_USERNAME;
+  };
+  const setAdminHash = async (hash: string, salt: string): Promise<void> => {
+    // 复用 admin:hash 存储结构（由 index.ts 初始化写入），这里直接覆盖
+    await kv?.put('admin:hash', JSON.stringify({ hash, salt }));
+  };
   return {
-    async login(password: string): Promise<string | null> {
+    async login(username: string, password: string): Promise<string | null> {
+      // 用户名校验：不匹配直接拒绝（未设置用户名的旧部署默认 'admin'）
+      const expectedUser = await getUsernameInner();
+      if ((username || '').trim().toLowerCase() !== expectedUser.toLowerCase()) return null;
       const admin = await getAdminHash();
       if (!admin) return null;
       const valid = await verifyPassword(password, admin.salt, admin.hash);
@@ -117,6 +146,34 @@ export function createAuthService(
       if (token) {
         await sessions.delete(token);
       }
+    },
+
+    async getUsername(): Promise<string> {
+      return getUsernameInner();
+    },
+
+    async setUsername(currentPassword: string, newUsername: string): Promise<boolean> {
+      if (!kv) return false;
+      const name = (newUsername || '').trim();
+      if (!/^[a-zA-Z0-9_-]{2,32}$/.test(name)) return false; // 用户名规则：2-32 位字母数字下划线连字符
+      const admin = await getAdminHash();
+      if (!admin) return false;
+      const valid = await verifyPassword(currentPassword, admin.salt, admin.hash);
+      if (!valid) return false;
+      await kv.put(ADMIN_USERNAME_KEY, name);
+      return true;
+    },
+
+    async changePassword(currentPassword: string, newPassword: string): Promise<boolean> {
+      if (!kv) return false;
+      if (typeof newPassword !== 'string' || newPassword.length < 6) return false;
+      const admin = await getAdminHash();
+      if (!admin) return false;
+      const valid = await verifyPassword(currentPassword, admin.salt, admin.hash);
+      if (!valid) return false;
+      const { hash, salt } = await createPasswordHash(newPassword);
+      await setAdminHash(hash, salt);
+      return true;
     },
   };
 }

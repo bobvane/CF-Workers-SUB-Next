@@ -413,6 +413,30 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
       </div>
       <button class="btn btn-primary mt-12" onclick="saveSettings()">💾 保存</button>
     </div>
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin:0 0 12px">👤 账号安全</h3>
+      <div class="form-group">
+        <label>当前用户名：<b id="currentUsername" style="color:var(--accent)">-</b></label>
+        <label style="margin-top:8px">新用户名（2-32位字母数字_-）</label>
+        <input id="settingNewUsername" placeholder="新用户名" autocomplete="off">
+        <label style="margin-top:8px">当前密码（确认）</label>
+        <input type="password" id="settingUsernamePassword" autocomplete="current-password">
+      </div>
+      <button class="btn btn-primary" onclick="changeUsername()">修改用户名</button>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin:0 0 12px">🔑 修改密码</h3>
+      <div class="form-group">
+        <label>旧密码</label>
+        <input type="password" id="settingOldPassword" autocomplete="current-password">
+        <label style="margin-top:8px">新密码（至少6位）</label>
+        <input type="password" id="settingNewPassword" autocomplete="new-password">
+        <label style="margin-top:8px">确认新密码</label>
+        <input type="password" id="settingNewPassword2" autocomplete="new-password">
+      </div>
+      <button class="btn btn-primary" onclick="changePassword()">修改密码</button>
+      <p class="mt-12" style="color:var(--text2);font-size:12px">修改成功后需重新登录。</p>
+    </div>
   </div>
 
   <!-- 加入规则弹窗 -->
@@ -448,8 +472,12 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
   <div class="login-card">
     <h1 id="loginTitle">🔐 CF-Workers-SUB-Next</h1>
     <div class="form-group">
+      <label>用户名</label>
+      <input id="loginUsername" placeholder="admin" autocomplete="username">
+    </div>
+    <div class="form-group">
       <label>管理员密码</label>
-      <input type="password" id="loginPassword" placeholder="输入密码" onkeydown="if(event.key==='Enter')login()">
+      <input type="password" id="loginPassword" placeholder="输入密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="login()">登录</button>
     <p class="text-center mt-12" style="color:var(--text2);font-size:12px">首次登录使用 ADMIN_PASSWORD 环境变量设置的密码</p>
@@ -574,10 +602,11 @@ async function checkSession() {
 }
 
 async function login() {
+  const username = document.getElementById('loginUsername').value.trim() || 'admin';
   const password = document.getElementById('loginPassword').value;
   if (!password) { toast('请输入密码', 'error'); return; }
   try {
-    await api('/auth/login', { method: 'POST', body: JSON.stringify({ password }) });
+    await api('/auth/login', { method: 'POST', body: JSON.stringify({ username, password }) });
     document.getElementById('loginPassword').value = '';
     toast('登录成功');
     state.authenticated = true;
@@ -609,7 +638,7 @@ function switchPage(page) {
   if (page === 'nodes') loadNodes();
   if (page === 'output') loadOutput();
   if (page === 'rules') { loadRules(); ensureCatalogLoaded(); }
-  if (page === 'settings') { loadSettings(); }
+  if (page === 'settings') { loadSettings(); loadCurrentUsername(); }
 }
 
 // ============ 分流规则 ============
@@ -1139,6 +1168,43 @@ async function saveSettings() {
     document.getElementById('loginTitle').textContent = '🔐 ' + appName;
     document.title = appName;
   } catch (e) { toast('保存失败: ' + e.message, 'error'); }
+}
+
+// ============ 账号安全（用户名/密码） ============
+
+async function loadCurrentUsername() {
+  try {
+    const res = await api('/auth/username');
+    const el = document.getElementById('currentUsername');
+    if (el) el.textContent = res.data?.username || 'admin';
+  } catch {}
+}
+
+async function changeUsername() {
+  const newUsername = document.getElementById('settingNewUsername').value.trim();
+  const currentPassword = document.getElementById('settingUsernamePassword').value;
+  if (!newUsername || !currentPassword) { toast('请填写新用户名和当前密码', 'error'); return; }
+  try {
+    await api('/auth/username', { method: 'POST', body: JSON.stringify({ currentPassword, newUsername }) });
+    toast('用户名修改成功，下次登录使用新用户名');
+    document.getElementById('settingNewUsername').value = '';
+    document.getElementById('settingUsernamePassword').value = '';
+    loadCurrentUsername();
+  } catch (e) { toast('修改失败: ' + e.message, 'error'); }
+}
+
+async function changePassword() {
+  const currentPassword = document.getElementById('settingOldPassword').value;
+  const newPassword = document.getElementById('settingNewPassword').value;
+  const confirm2 = document.getElementById('settingNewPassword2').value;
+  if (!currentPassword || !newPassword) { toast('请填写旧密码和新密码', 'error'); return; }
+  if (newPassword.length < 6) { toast('新密码至少6位', 'error'); return; }
+  if (newPassword !== confirm2) { toast('两次输入的新密码不一致', 'error'); return; }
+  try {
+    await api('/auth/password', { method: 'POST', body: JSON.stringify({ currentPassword, newPassword }) });
+    toast('密码修改成功，请重新登录');
+    setTimeout(() => location.reload(), 1200);
+  } catch (e) { toast('修改失败: ' + e.message, 'error'); }
 }
 
 // ============ 规则库管理（设置页） ============

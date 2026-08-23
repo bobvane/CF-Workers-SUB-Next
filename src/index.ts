@@ -9,7 +9,7 @@ import {
   KvAdapter,
   createRepositories,
 } from '@/storage/kv';
-import { createAuthService, createPasswordHash } from '@/services/auth.service';
+import { createAuthService, createPasswordHash, ADMIN_USERNAME_KEY, DEFAULT_USERNAME } from '@/services/auth.service';
 import { createSubscriptionService } from '@/services/subscription.service';
 import { createConfigService } from '@/services/config.service';
 import { createCatalogSyncService } from '@/services/catalog-sync.service';
@@ -51,6 +51,11 @@ async function buildApp(env: Env): Promise<Hono> {
       const { hash, salt } = await createPasswordHash(env.ADMIN_PASSWORD);
       await kv.put('admin:hash', JSON.stringify({ hash, salt }));
     }
+    // 用户名初始化：旧部署自动补上默认 'admin'，不覆盖已有自定义用户名
+    const existingUsername = await kv.get(ADMIN_USERNAME_KEY);
+    if (!existingUsername) {
+      await kv.put(ADMIN_USERNAME_KEY, DEFAULT_USERNAME);
+    }
   } catch (err) {
     console.error('Failed to initialize admin password:', (err as Error).message);
   }
@@ -61,7 +66,7 @@ async function buildApp(env: Env): Promise<Hono> {
       try { return JSON.parse(raw) as { hash: string; salt: string }; } catch { return null; }
     }
     return null;
-  });
+  }, { get: (key) => kv.get(key), put: (key, value) => kv.put(key, value) });
 
   const subscriptions = createSubscriptionService(
     repos,

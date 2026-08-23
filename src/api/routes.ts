@@ -101,12 +101,14 @@ export function createApp(deps: AppDeps): Hono {
   // ============ Auth ============
   // 登录接口限流：防暴力破解（10 次/分钟/IP）
   app.post('/api/auth/login', rateLimit({ windowSeconds: 60, maxRequests: 10 }), async (c) => {
-    const body = await readBody<{ password?: string }>(c);
+    const body = await readBody<{ username?: string; password?: string }>(c);
     if (!body.password || typeof body.password !== 'string') {
       throw ERRORS.INVALID_PARAMETER('password is required');
     }
+    // 兼容旧客户端：未传 username 时默认 'admin'
+    const username = (body.username || 'admin').trim();
 
-    const token = await auth.login(body.password);
+    const token = await auth.login(username, body.password);
     if (!token) {
       return c.json(
         { success: false, error: { code: 'INVALID_PASSWORD', message: 'Invalid password' } },
@@ -483,6 +485,42 @@ export function createApp(deps: AppDeps): Hono {
       await repos.settings.set('app_name', body.app_name);
     }
     return c.json({ success: true });
+  });
+
+  // 获取当前用户名
+  app.get('/api/auth/username', requireAuth(auth), async (c) => {
+    const username = await auth.getUsername();
+    return c.json({ success: true, data: { username } });
+  });
+
+  // 修改用户名（需当前密码）
+  app.post('/api/auth/username', requireAuth(auth), rateLimit({ windowSeconds: 60, maxRequests: 5 }), async (c) => {
+    const body = await readBody<{ currentPassword?: string; newUsername?: string }>(c);
+    if (!body.currentPassword || !body.newUsername) {
+      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'currentPassword 和 newUsername 必填' } }, 400);
+    }
+    const ok = await auth.setUsername(body.currentPassword, body.newUsername);
+    if (!ok) {
+      return c.json({ success: false, error: { code: 'CHANGE_FAILED', message: '密码错误或用户名不合法（2-32位字母数字_-）' } }, 400);
+    }
+    return c.json({ success: true });
+  });
+
+  // 修改密码（需旧密码；成功后建议前端重新登录）
+  app.post('/api/auth/password', requireAuth(auth), rateLimit({ windowSeconds: 60, maxRequests: 5 }), async (c) => {
+    const body = await readBody<{ currentPassword?: string; newPassword?: string }>(c);
+    if (!body.currentPassword || !body.newPassword) {
+      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'currentPassword 和 newPassword 必填' } }, 400);
+    }
+    const ok = await auth.changePassword(body.currentPassword, body.newPassword);
+    if (!ok) {
+      return c.json({ success: false, error: { code: 'CHANGE_FAILED', message: '旧密码错误或新密码不足6位' } }, 400);
+    }
+    // 吊销当前 session，强制重新登录
+    const token = getToken(c);
+    if (token) await auth.logout(token);
+    c.header('Set-Cookie', createClearCookie());
+    return c.json({ success: true, data: { relogin: true } });
   });
 
   // ============ 根路径（前端由 static 服务，后续实现） ============
