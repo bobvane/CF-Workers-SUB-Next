@@ -316,6 +316,12 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
     <div class="card" style="padding:12px 16px;font-size:13px;color:var(--text2)">
       💡 勾选 = 该节点会进入输出配置；取消勾选 = 从输出的订阅中排除。测速请在客户端（OpenClash/Mihomo 等）导入订阅后测试。
     </div>
+    <div class="card" id="nodeStats" style="margin:12px 0;padding:10px 16px;display:flex;gap:24px;font-size:13px">
+      <span>📥 总节点 <b id="statsOriginal">0</b></span>
+      <span>🔀 重复 <b id="statsDuplicates">0</b></span>
+      <span>✅ 实际 <b id="statsUnique">0</b></span>
+      <span style="color:var(--text2)">（去重依据：IP + 端口 + 协议）</span>
+    </div>
     <table id="nodesTable">
       <thead><tr><th style="width:40px"><input type="checkbox" id="nodeSelectAll" onchange="toggleSelectAll(this)" checked></th><th>名称</th><th>协议</th><th>地址</th><th>端口</th><th>TLS</th><th>操作</th></tr></thead>
       <tbody id="nodesTableBody"></tbody>
@@ -834,8 +840,15 @@ async function deleteSub(id) {
 // ============ Nodes ============
 async function loadNodes() {
   try {
-    const data = await api('/nodes');
-    state.nodes = data.data || [];
+    const res = await api('/nodes');
+    state.nodes = res.data || [];
+    // 显示去重统计
+    if (res.stats) {
+      const setStat = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v ?? 0); };
+      setStat('statsOriginal', res.stats.original);
+      setStat('statsDuplicates', res.stats.duplicates);
+      setStat('statsUnique', res.stats.unique);
+    }
     renderNodes();
   } catch { toast('加载节点失败', 'error'); }
 }

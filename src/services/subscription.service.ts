@@ -10,7 +10,6 @@ import { Node } from '@/models/node';
 import { Repositories } from '@/storage/kv';
 import {
   parseSubscriptionContent,
-  deduplicateNodes,
   applyRules,
 } from '@/parser';
 
@@ -72,8 +71,8 @@ export function createSubscriptionService(
 
         // 2. 解析 + 标准化
         const parsed = parseSubscriptionContent(raw, id);
-        // 3. 去重
-        let nodes = deduplicateNodes(parsed.nodes);
+        // 3. 不去重：记录原始节点（去重在节点列表页面统一做）
+        let nodes = parsed.nodes;
         // 4. 应用规则（关键字过滤）
         const rules = await getRules();
         nodes = applyRules(nodes, rules);

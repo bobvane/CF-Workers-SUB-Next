@@ -17,6 +17,7 @@ import { requireAuth, errorHandler, readBody, AppError, ERRORS, getToken } from 
 import { rateLimit } from './rate-limit';
 import { nodeToLink } from '@/services/config.service';
 import { nodeFingerprint } from '@/models/node';
+import { deduplicateNodes } from '@/parser';
 import { APP_META, isNewerVersion } from '@/meta';
 import { createCatalogSyncService, CatalogSyncService } from '@/services/catalog-sync.service';
 import { RuleCatalogMeta } from '@/models/rule-catalog';
@@ -199,7 +200,7 @@ export function createApp(deps: AppDeps): Hono {
 
   // ============ Node API ============
 
-  // 获取节点列表（可选按订阅过滤）
+  // 获取节点列表（可选按订阅过滤）；统一按 server:port:protocol 去重
   app.get('/api/nodes', async (c) => {
     const subscriptionId = c.req.query('subscriptionId');
     const disabled = new Set(await config.getDisabledNodes());
@@ -221,9 +222,12 @@ export function createApp(deps: AppDeps): Hono {
       });
     }
     const all = await repos.nodes.getAll();
+    const original = all.length;
+    const unique = deduplicateNodes(all);
     return c.json({
       success: true,
-      data: all.map(mapper),
+      data: unique.map(mapper),
+      stats: { original, duplicates: original - unique.length, unique: unique.length },
     });
   });
 

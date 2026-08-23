@@ -16,6 +16,7 @@ import { generateLoonConfig } from '@/generator/loon';
 import { nodeToUrl } from '@/generator/node-to-url';
 import { MetaCubeXRule, RULE_GROUPS, CustomRule, mergeCustomRules, findRuleInGroups } from '@/data/metacubex-rules';
 import { createIpGeoResolver } from './ip-geo.service';
+import { deduplicateNodes } from '@/parser';
 
 export type OutputFormat =
   | 'mihomo'
@@ -77,7 +78,8 @@ const CUSTOM_RULES_KEY = 'custom_rules';
 export function createConfigService(repos: Repositories): ConfigService {
   return {
     async getNodes(): Promise<Node[]> {
-      return repos.nodes.getAll();
+      // 返回去重后节点（按 server:port:protocol 三项指纹）
+      return deduplicateNodes(await repos.nodes.getAll());
     },
 
     async getDisabledNodes(): Promise<string[]> {
@@ -158,7 +160,8 @@ export function createConfigService(repos: Repositories): ConfigService {
     },
 
     async generate(format: OutputFormat): Promise<string> {
-      const all = await repos.nodes.getAll();
+      // 去重：按 server:port:protocol 三项指纹，合并多订阅重复节点
+      const all = deduplicateNodes(await repos.nodes.getAll());
       // 过滤禁用的节点
       const disabled = new Set(await this.getDisabledNodes());
       const nodes = all.filter((n) => !disabled.has(nodeFingerprint(n)));
