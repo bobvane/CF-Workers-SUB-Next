@@ -46,9 +46,51 @@ export const DEFAULT_MIHOMO_TEMPLATE: MihomoTemplate = {
   mixedPort: 7890,
   allowLan: true, // 旁路由/网关场景：局域网设备需指定 7890 混合端口走代理。仅监听内网 NIC，配合 bind-address 可进一步限制。
   mode: 'rule',
-  logLevel: 'info',
-  ipv6: false, // 默认关闭 IPv6，避免 IPv4 走代理 / IPv6 走直连的诡异分流（完整 DNS+TUN+IPv6 路由留待后续版本）
+  logLevel: 'warning', // 长期运行 info 日志量过大，warning 足够诊断
+  ipv6: false, // 默认关闭 IPv6，避免 IPv4 走代理 / IPv6 走直连的诡异分流
 };
+
+/**
+ * 默认 DNS 配置（fake-ip 模式）
+ * 固定输出——防止 DNS 污染/泄漏（AI 审查两票共识的最大缺陷）。
+ * nameserver 用国内 DoH 解析国内域名；fallback 用国外 DoH 解析被污染域名；
+ * fallback-filter 按 GEOIP CN 判定：解析结果非 CN IP 时采用 fallback 结果。
+ */
+export const DEFAULT_DNS_CONFIG: Record<string, unknown> = {
+  enable: true,
+  ipv6: false,
+  'enhanced-mode': 'fake-ip',
+  'fake-ip-range': '198.18.0.1/16',
+  'fake-ip-filter': [
+    '*.lan',
+    '*.local',
+    '*.localdomain',
+    '+.stun.*.*',
+    '+.stun.*.*.*',
+    '+.stun.*.*.*.*',
+    '+.stun.*.*.*.*.*',
+    'time.windows.com',
+    'time.*.apple.com',
+    'ntp.*.com',
+  ],
+  nameserver: ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
+  fallback: ['https://1.1.1.1/dns-query', 'https://8.8.8.8/dns-query'],
+  'fallback-filter': {
+    geoip: true,
+    'geoip-code': 'CN',
+    ipcidr: ['240.0.0.0/4'],
+  },
+};
+
+/** 常用国家地理组（url-test 自动测速）；不在集合内的国家建 select 组，不长期测速 */
+export const GEO_URL_TEST_SET: Set<string> = new Set([
+  '🇭🇰 香港',
+  '🇹🇼 台湾',
+  '🇯🇵 日本',
+  '🇸🇬 新加坡',
+  '🇺🇸 美国',
+  '🇰🇷 韩国',
+]);
 
 /**
  * 将 Node 转换为 Mihomo proxy 配置对象
@@ -467,14 +509,16 @@ export async function generateProxyGroups(
     proxies: globalOrder,
   });
 
-  // 10. 地理组（url-test 类型，自动测速选该地区最优节点）
+  // 10. 地理组：常用国家（GEO_URL_TEST_SET）url-test 自动测速；
+  //     其他国家 select 手动选择（不长期定时测速，降低旁路由 CPU 占用）
   for (const geo of geoGroups) {
+    const isCommon = GEO_URL_TEST_SET.has(geo.name);
     groups.push({
       name: geo.name,
-      type: 'url-test',
-      url: 'http://www.gstatic.com/generate_204',
-      interval: 300,
-      tolerance: 50,
+      type: isCommon ? 'url-test' : 'select',
+      ...(isCommon
+        ? { url: 'http://www.gstatic.com/generate_204', interval: 300, tolerance: 50 }
+        : {}),
       proxies: geo.nodes,
     });
   }
@@ -507,6 +551,7 @@ export async function generateMihomoConfig(
     'ipv6': template.ipv6 ?? false,
     proxies,
     'proxy-groups': groups,
+    dns: DEFAULT_DNS_CONFIG,
     rules: ['MATCH,漏网之鱼'],
   };
 

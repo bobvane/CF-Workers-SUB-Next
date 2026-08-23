@@ -31,6 +31,7 @@ export const META_DAT_GITHUB =
 export function buildRuleProvider(rule: MetaCubeXRule): {
   name: string;
   url: string;
+  path: string;
   interval: number;
   behavior: 'domain';
   format: 'mrs';
@@ -42,6 +43,7 @@ export function buildRuleProvider(rule: MetaCubeXRule): {
     behavior: 'domain',
     format: 'mrs',
     url: providerUrl(rule.id),
+    path: `./ruleset/${providerName(rule.id)}.mrs`,
     interval: 86400,
   };
 }
@@ -106,6 +108,7 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
       behavior: p.behavior,
       format: p.format,
       url: p.url,
+      path: p.path,
       interval: p.interval,
     };
   }

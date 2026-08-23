@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { generateProxyGroups } from '@/generator/mihomo';
+import { generateProxyGroups, generateMihomoConfig } from '@/generator/mihomo';
 import { buildRules, ruleActionTarget } from '@/generator/rule-providers';
 import { RULE_GROUPS, MetaCubeXRule, RuleGroup } from '@/data/metacubex-rules';
 import { Node } from '@/models/node';
@@ -127,5 +127,28 @@ describe('用户自定义规则置顶', () => {
     // 不重复：全文只出现一次
     const count = rules.filter(r => r.includes('geosite-my-custom-site')).length;
     expect(count).toBe(1);
+  });
+});
+
+describe('AI 审查意见修复（v2.0.9）', () => {
+  it('输出配置包含完整 DNS 配置（fake-ip + 国内外 DoH）', async () => {
+    const yaml = await generateMihomoConfig([makeNode()]);
+    expect(yaml).toContain('dns:');
+    expect(yaml).toContain('enhanced-mode: fake-ip');
+    expect(yaml).toContain('fake-ip-range');
+    expect(yaml).toContain('https://223.5.5.5/dns-query');
+    expect(yaml).toContain('fallback-filter');
+    expect(yaml).toContain('log-level: warning');
+  });
+
+  it('常用国家地理组为 url-test，其他国家为 select（不长期测速）', async () => {
+    const groups = await generateProxyGroups([
+      makeNode({ name: '🇭🇰 香港 01' }),
+      makeNode({ name: '🇹🇷 土耳其 01' }),
+    ]);
+    const hk = groups.find(g => g.name === '🇭🇰 香港');
+    const tr = groups.find(g => g.name === '🇹🇷 土耳其');
+    expect(hk?.type).toBe('url-test');
+    expect(tr?.type).toBe('select');
   });
 });
