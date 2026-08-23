@@ -350,15 +350,18 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
       <div style="font-size:13px;font-weight:500;margin-bottom:8px">⚡ 快速预设 <span style="color:var(--text2);font-weight:normal;font-size:12px">点击覆盖当前勾选，配置跟随输出</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap" id="presetBar"></div>
     </div>
-    <div id="rulesTree"></div>
-    <div style="margin-top:12px;display:flex;gap:8px">
-      <button class="btn btn-primary" onclick="selectAllRules(true)">✅ 全选</button>
-      <button class="btn" onclick="selectAllRules(false)">⬜ 全不选</button>
-      <button class="btn" onclick="resetRulesExpanded()">🔽 全部展开</button>
-    </div>
+    <div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start" id="rulesTwoCol">
+      <div>
+        <div id="rulesTree"></div>
+        <div style="margin-top:12px;display:flex;gap:8px">
+          <button class="btn btn-primary" onclick="selectAllRules(true)">✅ 全选</button>
+          <button class="btn" onclick="selectAllRules(false)">⬜ 全不选</button>
+          <button class="btn" onclick="resetRulesExpanded()">🔽 全部展开</button>
+        </div>
+      </div>
 
-    <!-- 规则库：从 MetaCubeX 全量分类挑选加入分流规则 + 同步管理 -->
-    <div class="card" style="margin-top:16px">
+      <!-- 规则库：从 MetaCubeX 全量分类挑选加入分流规则 + 同步管理（右侧栏） -->
+      <div class="card" style="position:sticky;top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
         <h3 style="margin:0">📚 规则库 <span style="color:var(--text2);font-size:12px;font-weight:normal">从 1546 个 MetaCubeX 分类中挑选加入分流规则</span></h3>
         <div style="display:flex;align-items:center;gap:12px">
@@ -387,7 +390,8 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
       <div id="catalogList" style="max-height:420px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:8px">
         <div style="color:var(--text2);padding:16px;text-align:center">输入关键词开始搜索</div>
       </div>
-    </div>
+      </div><!-- /规则库右栏 -->
+    </div><!-- /rulesTwoCol -->
   </div>
 
   <!-- Output -->
