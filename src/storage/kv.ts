@@ -182,6 +182,8 @@ export interface NodeRepository {
   setBySubscription(subscriptionId: string, nodes: Node[]): Promise<void>;
   deleteBySubscription(subscriptionId: string): Promise<void>;
   getAll(): Promise<Node[]>;
+  /** 对所有节点的 name 应用变换，返回受影响数量 */
+  renameAll(transform: (name: string) => string): Promise<number>;
 }
 
 export class KvNodeRepository implements NodeRepository {
@@ -219,6 +221,31 @@ export class KvNodeRepository implements NodeRepository {
       }
     }
     return all;
+  }
+
+  async renameAll(transform: (name: string) => string): Promise<number> {
+    const entries = await this.kv.list('nodes:');
+    let changed = 0;
+    for (const entry of entries) {
+      const raw = await this.kv.get(entry.key);
+      if (!raw) continue;
+      try {
+        const nodes = JSON.parse(raw) as Node[];
+        let dirty = false;
+        for (const n of nodes) {
+          const next = transform(n.name);
+          if (next !== n.name) {
+            n.name = next;
+            dirty = true;
+            changed++;
+          }
+        }
+        if (dirty) await this.kv.put(entry.key, JSON.stringify(nodes));
+      } catch {
+        // 跳过损坏数据
+      }
+    }
+    return changed;
   }
 }
 

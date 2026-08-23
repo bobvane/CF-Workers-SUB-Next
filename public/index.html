@@ -318,6 +318,14 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
       <span>✅ 实际 <b id="statsUnique">0</b></span>
       <span style="color:var(--text2)">（去重依据：IP + 端口 + 协议）</span>
     </div>
+    <div class="card" style="margin:0 0 12px;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <label style="font-size:13px;font-weight:500">🧹 节点名清洗</label>
+      <input id="cleanPattern" placeholder="输入要删除的片段，如 地区随机_|_" style="width:auto;flex:1;min-width:200px">
+      <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px"><input type="checkbox" id="cleanRegex"> 正则模式</label>
+      <button class="btn btn-sm" onclick="previewClean()">👁️ 预览</button>
+      <button class="btn btn-sm btn-primary" onclick="applyClean()">🧹 清洗</button>
+    </div>
+    <div class="card" id="cleanPreviewBox" style="display:none;margin:0 0 12px;padding:10px 16px;font-size:13px"></div>
     <table id="nodesTable">
       <thead><tr><th style="width:40px"><input type="checkbox" id="nodeSelectAll" onchange="toggleSelectAll(this)" checked></th><th>名称</th><th>协议</th><th>地址</th><th>端口</th><th>TLS</th><th>操作</th></tr></thead>
       <tbody id="nodesTableBody"></tbody>
@@ -914,6 +922,43 @@ function renderNodes() {
 }
 
 function filterNodes() { renderNodes(); }
+
+// ============ 节点名清洗 ============
+
+function cleanParams() {
+  return {
+    pattern: document.getElementById('cleanPattern').value,
+    regex: document.getElementById('cleanRegex').checked,
+  };
+}
+
+async function previewClean() {
+  const box = document.getElementById('cleanPreviewBox');
+  try {
+    const res = await api('/nodes/clean/preview', { method: 'POST', body: JSON.stringify(cleanParams()) });
+    const d = res.data || { count: 0, samples: [] };
+    if (d.count === 0) {
+      box.style.display = 'block';
+      box.innerHTML = '✅ 没有节点名包含该片段';
+      return;
+    }
+    const rows = d.samples.map((s) => `<div style="margin:2px 0"><code style="color:var(--text2);text-decoration:line-through">${escHtml(s.before)}</code> → <b>${escHtml(s.after)}</b></div>`).join('');
+    box.style.display = 'block';
+    box.innerHTML = `<b>将影响 ${d.count} 个节点</b>（最多预览10条）：${rows}<div style="color:var(--text2);margin-top:4px">确认无误后点「🧹 清洗」执行</div>`;
+  } catch (e) { toast('预览失败: ' + e.message, 'error'); }
+}
+
+async function applyClean() {
+  const p = cleanParams();
+  if (!p.pattern.trim()) { toast('请先输入要删除的片段', 'error'); return; }
+  if (!confirm('确定清洗所有匹配的节点名？此操作直接修改存储的节点名。')) return;
+  try {
+    const res = await api('/nodes/clean', { method: 'POST', body: JSON.stringify(p) });
+    toast(`清洗完成，已重命名 ${res.data?.changed ?? 0} 个节点`);
+    document.getElementById('cleanPreviewBox').style.display = 'none';
+    loadNodes();
+  } catch (e) { toast('清洗失败: ' + e.message, 'error'); }
+}
 
 function copyNodeLink(fingerprint) {
   const node = state.nodes.find(n => n.fingerprint === fingerprint);
