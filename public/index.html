@@ -262,7 +262,7 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 <body>
 <div id="app" style="display:none">
   <header class="app-header">
-    <div class="logo"><span>CF</span>-Workers-SUB-Next</div>
+    <div class="logo" id="sidebarLogo"><span>CF</span>-Workers-SUB-Next</div>
     <div class="actions">
       <button class="btn btn-sm" onclick="cycleTheme()" id="themeBtn">🌙</button>
       <span id="userBadge" style="font-size:13px;color:var(--text2)">admin</span>
@@ -440,7 +440,7 @@ tbody tr:hover { background: rgba(0,113,227,0.04); }
 <!-- Login -->
 <div class="login-page" id="loginPage" style="display:none">
   <div class="login-card">
-    <h1>🔐 CF-Workers-SUB-Next</h1>
+    <h1 id="loginTitle">🔐 CF-Workers-SUB-Next</h1>
     <div class="form-group">
       <label>管理员密码</label>
       <input type="password" id="loginPassword" placeholder="输入密码" onkeydown="if(event.key==='Enter')login()">
@@ -1121,6 +1121,10 @@ async function saveSettings() {
   try {
     await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName }) });
     toast('设置已保存');
+    // 立即刷新页面标题
+    document.getElementById('sidebarLogo').textContent = appName;
+    document.getElementById('loginTitle').textContent = '🔐 ' + appName;
+    document.title = appName;
   } catch (e) { toast('保存失败: ' + e.message, 'error'); }
 }
 
@@ -1366,9 +1370,14 @@ async function loadMeta() {
   try {
     const metaRes = await api('/meta');
     const meta = metaRes.data?.meta || {};
+    const appName = metaRes.data?.app_name || meta.name || 'CF-Workers-SUB-Next';
     const ver = meta.version || '-';
     document.getElementById('appVersion').textContent = ver;
     document.getElementById('loginVersion').textContent = ver;
+    // 动态替换站点名称
+    document.getElementById('sidebarLogo').textContent = appName;
+    document.getElementById('loginTitle').textContent = '🔐 ' + appName;
+    document.title = appName;
   } catch { /* 版本信息加载失败静默 */ }
 
   // 升级检测（静默，不阻塞页面）

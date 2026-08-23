@@ -53,7 +53,14 @@ export function createApp(deps: AppDeps): Hono {
   app.get('/api/health', (c) => c.json({ status: 'ok' }));
 
   // ============ Meta（项目信息，公开） ============
-  app.get('/api/meta', (c) => c.json({ success: true, data: { meta: APP_META } }));
+  // app_name：用户自定义站点名（设置页保存），登录前也需显示，故放公开接口
+  app.get('/api/meta', async (c) => {
+    const appName = await repos.settings.get('app_name');
+    return c.json({
+      success: true,
+      data: { meta: APP_META, app_name: appName ?? APP_META.name },
+    });
+  });
 
   // 升级检测：查 GitHub releases 最新版本（服务端代理，避免前端 CORS/限流）
   app.get('/api/meta/check-upgrade', async (c) => {
