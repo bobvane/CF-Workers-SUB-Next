@@ -5,7 +5,7 @@ import { RULE_GROUPS } from '@/data/metacubex-rules';
 describe('rule order', () => {
   it('github (dev) before microsoft', () => {
     const all = RULE_GROUPS.flatMap(g => g.items).filter(i => !i.custom);
-    const lines = buildRules(all as any, RULE_GROUPS);
+    const lines = buildRules(all, RULE_GROUPS);
     const gh = lines.findIndex(l => l.includes('geosite-github,'));
     const ms = lines.findIndex(l => l.includes('geosite-microsoft,'));
     console.log('github idx', gh, 'microsoft idx', ms);
