@@ -63,7 +63,7 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
  *   1. PRIVATE / LAN（GEOIP,private → DIRECT，必须最前，防内网误代理）
  *   2. 用户自定义规则（可覆盖业务分类和 CN，但不能覆盖 LAN）
  *   3. 广告拦截（CATEGORY-ADS-ALL → REJECT）
- *   4. 业务分类（细分在前，宽泛在后；AI/开发/社交/加密/云/FCM/微软/苹果/游戏/国内媒体/国外媒体）
+ *   4. 业务分类（细分在前，宽泛在后；FCM/AI/开发/社交/云/加密/用户规则/游戏/媒体 → 宽泛厂商组 Bing/OneDrive/微软/苹果最后——geosite-microsoft 包含 github.com，微软服务必须排在开发工具之后）
  *   5. 国内直连规则（RULE-SET,xxx → DIRECT，不建策略组）
  *   6. GEOSITE,cn → DIRECT
  *   7. GEOIP,CN → DIRECT
@@ -124,66 +124,6 @@ export const RULE_GROUPS: RuleGroup[] = [
     items: [
       // 细分规则（FCM）放在宽泛规则（GOOGLE）之前，防被先命中
       { id: 'GOOGLEFCM', label: '谷歌推送(GoogFCM)', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
-    key: 'bing', name: '微软Bing', icon: '🔍',
-    items: [
-      { id: 'BING', label: '微软必应(含国际版)', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
-    key: 'onedrive', name: '微软云盘', icon: '☁️',
-    items: [
-      { id: 'ONEDRIVE', label: '微软 OneDrive', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
-    key: 'microsoft', name: '微软服务', icon: '🪟',
-    items: [
-      // 微软服务整体（cn.* 子域会被国内直连先命中走 DIRECT，更稳）
-      { id: 'MICROSOFT', label: '微软服务', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
-    key: 'apple', name: '苹果服务', icon: '🍎',
-    items: [
-      // 苹果服务默认 DIRECT（中国区直连更稳）。APPLE-MUSIC 只放本组，不在网易音乐。
-      { id: 'APPLE', label: '苹果服务', tag: 'geosite', target: 'DIRECT' },
-      { id: 'APPLE-MUSIC', label: 'Apple Music', tag: 'geosite', target: 'DIRECT' },
-      { id: 'APPLE-UPDATE', label: 'Apple 系统更新', tag: 'geosite', target: 'DIRECT' },
-      { id: 'APPLE-PODCASTS', label: 'Apple 播客', tag: 'geosite', target: 'DIRECT' },
-      { id: 'APPLE-TVPLUS', label: 'Apple TV+', tag: 'geosite', target: 'DIRECT' },
-    ],
-  },
-  {
-    key: 'media', name: '国外媒体', icon: '🌍',
-    items: [
-      { id: 'NETFLIX', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
-      { id: 'YOUTUBE', label: 'YouTube', tag: 'geosite', target: 'PROXY' },
-      { id: 'DISNEY', label: 'Disney+', tag: 'geosite', target: 'PROXY' },
-      { id: 'HBO', label: 'HBO Max', tag: 'geosite', target: 'PROXY' },
-      { id: 'PRIMEVIDEO', label: 'Amazon Prime', tag: 'geosite', target: 'PROXY' },
-      { id: 'TIKTOK', label: 'TikTok', tag: 'geosite', target: 'PROXY' },
-      { id: 'SPOTIFY', label: 'Spotify', tag: 'geosite', target: 'PROXY' },
-      { id: 'TWITCH', label: 'Twitch', tag: 'geosite', target: 'PROXY' },
-      { id: 'CATEGORY-MEDIA', label: '媒体聚合', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
-    key: 'game', name: '游戏平台', icon: '🎮',
-    items: [
-      { id: 'STEAM', label: 'Steam', tag: 'geosite', target: 'PROXY' },
-      { id: 'EPICGAMES', label: 'Epic Games', tag: 'geosite', target: 'PROXY' },
-      { id: 'UBISOFT', label: '育碧', tag: 'geosite', target: 'PROXY' },
-      { id: 'BLIZZARD', label: '暴雪战网', tag: 'geosite', target: 'PROXY' },
-      { id: 'NINTENDO', label: '任天堂', tag: 'geosite', target: 'PROXY' },
-      { id: 'ROCKSTAR', label: 'R星', tag: 'geosite', target: 'PROXY' },
-      { id: 'ORIGIN', label: 'Origin/EA', tag: 'geosite', target: 'PROXY' },
-      { id: 'PLAYSTATION', label: 'PlayStation', tag: 'geosite', target: 'PROXY' },
-      { id: 'XBOX', label: 'Xbox', tag: 'geosite', target: 'PROXY' },
-      { id: 'CATEGORY-GAMES-CN', label: '游戏中国区', tag: 'geosite', target: 'DIRECT' },
-      { id: 'CATEGORY-GAMES-!CN', label: '游戏聚合(非中国)', tag: 'geosite', target: 'PROXY' },
     ],
   },
   {
@@ -264,7 +204,67 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'FASTLY', label: 'Fastly', tag: 'geosite', target: 'DIRECT' },
       { id: 'CLOUDINARY', label: 'Cloudinary', tag: 'geosite', target: 'DIRECT' },
     ],
+  },  {
+    key: 'game', name: '游戏平台', icon: '🎮',
+    items: [
+      { id: 'STEAM', label: 'Steam', tag: 'geosite', target: 'PROXY' },
+      { id: 'EPICGAMES', label: 'Epic Games', tag: 'geosite', target: 'PROXY' },
+      { id: 'UBISOFT', label: '育碧', tag: 'geosite', target: 'PROXY' },
+      { id: 'BLIZZARD', label: '暴雪战网', tag: 'geosite', target: 'PROXY' },
+      { id: 'NINTENDO', label: '任天堂', tag: 'geosite', target: 'PROXY' },
+      { id: 'ROCKSTAR', label: 'R星', tag: 'geosite', target: 'PROXY' },
+      { id: 'ORIGIN', label: 'Origin/EA', tag: 'geosite', target: 'PROXY' },
+      { id: 'PLAYSTATION', label: 'PlayStation', tag: 'geosite', target: 'PROXY' },
+      { id: 'XBOX', label: 'Xbox', tag: 'geosite', target: 'PROXY' },
+      { id: 'CATEGORY-GAMES-CN', label: '游戏中国区', tag: 'geosite', target: 'DIRECT' },
+      { id: 'CATEGORY-GAMES-!CN', label: '游戏聚合(非中国)', tag: 'geosite', target: 'PROXY' },
+    ],
   },
+  {
+    key: 'media', name: '国外媒体', icon: '🌍',
+    items: [
+      { id: 'NETFLIX', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
+      { id: 'YOUTUBE', label: 'YouTube', tag: 'geosite', target: 'PROXY' },
+      { id: 'DISNEY', label: 'Disney+', tag: 'geosite', target: 'PROXY' },
+      { id: 'HBO', label: 'HBO Max', tag: 'geosite', target: 'PROXY' },
+      { id: 'PRIMEVIDEO', label: 'Amazon Prime', tag: 'geosite', target: 'PROXY' },
+      { id: 'TIKTOK', label: 'TikTok', tag: 'geosite', target: 'PROXY' },
+      { id: 'SPOTIFY', label: 'Spotify', tag: 'geosite', target: 'PROXY' },
+      { id: 'TWITCH', label: 'Twitch', tag: 'geosite', target: 'PROXY' },
+      { id: 'CATEGORY-MEDIA', label: '媒体聚合', tag: 'geosite', target: 'PROXY' },
+    ],
+  },
+  {
+    key: 'bing', name: '微软Bing', icon: '🔍',
+    items: [
+      { id: 'BING', label: '微软必应(含国际版)', tag: 'geosite', target: 'PROXY' },
+    ],
+  },
+  {
+    key: 'onedrive', name: '微软云盘', icon: '☁️',
+    items: [
+      { id: 'ONEDRIVE', label: '微软 OneDrive', tag: 'geosite', target: 'PROXY' },
+    ],
+  },
+  {
+    key: 'microsoft', name: '微软服务', icon: '🪟',
+    items: [
+      // 微软服务整体（cn.* 子域会被国内直连先命中走 DIRECT，更稳）
+      { id: 'MICROSOFT', label: '微软服务', tag: 'geosite', target: 'PROXY' },
+    ],
+  },
+  {
+    key: 'apple', name: '苹果服务', icon: '🍎',
+    items: [
+      // 苹果服务默认 DIRECT（中国区直连更稳）。APPLE-MUSIC 只放本组，不在网易音乐。
+      { id: 'APPLE', label: '苹果服务', tag: 'geosite', target: 'DIRECT' },
+      { id: 'APPLE-MUSIC', label: 'Apple Music', tag: 'geosite', target: 'DIRECT' },
+      { id: 'APPLE-UPDATE', label: 'Apple 系统更新', tag: 'geosite', target: 'DIRECT' },
+      { id: 'APPLE-PODCASTS', label: 'Apple 播客', tag: 'geosite', target: 'DIRECT' },
+      { id: 'APPLE-TVPLUS', label: 'Apple TV+', tag: 'geosite', target: 'DIRECT' },
+    ],
+  },
+
 ];
 
 /** 将 RULE_GROUPS 转为前端所需的小写风格（保持 geosite id 大写） */
