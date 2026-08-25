@@ -142,20 +142,20 @@ describe('AI 审查意见修复（v2.0.9）', () => {
     expect(yaml).toContain('log-level: warning');
   });
 
-  it('常用国家地理组为 url-test，其他国家为 select（不长期测速）', async () => {
+  it('地理组全部为 select（v2.7.4 起不自动测速，防免费节点被自检流量打爆）', async () => {
     const groups = await generateProxyGroups([
       makeNode({ name: '🇭🇰 香港 01' }),
       makeNode({ name: '🇹🇷 土耳其 01' }),
     ]);
     const hk = groups.find(g => g.name === '🇭🇰 香港');
     const tr = groups.find(g => g.name === '🇹🇷 土耳其');
-    expect(hk?.type).toBe('url-test');
+    expect(hk?.type).toBe('select');
     expect(tr?.type).toBe('select');
   });
 });
 
 describe('AI 审查意见修复（v2.1.0）', () => {
-  it('DNS 含苹果推送排除、default-nameserver、proxy-server-nameserver；测速间隔 600', async () => {
+  it('DNS 含苹果推送排除、default-nameserver、proxy-server-nameserver；自动选择测速间隔 1800', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
     expect(yaml).toContain('+.push.apple.com');
     expect(yaml).toContain('+.icloud.com');

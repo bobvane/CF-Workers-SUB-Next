@@ -111,7 +111,7 @@ export const DEFAULT_SNIFFER_CONFIG: Record<string, unknown> = {
   ],
 };
 
-/** 常用国家地理组（url-test 自动测速）；不在集合内的国家建 select 组，不长期测速 */
+/** @deprecated v2.7.4 起地理组全部改为 select 不再自动测速（免费节点池被自检流量打爆），此常量仅为兼容保留 */
 export const GEO_URL_TEST_SET: Set<string> = new Set([
   '🇭🇰 香港',
   '🇹🇼 台湾',
@@ -558,15 +558,12 @@ export async function generateProxyGroups(
     proxies: globalOrder,
   });
 
-  // 11. 地理组：常用国家 url-test（低频，减轻节点服务器自检压力），其他国家 select
+  // 11. 地理组：全部 select（不自动测速）。OpenClash 面板自带手动测速，
+  // 自动测速对免费白嫖节点池是持续自检轰炸（曾致节点日请求超10万被封），故全部取消
   for (const geo of geoGroups) {
-    const isCommon = GEO_URL_TEST_SET.has(geo.name);
     groups.push({
       name: geo.name,
-      type: isCommon ? 'url-test' : 'select',
-      ...(isCommon
-        ? { url: 'http://www.gstatic.com/generate_204', interval: 1800, tolerance: 100 }
-        : {}),
+      type: 'select',
       proxies: geo.nodes,
     });
   }
