@@ -435,7 +435,7 @@ export async function generateProxyGroups(
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Auto.png',
     url: 'http://www.gstatic.com/generate_204',
     interval: 1800,
-    tolerance: 100,
+    tolerance: 50,
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
