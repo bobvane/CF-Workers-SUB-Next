@@ -111,16 +111,6 @@ export const DEFAULT_SNIFFER_CONFIG: Record<string, unknown> = {
   ],
 };
 
-/** @deprecated v2.7.4 起地理组全部改为 select 不再自动测速（免费节点池被自检流量打爆），此常量仅为兼容保留 */
-export const GEO_URL_TEST_SET: Set<string> = new Set([
-  '🇭🇰 香港',
-  '🇹🇼 台湾',
-  '🇯🇵 日本',
-  '🇸🇬 新加坡',
-  '🇺🇸 美国',
-  '🇰🇷 韩国',
-]);
-
 /**
  * 将 Node 转换为 Mihomo proxy 配置对象
  */
