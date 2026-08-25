@@ -424,7 +424,7 @@ export async function generateProxyGroups(
   groups.push({
     name: '节点选择',
     type: 'select',
-    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Static.png',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Static.png',
     'default-selected': '自动选择',
     proxies: ['自动选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
@@ -433,7 +433,7 @@ export async function generateProxyGroups(
   groups.push({
     name: '手动切换',
     type: 'select',
-    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Final.png',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Final.png',
     'default-selected': allGeoNodes[0] || 'DIRECT',
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
@@ -442,7 +442,7 @@ export async function generateProxyGroups(
   groups.push({
     name: '自动选择',
     type: 'url-test',
-    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Auto.png',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Auto.png',
     url: 'http://www.gstatic.com/generate_204',
     interval: 600,
     tolerance: 50,
@@ -453,7 +453,7 @@ export async function generateProxyGroups(
   groups.push({
     name: '国外媒体',
     type: 'select',
-    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/ForeignMedia.png',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Streaming.png',
     'default-selected': '自动选择',
     proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
@@ -462,21 +462,37 @@ export async function generateProxyGroups(
   groups.push({
     name: '广告拦截',
     type: 'select',
-    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Advertising.png',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Adblock.png',
     'default-selected': 'REJECT',
     proxies: ['REJECT', 'DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
   });
 
   // 8. 业务分类策略组（仅当勾选该大类规则时才生成，条件组）
   //    ads(广告拦截) / media(国外媒体) 已由上方固化策略组承接；
+  // Orz-3/mini Color 图标映射：仓库实际文件名（英文），无对应图标时用 Global.png 兜底
+  const groupIconMap: Record<string, string> = {
+    'google-fcm': 'Google.png',
+    'bing': 'Bing.png',
+    'onedrive': 'GoogleDrive.png', // 无 OneDrive 图标，用云盘类近似
+    'microsoft': 'Microsoft.png',
+    'apple': 'Apple.png',
+    'netease': 'neteasemusic.png',
+    'game': 'GAME.png',
+    'ai': 'OpenAI.png',
+    'dev': 'Static.png',
+    'social': 'Telegram.png',
+    'cloud': 'Global.png',
+    'crypto': 'Global.png',
+    'user': 'Manual.png',
+  };
   const groupDefaults: Record<string, { name: string; default: string }> = {
-    'google-fcm': { name: '谷歌FCM', default: '节点选择' },
-    'bing': { name: '微软Bing', default: '节点选择' },
-    'onedrive': { name: '微软云盘', default: '节点选择' },
-    'microsoft': { name: '微软服务', default: '节点选择' },
+    'google-fcm': { name: '谷歌FCM', default: 'DIRECT' },
+    'bing': { name: '微软Bing', default: 'DIRECT' },
+    'onedrive': { name: '微软云盘', default: 'DIRECT' },
+    'microsoft': { name: '微软服务', default: 'DIRECT' },
     'apple': { name: '苹果服务', default: 'DIRECT' },
     'netease': { name: '网易音乐', default: 'DIRECT' },
-    'game': { name: '游戏平台', default: '节点选择' },
+    'game': { name: '游戏平台', default: 'DIRECT' },
     'ai': { name: 'AI 平台', default: '节点选择' },
     'dev': { name: '开发工具', default: '节点选择' },
     'social': { name: '社交', default: '节点选择' },
@@ -508,7 +524,7 @@ export async function generateProxyGroups(
       name: g.name, 
       type: 'select', 
       'default-selected': groupDefaults[key].default,
-      icon: `https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/${encodeURIComponent(g.name)}.png`,
+      icon: `https://raw.githubusercontent.com/Orz-3/mini/master/Color/${groupIconMap[key] || 'Global.png'}`,
       proxies 
     });
   }
@@ -517,7 +533,7 @@ export async function generateProxyGroups(
   groups.push({
     name: '漏网之鱼',
     type: 'select',
-    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Other.png',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Global.png',
     'default-selected': '节点选择',
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
@@ -537,7 +553,7 @@ export async function generateProxyGroups(
   groups.push({
     name: 'GLOBAL',
     type: 'select',
-    icon: 'https://raw.githubusercontent.com/Orz-3/mini/refs/heads/master/Color/Final.png',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Final.png',
     'default-selected': '节点选择',
     proxies: globalOrder,
   });
