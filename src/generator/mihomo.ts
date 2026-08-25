@@ -52,9 +52,10 @@ export const DEFAULT_MIHOMO_TEMPLATE: MihomoTemplate = {
 
 /**
  * 默认 DNS 配置（fake-ip 模式）
- * 固定输出——防止 DNS 污染/泄漏（AI 审查两票共识的最大缺陷）。
- * nameserver 用国内 DoH 解析国内域名；fallback 用国外 DoH 解析被污染域名；
- * fallback-filter 按 GEOIP CN 判定：解析结果非 CN IP 时采用 fallback 结果。
+ * nameserver-policy 按域名分流：国内域名(cn,private)走国内 DoH，
+ * 国外域名(geolocation-!cn)直接走国外 DoH——一次查询到位，
+ * 避免 fallback+geoip 模式的"先查国内→判断→再查国外"双轮 RTT 延迟
+ * （MetaCubeX 官方推荐做法，需 Meta 内核 v1.14+）。
  */
 export const DEFAULT_DNS_CONFIG: Record<string, unknown> = {
   enable: true,
@@ -78,15 +79,14 @@ export const DEFAULT_DNS_CONFIG: Record<string, unknown> = {
     '+.icloud.com',
   ],
   nameserver: ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
-  fallback: ['https://1.1.1.1/dns-query', 'https://8.8.8.8/dns-query'],
   // default-nameserver：解析 DoH 服务器自身域名用的普通 DNS（鸡生蛋问题）
   'default-nameserver': ['223.5.5.5', '119.29.29.29'],
   // proxy-server-nameserver：专门解析节点服务器域名，防污染导致节点连不上
   'proxy-server-nameserver': ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
-  'fallback-filter': {
-    geoip: true,
-    'geoip-code': 'CN',
-    ipcidr: ['240.0.0.0/4'],
+  // 域名分流 DNS：国内域名走国内 DoH，国外域名直接走国外 DoH（单轮查询，无 geoip 判断环节）
+  'nameserver-policy': {
+    'geosite:cn,private': ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
+    'geosite:geolocation-!cn': ['https://1.1.1.1/dns-query', 'https://8.8.8.8/dns-query'],
   },
 };
 

@@ -137,7 +137,8 @@ describe('AI 审查意见修复（v2.0.9）', () => {
     expect(yaml).toContain('enhanced-mode: fake-ip');
     expect(yaml).toContain('fake-ip-range');
     expect(yaml).toContain('https://223.5.5.5/dns-query');
-    expect(yaml).toContain('fallback-filter');
+    expect(yaml).toContain('nameserver-policy');
+    expect(yaml).not.toContain('fallback-filter');
     expect(yaml).toContain('log-level: warning');
   });
 
