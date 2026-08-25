@@ -444,8 +444,8 @@ export async function generateProxyGroups(
     type: 'url-test',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Auto.png',
     url: 'http://www.gstatic.com/generate_204',
-    interval: 600,
-    tolerance: 50,
+    interval: 1800,
+    tolerance: 100,
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
@@ -558,13 +558,14 @@ export async function generateProxyGroups(
     proxies: globalOrder,
   });
 
-  // 11. 地理组：常用国家 url-test，其他国家 select
+  // 11. 地理组：常用国家 url-test（低频，减轻节点服务器自检压力），其他国家 select
   for (const geo of geoGroups) {
-    const isCommon = GEO_URL_TEST_SET.has(geo.name);    groups.push({
+    const isCommon = GEO_URL_TEST_SET.has(geo.name);
+    groups.push({
       name: geo.name,
       type: isCommon ? 'url-test' : 'select',
       ...(isCommon
-        ? { url: 'http://www.gstatic.com/generate_204', interval: 600, tolerance: 50 }
+        ? { url: 'http://www.gstatic.com/generate_204', interval: 1800, tolerance: 100 }
         : {}),
       proxies: geo.nodes,
     });

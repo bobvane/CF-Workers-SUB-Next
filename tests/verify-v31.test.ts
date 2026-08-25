@@ -161,7 +161,7 @@ describe('AI 审查意见修复（v2.1.0）', () => {
     expect(yaml).toContain('+.icloud.com');
     expect(yaml).toContain('default-nameserver');
     expect(yaml).toContain('proxy-server-nameserver');
-    expect(yaml).toContain('interval: 600');
+    expect(yaml).toContain('interval: 1800');
     expect(yaml).not.toContain('interval: 300');
   });
 });
