@@ -17,6 +17,9 @@ import { nodeToUrl } from '@/generator/node-to-url';
 import { MetaCubeXRule, RULE_GROUPS, CustomRule, mergeCustomRules, findRuleInGroups } from '@/data/metacubex-rules';
 import { createIpGeoResolver } from './ip-geo.service';
 import { deduplicateNodes } from '@/parser';
+import { createCleanRule, applyCleanRules } from '@/models/clean-rule';
+
+const CLEAN_RULES_KEY = 'clean_rules';
 
 export type OutputFormat =
   | 'mihomo'
@@ -57,6 +60,13 @@ export interface ConfigService {
   deleteCustomRule(id: string): Promise<void>;
   /** 获取合并自定义规则后的完整分组（供 /api/rules/groups 返回） */
   getMergedGroups(): Promise<(typeof RULE_GROUPS)[number][]>;
+  // ============ 节点名清洗规则（持久化，订阅更新后自动应用） ============
+  getCleanRules(): Promise<import('@/models/clean-rule').CleanRule[]>;
+  addCleanRule(rule: { pattern: string; replacement?: string; regex?: boolean }): Promise<import('@/models/clean-rule').CleanRule>;
+  deleteCleanRule(id: string): Promise<void>;
+  toggleCleanRule(id: string, enabled: boolean): Promise<void>;
+  /** 对当前全部节点立即执行清洗规则集（手动触发），返回受影响数量 */
+  applyCleanRulesNow(): Promise<number>;
 }
 
 const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string }> = {
@@ -157,6 +167,63 @@ export function createConfigService(repos: Repositories): ConfigService {
     async getMergedGroups() {
       const custom = await this.getCustomRules();
       return mergeCustomRules(custom);
+    },
+
+    // ============ 节点名清洗规则 ============
+    async getCleanRules() {
+      const raw = await repos.settings.get(CLEAN_RULES_KEY);
+      if (!raw) return [];
+      try {
+        return JSON.parse(raw) as import('@/models/clean-rule').CleanRule[];
+      } catch {
+        return [];
+      }
+    },
+
+    async addCleanRule(rule) {
+      const rules = await this.getCleanRules();
+      const created = createCleanRule({
+        pattern: rule.pattern,
+        replacement: rule.replacement ?? '',
+        regex: rule.regex ?? false,
+      });
+      rules.push(created);
+      await repos.settings.set(CLEAN_RULES_KEY, JSON.stringify(rules));
+      return created;
+    },
+
+    async deleteCleanRule(id) {
+      const rules = await this.getCleanRules();
+      await repos.settings.set(CLEAN_RULES_KEY, JSON.stringify(rules.filter((r) => r.id !== id)));
+    },
+
+    async toggleCleanRule(id, enabled) {
+      const rules = await this.getCleanRules();
+      const target = rules.find((r) => r.id === id);
+      if (!target) throw new Error('Clean rule not found');
+      target.enabled = enabled;
+      await repos.settings.set(CLEAN_RULES_KEY, JSON.stringify(rules));
+    },
+
+    async applyCleanRulesNow() {
+      const rules = await this.getCleanRules();
+      if (rules.length === 0) return 0;
+      let changed = 0;
+      for (const sub of await repos.subscriptions.list()) {
+        const nodes = await repos.nodes.getBySubscription(sub.id);
+        let subChanged = false;
+        const transformed = nodes.map((n) => {
+          const newName = applyCleanRules(n.name, rules);
+          if (newName !== n.name) {
+            changed++;
+            subChanged = true;
+            return { ...n, name: newName };
+          }
+          return n;
+        });
+        if (subChanged) await repos.nodes.setBySubscription(sub.id, transformed);
+      }
+      return changed;
     },
 
     async generate(format: OutputFormat): Promise<string> {

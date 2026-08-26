@@ -7,6 +7,7 @@
 
 import { Subscription } from '@/models/subscription';
 import { Node } from '@/models/node';
+import { CleanRule, applyCleanRules } from '@/models/clean-rule';
 import { Repositories } from '@/storage/kv';
 import {
   parseSubscriptionContent,
@@ -37,7 +38,8 @@ export interface SubscriptionService {
 export function createSubscriptionService(
   repos: Repositories,
   fetchRawContent: (url: string) => Promise<string>,
-  getRules: () => Promise<{ type: 'include' | 'exclude' | 'replace'; pattern: string; enabled?: boolean }[]>
+  getRules: () => Promise<{ type: 'include' | 'exclude' | 'replace'; pattern: string; enabled?: boolean }[]>,
+  getCleanRules: () => Promise<CleanRule[]> = async () => []
 ): SubscriptionService {
   return {
     async list() {
@@ -84,7 +86,11 @@ export function createSubscriptionService(
           errorMessage: undefined,
         });
 
-        // 5. 缓存节点
+        // 5. 缓存节点（写入前应用持久化清洗规则集，保证每天自动更新后名字保持干净）
+        const cleanRules = await getCleanRules();
+        if (cleanRules.length > 0) {
+          nodes = nodes.map((n) => ({ ...n, name: applyCleanRules(n.name, cleanRules) }));
+        }
         await repos.nodes.setBySubscription(id, nodes);
 
         return {

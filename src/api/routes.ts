@@ -230,7 +230,7 @@ export function createApp(deps: AppDeps): Hono {
     });
   });
 
-  // 节点名清洗执行
+  // 节点名清洗执行（一次性手动，保留兼容）
   app.post('/api/nodes/clean', requireAuth(auth), async (c) => {
     const body = await readBody<{ pattern?: string; regex?: boolean }>(c);
     const pattern = (body.pattern || '').trim();
@@ -248,6 +248,46 @@ export function createApp(deps: AppDeps): Hono {
       transform = (n) => n.split(pattern).join('').trim();
     }
     const changed = await repos.nodes.renameAll(transform);
+    return c.json({ success: true, data: { changed } });
+  });
+
+  // ============ 持久化清洗规则（订阅更新后自动应用） ============
+
+  app.get('/api/nodes/clean-rules', requireAuth(auth), async (c) => {
+    return c.json({ success: true, data: await config.getCleanRules() });
+  });
+
+  app.post('/api/nodes/clean-rules', requireAuth(auth), async (c) => {
+    const body = await readBody<{ pattern?: string; replacement?: string; regex?: boolean }>(c);
+    const pattern = (body.pattern || '').trim();
+    if (!pattern) return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'pattern 必填' } }, 400);
+    if (body.regex) {
+      try { new RegExp(pattern); } catch {
+        return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: '正则表达式无效' } }, 400);
+      }
+    }
+    const created = await config.addCleanRule({ pattern, replacement: body.replacement ?? '', regex: body.regex ?? false });
+    return c.json({ success: true, data: created });
+  });
+
+  app.delete('/api/nodes/clean-rules/:id', requireAuth(auth), async (c) => {
+    await config.deleteCleanRule(c.req.param('id')!);
+    return c.json({ success: true });
+  });
+
+  app.put('/api/nodes/clean-rules/:id/toggle', requireAuth(auth), async (c) => {
+    const body = await readBody<{ enabled?: boolean }>(c);
+    try {
+      await config.toggleCleanRule(c.req.param('id')!, body.enabled ?? true);
+      return c.json({ success: true });
+    } catch {
+      return c.json({ success: false, error: { code: 'NOT_FOUND', message: '规则不存在' } }, 404);
+    }
+  });
+
+  // 立即执行持久化规则集（手动触发）
+  app.post('/api/nodes/clean-rules/apply', requireAuth(auth), async (c) => {
+    const changed = await config.applyCleanRulesNow();
     return c.json({ success: true, data: { changed } });
   });
 

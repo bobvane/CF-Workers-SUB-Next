@@ -14,6 +14,7 @@ import { createSubscriptionService } from '@/services/subscription.service';
 import { createConfigService } from '@/services/config.service';
 import { createCatalogSyncService } from '@/services/catalog-sync.service';
 import { fetchSubscription } from '@/engine/fetcher';
+import { CleanRule } from '@/models/clean-rule';
 import HTML from '@/html';
 
 export interface Env {
@@ -71,7 +72,12 @@ async function buildApp(env: Env): Promise<Hono> {
   const subscriptions = createSubscriptionService(
     repos,
     fetchSubscription,
-    async () => (await repos.rules.list()).map((r) => ({ type: r.type, pattern: r.pattern, enabled: r.enabled }))
+    async () => (await repos.rules.list()).map((r) => ({ type: r.type, pattern: r.pattern, enabled: r.enabled })),
+    async () => {
+      const raw = await repos.settings.get('clean_rules');
+      if (!raw) return [];
+      try { return JSON.parse(raw) as CleanRule[]; } catch { return []; }
+    }
   );
 
   const config = createConfigService(repos);
@@ -138,7 +144,12 @@ export default {
     const subs = createSubscriptionService(
       repos,
       fetchSubscription,
-      async () => (await repos.rules.list()).map((r) => ({ type: r.type, pattern: r.pattern, enabled: r.enabled }))
+      async () => (await repos.rules.list()).map((r) => ({ type: r.type, pattern: r.pattern, enabled: r.enabled })),
+      async () => {
+        const raw = await repos.settings.get('clean_rules');
+        if (!raw) return [];
+        try { return JSON.parse(raw) as CleanRule[]; } catch { return []; }
+      }
     );
     const results: string[] = [];
     for (const s of await subs.list()) {
