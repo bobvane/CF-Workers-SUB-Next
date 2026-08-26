@@ -1065,11 +1065,11 @@ async function loadCleanRules() {
     box.innerHTML = '<b style="font-size:13px">📌 已保存的清洗规则（每次订阅更新后自动应用）</b>' + rules.map(r =>
       `<div style="display:flex;align-items:center;gap:8px;margin-top:6px;padding:4px 0;border-bottom:1px solid var(--border)">
         <input type="checkbox" ${r.enabled ? 'checked' : ''} onchange="toggleCleanRule('${r.id}', this.checked)">
-        <code style="flex:1;overflow:hidden;text-overflow:ellipsis">${escHtml(r.pattern)}</code>
+        <span style="color:var(--text2);font-size:12px;white-space:nowrap">${escHtml(r.pattern)}</span>
         <span style="color:var(--text2)">→</span>
-        <code>${escHtml(r.replacement || '(删除)')}</code>
+        <b style="white-space:nowrap">${r.replacement ? escHtml(r.replacement) : '(删除)'}</b>
         ${r.regex ? '<span class="tag">正则</span>' : ''}
-        <button class="btn btn-sm btn-danger" onclick="deleteCleanRule('${r.id}')">🗑</button>
+        <button class="btn btn-sm btn-danger" style="margin-left:auto" onclick="deleteCleanRule('${r.id}')">🗑</button>
       </div>`
     ).join('');
   } catch { /* 静默 */ }
@@ -1087,18 +1087,30 @@ async function saveCleanRule() {
         regex: document.getElementById('cleanRegex').checked,
       }),
     });
-    toast('规则已保存，之后每次订阅更新自动应用');
+    toast('规则已保存并已应用到当前节点');
     document.getElementById('cleanPattern').value = '';
     document.getElementById('cleanReplacement').value = '';
     document.getElementById('cleanRegex').checked = false;
+    // 保存后立即对存量节点应用一次全部启用规则，不等下次订阅更新
+    try {
+      const res = await api('/nodes/clean-rules/apply', { method: 'POST' });
+      toast(`已重命名 ${res.data?.changed ?? 0} 个节点`);
+    } catch { /* 应用失败不阻塞保存 */ }
+    loadNodes();
     loadCleanRules();
   } catch (e) { toast('保存失败: ' + e.message, 'error'); }
 }
 
 async function deleteCleanRule(id) {
-  if (!confirm('删除这条清洗规则？')) return;
+  if (!confirm('删除这条清洗规则？删除后剩余规则会立即重新应用到全部节点。')) return;
   try {
     await api('/nodes/clean-rules/' + id, { method: 'DELETE' });
+    // 删除后立即重应用（被删掉的规则效果会还原，如"删除XX"删掉后 XX 会重新出现）
+    try {
+      const res = await api('/nodes/clean-rules/apply', { method: 'POST' });
+      toast(`已删除，并重应用规则（${res.data?.changed ?? 0} 个节点受影响）`);
+    } catch { /* 静默 */ }
+    loadNodes();
     loadCleanRules();
   } catch (e) { toast('删除失败: ' + e.message, 'error'); }
 }
