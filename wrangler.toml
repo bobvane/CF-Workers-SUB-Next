@@ -12,5 +12,6 @@ id = "00000000-0000-0000-0000-000000000000"
 # ADMIN_PASSWORD, SESSION_SECRET 由 `wrangler secret put` 设置
 
 # 规则目录同步：每月 1 号 03:00 UTC 自动扫描 MetaCubeX 仓库
+# 订阅自动更新：每小时触发，scheduled handler 按设置页配置的小时(北京时间,默认07:00)判断是否执行
 [triggers]
-crons = ["0 3 1 * *"]
+crons = ["0 3 1 * *", "0 * * * *"]

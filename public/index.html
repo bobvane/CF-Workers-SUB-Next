@@ -319,7 +319,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <button class="btn btn-primary" onclick="showAddSub()">＋ 添加订阅</button>
     </div>
     <table id="subTable">
-      <thead><tr><th>名称</th><th>状态</th><th>节点数</th><th>更新时间</th><th>操作</th></tr></thead>
+      <thead><tr><th>名称</th><th>链接</th><th>状态</th><th>节点数</th><th>更新时间</th><th>操作</th></tr></thead>
       <tbody id="subTableBody"></tbody>
     </table>
   </div>
@@ -447,6 +447,10 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <div class="form-group">
         <label>系统名称</label>
         <input id="settingAppName" placeholder="CF-Workers-SUB-Next">
+      </div>
+      <div class="form-group">
+        <label>订阅自动更新时间（北京时间 0-23 点整，默认每天 7:00）</label>
+        <input id="settingSubUpdateHour" type="number" min="0" max="23" placeholder="7">
       </div>
       <button class="btn btn-primary mt-12" onclick="saveSettings()">💾 保存</button>
     </div>
@@ -921,12 +925,15 @@ async function loadSubscriptions() {
 function renderSubTable() {
   const tbody = document.getElementById('subTableBody');
   if (state.subscriptions.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color:var(--text2);padding:24px">暂无订阅，点击右上角添加</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color:var(--text2);padding:24px">暂无订阅，点击右上角添加</td></tr>';
     return;
   }
   tbody.innerHTML = state.subscriptions.map(s => `
     <tr>
       <td><strong>${escHtml(s.name)}</strong></td>
+      <td style="font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(s.url || '')}">
+        ${s.url ? `<a href="${escHtml(s.url)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">${escHtml(s.url)}</a>` : '-'}
+      </td>
       <td><span class="status-${s.status}">${s.status === 'active' ? '✅ 正常' : s.status === 'error' ? '❌ 错误' : '⏸ 停用'}</span></td>
       <td>${s.nodeCount ?? 0}</td>
       <td style="font-size:12px;color:var(--text2)">${s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '-'}</td>
@@ -1309,6 +1316,7 @@ async function loadSettings() {
   try {
     const data = await api('/settings');
     document.getElementById('settingAppName').value = data.data?.app_name || '';
+    document.getElementById('settingSubUpdateHour').value = data.data?.sub_auto_update_hour ?? 7;
   } catch {}
   loadCatalogStatus();
   searchCatalog(); // 默认显示前 100 个分类
@@ -1316,8 +1324,11 @@ async function loadSettings() {
 
 async function saveSettings() {
   const appName = document.getElementById('settingAppName').value.trim();
+  const hourRaw = document.getElementById('settingSubUpdateHour').value.trim();
+  const subHour = hourRaw === '' ? 7 : parseInt(hourRaw, 10);
+  if (Number.isNaN(subHour) || subHour < 0 || subHour > 23) { toast('更新时间须为 0-23 的整数', 'error'); return; }
   try {
-    await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName }) });
+    await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName, sub_auto_update_hour: subHour }) });
     toast('设置已保存');
     // 立即刷新页面标题
     document.getElementById('sidebarLogo').textContent = appName;

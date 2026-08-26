@@ -109,16 +109,46 @@ export default {
     return app.fetch(request, env);
   },
 
-  /** 规则目录定时同步（每月 1 号 03:00 UTC） */
-  async scheduled(_controller: ScheduledController, env: Env): Promise<void> {
+  /** 定时任务：每月 1 号 03:00 UTC 规则目录同步；每天按用户设定时间(默认北京时间07:00)自动更新全部订阅 */
+  async scheduled(controller: ScheduledController, env: Env): Promise<void> {
     const kv = new KvAdapter(env.DATABASE);
     const repos = createRepositories(kv);
-    const catalogSync = createCatalogSyncService(repos, createCatalogFetcher(env.GITHUB_TOKEN));
-    const result = await catalogSync.sync();
-    if (result.status === 'stale') {
-      console.warn(`[CatalogSync] 扫描失败: ${result.error}`);
-    } else {
-      console.warn(`[CatalogSync] 扫描完成: ${result.total} 个分类, 新增 ${result.added.length}, 移除 ${result.removed.length}`);
+    const cron = controller.cron;
+
+    // 每月 1 号规则目录同步
+    if (cron === '0 3 1 * *') {
+      const catalogSync = createCatalogSyncService(repos, createCatalogFetcher(env.GITHUB_TOKEN));
+      const result = await catalogSync.sync();
+      if (result.status === 'stale') {
+        console.warn(`[CatalogSync] 扫描失败: ${result.error}`);
+      } else {
+        console.warn(`[CatalogSync] 扫描完成: ${result.total} 个分类, 新增 ${result.added.length}, 移除 ${result.removed.length}`);
+      }
+      return;
     }
+
+    // 每日订阅自动更新（时间由设置页 sub_auto_update_hour 控制，北京时间）
+    const hourSetting = await repos.settings.get('sub_auto_update_hour');
+    const hour = hourSetting !== null ? parseInt(hourSetting, 10) : 7;
+    if (Number.isNaN(hour) || hour < 0 || hour > 23) return;
+    // UTC 时间 = 北京时间 - 8
+    const utcHourNow = controller.scheduledTime ? new Date(controller.scheduledTime).getUTCHours() : new Date().getUTCHours();
+    if (utcHourNow !== ((hour - 8 + 24) % 24)) return;
+
+    const subs = createSubscriptionService(
+      repos,
+      fetchSubscription,
+      async () => (await repos.rules.list()).map((r) => ({ type: r.type, pattern: r.pattern, enabled: r.enabled }))
+    );
+    const results: string[] = [];
+    for (const s of await subs.list()) {
+      try {
+        const { nodeCount } = await subs.update(s.id, fetchSubscription);
+        results.push(`${s.name}:${nodeCount}节点`);
+      } catch (e) {
+        results.push(`${s.name}:失败(${(e as Error).message})`);
+      }
+    }
+    console.warn(`[SubAutoUpdate] 每日订阅更新完成: ${results.join(', ')}`);
   },
 };
