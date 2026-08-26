@@ -1,9 +1,10 @@
 # CF-Workers-SUB-Next V2
 
-> 基于 Cloudflare Workers 的订阅管理与配置生成平台
+> 基于 Cloudflare Workers 的订阅管理与多客户端配置生成平台
 > 无需 VPS / Docker / 本地数据库，Fork 即用
 
 [![CI/CD](https://github.com/bobvane/CF-Workers-SUB-Next/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/bobvane/CF-Workers-SUB-Next/actions/workflows/ci-cd.yml)
+![Version](https://img.shields.io/badge/version-2.7.12-533afd)
 
 ---
 
@@ -11,19 +12,19 @@
 
 | 功能 | 说明 |
 |------|------|
-| 🔐 **管理员登录** | 密码认证 + HttpOnly Cookie Session 管理 |
-| 📥 **订阅管理** | 添加 / 删除 / 手动更新订阅 URL |
+| 🔐 **用户名 + 密码登录** | 双因子凭据认证，HttpOnly Cookie Session，可在设置页修改用户名/密码 |
+| 📥 **订阅管理** | 添加 / 删除 / 手动更新订阅 URL；显示订阅链接；**每日自动更新**（更新时间可配置，北京时间） |
 | 🔗 **节点解析** | VMess / VLESS / Trojan / Shadowsocks 四协议 |
-| 🧹 **节点去重** | 自动去重 + 关键字过滤 + 节点指纹 |
-| 🚀 **Mihomo 配置生成** | 完整 YAML 输出（策略组 + rule-providers + 有序 rules） |
-| 🌐 **分流规则系统** | 预置 11 大类 80+ 规则 + 自定义规则库（全量 1546 分类） |
+| 🧹 **节点去重** | 按 `server:port:protocol` 三项指纹去重（节点列表页与输出生成层统一） |
+| ✅ **节点启用管理** | 勾选/取消节点控制是否输出；订阅更新后新节点默认全部启用 |
+| 🧼 **节点名清洗规则集** | 保存多条清洗规则（删除片段 / 替换 / 正则），**每次订阅更新后自动按序应用**；删除规则自动还原 |
+| 🚀 **9 种客户端配置输出** | Mihomo / sing-box / v2ray / v2rayN / NekoBox / Shadowrocket / Loon / Surge / Quantumult X |
+| 🌐 **分流规则系统** | 预置分组 + 六个预设按钮（极简/标准/完全体 ± 加密货币），双栏布局 + 1546 分类 MetaCubeX 规则库搜索 |
 | 🛡️ **安全防护** | SSRF 防护 / XSS 转义 / 登录限流 / PBKDF2 密码哈希 |
-| 📊 **Web 管理面板** | 仪表盘 / 订阅管理 / 节点列表 / 分流规则 / 输出配置 / 设置 |
-| 📚 **规则库扩展** | 从 1546 个 MetaCubeX 分类中搜索挑选，自定义加入分流规则 |
-| 🎯 **规则库分类筛选** | 按 聚合/站点/顶级域 分类快速浏览，避免平铺几千条 |
+| ⏱️ **定时任务** | 每小时 Cron 触发，命中设定小时执行订阅自动更新；规则目录每月同步一次 |
+| 📊 **Web 管理面板** | Stripe 设计风格：仪表盘 / 订阅管理 / 节点列表 / 分流规则 / 输出配置 / 设置 |
 | 🔔 **升级检测** | 自动检查 GitHub Releases 新版本，页面内提示 |
-| 🌙 **暗色/亮色主题** | 跟随系统主题，自适应 |
-| 🚀 **自动部署** | GitHub Actions 一键部署到 Cloudflare Workers |
+| 🌙 **暗色/亮色主题** | 手动切换 + localStorage 持久化 |
 
 ---
 
@@ -52,7 +53,7 @@ Fork [bobvane/CF-Workers-SUB-Next](https://github.com/bobvane/CF-Workers-SUB-Nex
 |--------|------|------|
 | `CLOUDFLARE_API_TOKEN` | Cloudflare API Token（权限：Workers R2 Edit + KV Edit） | ✅ |
 | `KV_NAMESPACE_ID` | 上一步创建的 KV 命名空间 ID | ✅ |
-| `ADMIN_PASSWORD` | 管理界面登录密码 | ✅ |
+| `ADMIN_PASSWORD` | 管理界面初始密码 | ✅ |
 | `SESSION_SECRET` | Session 加密密钥（可用 `openssl rand -hex 32` 生成） | ✅ |
 | `WORKER_GITHUB_TOKEN` | GitHub Personal Access Token（规则目录同步用，避免 403 限流） | ❌ |
 
@@ -82,10 +83,12 @@ Fork [bobvane/CF-Workers-SUB-Next](https://github.com/bobvane/CF-Workers-SUB-Nex
 ### 第五步：访问
 
 部署完成后访问：
+
 ```
 https://cf-workers-sub-next.<你的子域名>.workers.dev
 ```
-使用 `ADMIN_PASSWORD` 设置的密码登录。
+
+默认用户名 `admin`，密码为 `ADMIN_PASSWORD` 设置的值（登录后可在设置页修改）。
 
 ---
 
@@ -95,83 +98,120 @@ https://cf-workers-sub-next.<你的子域名>.workers.dev
 
 1. **添加订阅** → 订阅管理页面，填入名称和订阅 URL
 2. **查看节点** → 节点列表页面，勾选/取消勾选需要输出的节点
-3. **配置规则** → 分流规则页面，勾选需要的分流规则（默认无规则，需手动选择）
-4. **输出配置** → 选择格式（Mihomo YAML），下载后导入客户端
+3. **保存清洗规则** → 节点页输入匹配内容（可正则、可替换），保存后立即生效且此后每次订阅更新自动应用
+4. **配置规则** → 分流规则页面勾选分流规则，或直接点击预设按钮一键套用
+5. **输出配置** → 选择客户端格式下载，或在客户端中填入订阅链接自动拉取
 
-### 规则系统
+### 订阅链接与自动更新
 
-规则页面预置了 11 个大类分组，按优先级（自上而下）覆盖日常使用场景：
+- 订阅管理页面显示每个订阅的专属链接，可直接导入 OpenClash / Clash Mi 等客户端
+- 客户端拉取 `/sub/{format}/{token}` 时**实时读取最新节点并生成配置**——不需要手动重新导出
+- **每日自动更新**：设置页可配置更新时间（0-23 整数，北京时间，默认 07:00），到点自动拉取全部上游订阅并刷新节点
 
-| 分组 | 包含规则 |
-|------|---------|
-| 🔥 广告拦截 | 广告拦截通用合集（REJECT） |
-| 🧹 应用净化 | 应用净化通用合集（REJECT） |
-| 🇨🇳 国内直连规则 | 私有地址、中国直连域名、百度/阿里/腾讯/京东、Bilibili/爱奇艺/优酷（路由到国内媒体，默认 DIRECT） |
-| 🎬 国外媒体 | Netflix、YouTube、Disney+、HBO、Spotify、TikTok 等 |
-| 🪙 加密货币 | Binance、Coinbase、Uniswap 等 |
-| 🤖 AI 服务 | OpenAI、Anthropic、Gemini 等 |
-| 💬 社交 | Telegram、Twitter、Instagram、Discord 等 |
-| 🎮 游戏 | Steam、Epic、PlayStation、Xbox 等 |
-| 🏢 云服务 | Cloudflare、AWS、Google Cloud、Azure 等 |
-| 💻 开发 | GitHub、GitLab、NPMJS、Docker 等 |
-| 👑 用户规则 | Adobe、Apple、Zoom 等 + 用户自定义兜底 |
+### 节点名清洗
 
-Mihomo/OpenClash 输出中的核心策略组默认关系：
+节点列表页支持持久化清洗规则集，解决"订阅每天更新把原始乱名拉回来"的问题：
+
+- **匹配内容**：要删除或匹配的片段（勾选"正则"则按正则表达式处理）
+- **替换为**：留空 = 删除该片段；填写内容 = 替换（如 `香港` → `🇭🇰`）
+- 保存后**立即应用到存量节点**，此后每次订阅更新完成自动按序应用
+- 已保存规则可随时启停/删除；删除规则后其效果自动还原（应用时始终从原始节点名出发重放）
+- "⚡ 立即应用已保存规则"按钮可对当前全部节点手动执行一遍
+
+### 分流规则系统
+
+规则页面采用双栏布局（左侧规则树 + 右侧规则库），顶部六个预设按钮：
+
+| 预设 | 包含分组 |
+|------|----------|
+| 极简 | 广告拦截、国内直连、国内媒体、网易音乐、国外媒体、AI平台 |
+| 极简+加密 | 极简 + 加密货币 |
+| 标准 | 极简 + 谷歌FCM、微软Bing、微软云盘、微软服务、苹果服务、游戏平台 |
+| 标准+加密 | 标准 + 加密货币 |
+| 完全体 | 除加密货币外的全部 16 组 |
+| 完全+加密 | 全部组 |
+
+- 预设高亮仅在当前勾选状态与预设完全一致时显示；手动增删任何规则后即为自定义状态
+- 细分业务组（AI平台/开发工具/社交等）排在宽泛厂商组之前——例如 GitHub 归"开发工具"而非"微软服务"，避免误直连
+- 规则库扩展：可搜索 1546 个 MetaCubeX 全量分类加入任意分组，支持自定义显示名称和目标策略
+
+### 核心策略组关系
 
 | 策略组 | 类型 | 默认策略 |
 |--------|------|----------|
 | 节点选择 | select | 自动选择 |
 | 手动切换 | select | 第一个节点 |
-| 自动选择 | url-test | 自动测速 |
-| 广告拦截 / 应用净化 | select | REJECT |
+| 自动选择 | url-test | interval 1800s + tolerance 50（低频测速省流量） |
+| 地理分组（香港/日本/美国…） | select | 手动选，零自动测速 |
+| 广告拦截 | select | REJECT |
 | 国内媒体 | select | DIRECT |
 | 国外媒体 | select | 自动选择 |
 | 漏网之鱼 | select | 节点选择 |
-| GLOBAL | select | DIRECT |
 
-**规则库扩展**：设置页内置规则库扫描功能，可搜索 1546 个 MetaCubeX 全量分类，挑选加入任意分组，支持自定义显示名称和目标策略（代理/直连/拦截）。
+DNS 采用 `nameserver-policy` 单轮分流：国内域名走国内 DoH，国外域名走国外 DoH 并经代理隧道发出（`#节点选择` 后缀）；Sniffer 自动嗅探 TLS/HTTP/QUIC。
 
 ### 输出格式
 
-| 格式 | 说明 | 分流规则 |
-|------|------|:--------:|
-| **Mihomo YAML** | Clash Meta 内核配置（推荐） | ✅ 完整规则 |
-| Sing-box JSON | 新版通用代理内核 | ❌ 未实现 |
-| Surge | Apple 生态代理工具 | ❌ 未实现 |
+九种格式均从同一份去重后的节点实时生成：
+
+| 格式 | 说明 |
+|------|------|
+| **Mihomo YAML** | Clash Meta 内核（推荐，完整分流规则 + rule-providers） |
+| sing-box JSON | 1.11+ 新写法（action: reject / hijack-dns），含 DNS/TUN/urltest |
+| v2ray / v2rayN | Base64 节点链接 |
+| NekoBox / Shadowrocket | 节点链接 |
+| Loon | 原生语法（VLESS/Reality 完整支持） |
+| Surge | 不支持 VLESS 的协议自动跳过，不伪造兼容行 |
+| Quantumult X | vmess 补全 ws transport；VLESS 跳过 |
 
 ---
 
-## 📚 API 参考
+## 🧾 API 参考
 
 | 方法 | 路径 | 说明 | 认证 |
 |------|------|------|:----:|
 | GET | `/api/meta` | 项目信息（名称、版本、仓库） | ❌ |
 | GET | `/api/meta/check-upgrade` | 升级检测 | ❌ |
 | GET | `/api/health` | 健康检查 | ❌ |
-| POST | `/api/auth/login` | 登录 | ❌ |
+| POST | `/api/auth/login` | 登录（用户名+密码） | ❌ |
 | POST | `/api/auth/logout` | 登出 | ❌ |
 | GET | `/api/auth/session` | 会话检查 | ❌ |
+| PUT | `/api/auth/password` | 修改密码 | ✅ |
+| PUT | `/api/auth/username` | 修改用户名 | ✅ |
 | GET | `/api/dashboard` | 仪表盘统计 | ✅ |
 | GET | `/api/subscriptions` | 订阅列表 | ✅ |
 | POST | `/api/subscriptions` | 创建订阅 | ✅ |
 | DELETE | `/api/subscriptions/:id` | 删除订阅 | ✅ |
 | POST | `/api/subscriptions/:id/update` | 更新订阅 | ✅ |
-| GET | `/api/nodes` | 节点列表 | ✅ |
+| GET | `/sub/:format/:token` | 订阅链接输出（客户端用） | ❌* |
+| GET | `/api/nodes` | 节点列表（已去重，含启用状态） | ✅ |
 | PUT | `/api/nodes/disabled` | 设置禁用节点 | ✅ |
-| **分流规则** | | | |
+| GET | `/api/nodes/clean-rules` | 清洗规则列表 | ✅ |
+| POST | `/api/nodes/clean-rules` | 新增清洗规则 | ✅ |
+| DELETE | `/api/nodes/clean-rules/:id` | 删除清洗规则 | ✅ |
+| PUT | `/api/nodes/clean-rules/:id/toggle` | 启停清洗规则 | ✅ |
+| POST | `/api/nodes/clean-rules/apply` | 立即应用全部规则 | ✅ |
 | GET | `/api/rules/groups` | 规则分组（含自定义） | ✅ |
 | GET | `/api/rules/catalog` | 全量分类目录（1546） | ✅ |
-| GET | `/api/rules/selection` | 已勾选规则 ID | ✅ |
-| PUT | `/api/rules/selection` | 保存勾选规则 | ✅ |
-| GET | `/api/rules/custom` | 自定义规则列表 | ✅ |
-| POST | `/api/rules/custom` | 添加/更新自定义规则 | ✅ |
-| DELETE | `/api/rules/custom/:id` | 删除自定义规则 | ✅ |
-| **配置输出** | | | |
-| GET | `/api/output/mihomo` | 下载 Mihomo YAML 配置 | ✅ |
-| POST | `/api/output/mihomo` | 生成并返回配置内容 | ✅ |
-| **设置** | | | |
-| GET | `/api/settings` | 获取设置 | ✅ |
-| PUT | `/api/settings` | 保存设置 | ✅ |
+| GET/PUT | `/api/rules/selection` | 已勾选规则读写 | ✅ |
+| GET/POST/DELETE | `/api/rules/custom[...]` | 自定义规则管理 | ✅ |
+| GET | `/api/output/:format` | 下载配置（9 种格式） | ✅ |
+| GET/PUT | `/api/settings` | 系统设置（名称/更新时间/密码等） | ✅ |
+
+> *`/sub/:format/:token` 使用长随机 token 鉴权，请勿泄露。
+
+---
+
+## ⏰ 定时任务一览
+
+| 任务 | 触发 | 说明 |
+|------|------|------|
+| 订阅自动更新 | 每小时 Cron 触发，命中设定小时才执行 | 默认每天北京 07:00，设置页可调 |
+| 规则目录同步 | 每月 1 号 03:00 UTC | 同步 MetaCubeX 最新分类清单 |
+| 清洗规则自动应用 | 每次订阅更新完成后 | 无独立定时，跟随更新 |
+| 客户端侧 | Mihomo rule-providers 86400s / url-test 1800s | 输出配置内建，非 Worker 定时 |
+
+无人访问时项目仅消耗每小时 1 次 Cron 触发（约 24 次/天），远低于 Cloudflare 免费额度。
 
 ---
 
@@ -179,40 +219,40 @@ Mihomo/OpenClash 输出中的核心策略组默认关系：
 
 ```
 src/
-├── index.ts           # Worker 入口 + 依赖装配
+├── index.ts           # Worker 入口 + scheduled handler + 依赖装配
 ├── meta.ts            # 项目元信息（版本、仓库、作者）
 ├── api/
 │   ├── routes.ts      # Hono 路由（所有 API 端点）
-│   ├── middleware.ts   # 认证 / 错误处理 / 请求解析
+│   ├── middleware.ts  # 认证 / 错误处理 / 请求解析
 │   └── rate-limit.ts  # 登录限流
 ├── services/
-│   ├── auth.service.ts       # 认证服务（PBKDF2 Session）
-│   ├── config.service.ts     # 配置服务（规则选择 + 自定义规则）
-│   └── subscription.service.ts  # 订阅服务
+│   ├── auth.service.ts          # 认证服务（用户名+密码, PBKDF2 Session）
+│   ├── config.service.ts        # 配置服务（规则选择/自定义规则/清洗规则/输出生成）
+│   ├── subscription.service.ts  # 订阅服务（更新后自动应用清洗规则）
+│   └── ip-geo.service.ts        # IP 归属地查询（30 天 KV 缓存）
 ├── engine/
-│   ├── fetcher.ts     # 订阅内容获取（SSRF 防护）
-│   └── parser.ts      # 内容解析调度
-├── parser/            # 协议解析器（vmess/vless/trojan/ss）
+│   └── fetcher.ts     # 订阅内容获取（SSRF 防护）
+├── parser/            # 协议解析器（vmess/vless/trojan/ss/clash/base64）
 ├── generator/
-│   ├── mihomo.ts      # Mihomo YAML 生成器
+│   ├── mihomo.ts      # Mihomo YAML 生成器（策略组/DNS/Sniffer/rule-providers）
+│   ├── singbox.ts     # sing-box 1.11+ 生成器
+│   ├── loon.ts / surge.ts / quantumultx.ts / shadowrocket.ts
+│   ├── base64-generator.ts / node-to-url.ts
 │   ├── rule-providers.ts  # 分流规则提供者生成
 │   └── yaml-serializer.ts # YAML 序列化
 ├── models/
-│   └── node.ts        # 节点数据模型
+│   ├── node.ts        # 节点数据模型（含 metadata.originalName）
+│   └── clean-rule.ts  # 节点名清洗规则模型
 ├── data/
-│   ├── metacubex-rules.ts   # 预定义规则分组（11 大类 80+ 规则）
-│   └── metacubex-catalog.json  # 全量 1546 分类目录
+│   ├── metacubex-rules.ts       # 预定义规则分组（细分优先排序）
+│   └── metacubex-catalog.json   # 全量 1546 分类目录
 ├── storage/
 │   └── kv.ts          # KV 仓储层（Repository Pattern）
 ├── html.js            # 构建生成的前端内嵌模块
 public/
-└── index.html         # 前端 SPA（构建时内嵌）
+└── index.html         # 前端 SPA（Stripe 风格，构建时内嵌）
 tests/
-├── unit/              # 单元测试
-├── integration/       # 集成测试（使用 MemoryKvAdapter）
-├── generator/         # 生成器测试
-├── data/              # 数据层测试
-└── services/          # 服务层测试
+├── api/ integration/ engine/ generator/ data/ services/ storage/
 ```
 
 ---
@@ -220,7 +260,7 @@ tests/
 ## 🔐 安全设计
 
 - **SSRF 防护**：拒绝 localhost / 私有 IP / 内网地址，重定向二次校验
-- **密码安全**：PBKDF2-SHA256 哈希 + 随机盐
+- **密码安全**：PBKDF2-SHA256 哈希 + 随机盐；改密码需验证旧密码
 - **Session 管理**：HttpOnly + Secure + SameSite=Strict Cookie，7 天过期
 - **XSS 防护**：前端所有用户输入在插入 DOM 前转义
 - **登录限流**：10 次/分钟/IP，防暴力破解
@@ -231,12 +271,11 @@ tests/
 ## 🧪 测试
 
 ```bash
-npm test         # 运行所有测试
+npm test         # 运行所有测试（299 项）
 npm run lint     # ESLint 检查
-npm run build    # 类型检查 + 前端构建
+npm run typecheck # TypeScript 类型检查
+npm run build    # 构建（含前端内嵌）
 ```
-
-当前测试覆盖：244 项测试（单元 + 集成 + 生成器 + 数据层）
 
 ---
 
