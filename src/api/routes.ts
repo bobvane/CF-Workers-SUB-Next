@@ -202,55 +202,6 @@ export function createApp(deps: AppDeps): Hono {
 
   // ============ Node API ============
 
-  // 节点名清洗预览：返回将受影响的节点（不修改）
-  app.post('/api/nodes/clean/preview', requireAuth(auth), async (c) => {
-    const body = await readBody<{ pattern?: string; regex?: boolean }>(c);
-    const pattern = (body.pattern || '').trim();
-    if (!pattern) return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'pattern 必填' } }, 400);
-
-    let matcher: (name: string) => string;
-    if (body.regex) {
-      try {
-        const re = new RegExp(pattern, 'g');
-        matcher = (n) => n.replace(re, '');
-      } catch {
-        return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: '正则表达式无效' } }, 400);
-      }
-    } else {
-      matcher = (n) => n.split(pattern).join('');
-    }
-    const all = await repos.nodes.getAll();
-    const affected = all.filter((n) => matcher(n.name) !== n.name);
-    return c.json({
-      success: true,
-      data: {
-        count: affected.length,
-        samples: affected.slice(0, 10).map((n) => ({ before: n.name, after: matcher(n.name).trim() })),
-      },
-    });
-  });
-
-  // 节点名清洗执行（一次性手动，保留兼容）
-  app.post('/api/nodes/clean', requireAuth(auth), async (c) => {
-    const body = await readBody<{ pattern?: string; regex?: boolean }>(c);
-    const pattern = (body.pattern || '').trim();
-    if (!pattern) return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'pattern 必填' } }, 400);
-
-    let transform: (name: string) => string;
-    if (body.regex) {
-      try {
-        const re = new RegExp(pattern, 'g');
-        transform = (n) => n.replace(re, '').trim();
-      } catch {
-        return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: '正则表达式无效' } }, 400);
-      }
-    } else {
-      transform = (n) => n.split(pattern).join('').trim();
-    }
-    const changed = await repos.nodes.renameAll(transform);
-    return c.json({ success: true, data: { changed } });
-  });
-
   // ============ 持久化清洗规则（订阅更新后自动应用） ============
 
   app.get('/api/nodes/clean-rules', requireAuth(auth), async (c) => {

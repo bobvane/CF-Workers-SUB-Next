@@ -323,7 +323,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <button class="btn btn-primary" onclick="showAddSub()">＋ 添加订阅</button>
     </div>
     <table id="subTable">
-      <thead><tr><th>名称</th><th>状态</th><th>节点数</th><th>更新时间</th><th>操作</th></tr></thead>
+      <thead><tr><th>名称</th><th>链接</th><th>状态</th><th>节点数</th><th>更新时间</th><th>操作</th></tr></thead>
       <tbody id="subTableBody"></tbody>
     </table>
   </div>
@@ -345,12 +345,16 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
     </div>
     <div class="card" style="margin:0 0 12px;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <label style="font-size:13px;font-weight:500">🧹 节点名清洗</label>
-      <input id="cleanPattern" placeholder="输入要删除的片段，如 地区随机_|_" style="width:auto;flex:1;min-width:200px">
-      <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px"><input type="checkbox" id="cleanRegex"> 正则模式</label>
-      <button class="btn btn-sm" onclick="previewClean()">👁️ 预览</button>
-      <button class="btn btn-sm btn-primary" onclick="applyClean()">🧹 清洗</button>
+      <input id="cleanPattern" placeholder="匹配内容（片段或正则）" style="width:auto;flex:1;min-width:180px">
+      <input id="cleanReplacement" placeholder="替换为（留空=删除）" style="width:auto;min-width:140px">
+      <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px"><input type="checkbox" id="cleanRegex"> 正则</label>
+      <button class="btn btn-sm btn-primary" onclick="saveCleanRule()">💾 保存规则（更新后自动生效）</button>
     </div>
-    <div class="card" id="cleanPreviewBox" style="display:none;margin:0 0 12px;padding:10px 16px;font-size:13px"></div>
+    <div class="card" id="cleanRulesBox" style="display:none;margin:0 0 12px;padding:10px 16px;font-size:13px"></div>
+    <div class="card" style="margin:0 0 12px;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn btn-sm" onclick="applySavedRulesNow()">⚡ 立即应用已保存规则</button>
+      <span style="color:var(--text2);font-size:12px">保存/删除规则时也会自动应用一次</span>
+    </div>
     <table id="nodesTable">
       <thead><tr><th style="width:40px"><input type="checkbox" id="nodeSelectAll" onchange="toggleSelectAll(this)" checked></th><th>名称</th><th>协议</th><th>地址</th><th>端口</th><th>TLS</th><th>操作</th></tr></thead>
       <tbody id="nodesTableBody"></tbody>
@@ -451,6 +455,10 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <div class="form-group">
         <label>系统名称</label>
         <input id="settingAppName" placeholder="CF-Workers-SUB-Next">
+      </div>
+      <div class="form-group">
+        <label>订阅自动更新时间（北京时间 0-23 点整，默认每天 7:00）</label>
+        <input id="settingSubUpdateHour" type="number" min="0" max="23" placeholder="7">
       </div>
       <button class="btn btn-primary mt-12" onclick="saveSettings()">💾 保存</button>
     </div>
@@ -925,12 +933,15 @@ async function loadSubscriptions() {
 function renderSubTable() {
   const tbody = document.getElementById('subTableBody');
   if (state.subscriptions.length === 0) {
-    tbody.innerHTML = '<tr><td colspan="5" class="text-center" style="color:var(--text2);padding:24px">暂无订阅，点击右上角添加</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="6" class="text-center" style="color:var(--text2);padding:24px">暂无订阅，点击右上角添加</td></tr>';
     return;
   }
   tbody.innerHTML = state.subscriptions.map(s => \`
     <tr>
       <td><strong>\${escHtml(s.name)}</strong></td>
+      <td style="font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\${escHtml(s.url || '')}">
+        \${s.url ? \`<a href="\${escHtml(s.url)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">\${escHtml(s.url)}</a>\` : '-'}
+      </td>
       <td><span class="status-\${s.status}">\${s.status === 'active' ? '✅ 正常' : s.status === 'error' ? '❌ 错误' : '⏸ 停用'}</span></td>
       <td>\${s.nodeCount ?? 0}</td>
       <td style="font-size:12px;color:var(--text2)">\${s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '-'}</td>
@@ -999,6 +1010,7 @@ async function loadNodes() {
     }
     renderNodes();
   } catch { toast('加载节点失败', 'error'); }
+  loadCleanRules();
 }
 
 function renderNodes() {
@@ -1031,39 +1043,82 @@ function filterNodes() { renderNodes(); }
 
 // ============ 节点名清洗 ============
 
-function cleanParams() {
-  return {
-    pattern: document.getElementById('cleanPattern').value,
-    regex: document.getElementById('cleanRegex').checked,
-  };
-}
+// ============ 持久化清洗规则 ============
 
-async function previewClean() {
-  const box = document.getElementById('cleanPreviewBox');
+async function loadCleanRules() {
   try {
-    const res = await api('/nodes/clean/preview', { method: 'POST', body: JSON.stringify(cleanParams()) });
-    const d = res.data || { count: 0, samples: [] };
-    if (d.count === 0) {
-      box.style.display = 'block';
-      box.innerHTML = '✅ 没有节点名包含该片段';
+    const res = await api('/nodes/clean-rules');
+    const rules = res.data || [];
+    const box = document.getElementById('cleanRulesBox');
+    if (rules.length === 0) {
+      box.style.display = 'none';
       return;
     }
-    const rows = d.samples.map((s) => \`<div style="margin:2px 0"><code style="color:var(--text2);text-decoration:line-through">\${escHtml(s.before)}</code> → <b>\${escHtml(s.after)}</b></div>\`).join('');
     box.style.display = 'block';
-    box.innerHTML = \`<b>将影响 \${d.count} 个节点</b>（最多预览10条）：\${rows}<div style="color:var(--text2);margin-top:4px">确认无误后点「🧹 清洗」执行</div>\`;
-  } catch (e) { toast('预览失败: ' + e.message, 'error'); }
+    box.innerHTML = '<b style="font-size:13px;color:var(--text1,#061b31)">已保存的清洗规则</b><span style="color:var(--text2);font-size:12px;margin-left:8px">每次订阅更新后自动应用</span><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2px 20px;margin-top:4px">' + rules.map(r =>
+      \`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border,#e5edf5);font-size:13px">
+        <b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\${escHtml(r.pattern)}">\${escHtml(r.pattern)}</b>
+        <input type="checkbox" style="flex-shrink:0;width:16px;height:16px;cursor:pointer" \${r.enabled ? 'checked' : ''} onchange="toggleCleanRule('\${r.id}', this.checked)" title="启用/停用">
+        <button class="btn btn-sm btn-danger" style="flex-shrink:0" onclick="deleteCleanRule('\${r.id}')">🗑</button>
+      </div>\`
+    ).join('') + '</div>';
+  } catch { /* 静默 */ }
 }
 
-async function applyClean() {
-  const p = cleanParams();
-  if (!p.pattern.trim()) { toast('请先输入要删除的片段', 'error'); return; }
-  if (!confirm('确定清洗所有匹配的节点名？此操作直接修改存储的节点名。')) return;
+async function saveCleanRule() {
+  const pattern = document.getElementById('cleanPattern').value.trim();
+  if (!pattern) { toast('请输入匹配内容', 'error'); return; }
   try {
-    const res = await api('/nodes/clean', { method: 'POST', body: JSON.stringify(p) });
-    toast(\`清洗完成，已重命名 \${res.data?.changed ?? 0} 个节点\`);
-    document.getElementById('cleanPreviewBox').style.display = 'none';
+    await api('/nodes/clean-rules', {
+      method: 'POST',
+      body: JSON.stringify({
+        pattern,
+        replacement: document.getElementById('cleanReplacement').value,
+        regex: document.getElementById('cleanRegex').checked,
+      }),
+    });
+    toast('规则已保存并已应用到当前节点');
+    document.getElementById('cleanPattern').value = '';
+    document.getElementById('cleanReplacement').value = '';
+    document.getElementById('cleanRegex').checked = false;
+    // 保存后立即对存量节点应用一次全部启用规则，不等下次订阅更新
+    try {
+      const res = await api('/nodes/clean-rules/apply', { method: 'POST' });
+      toast(\`已重命名 \${res.data?.changed ?? 0} 个节点\`);
+    } catch { /* 应用失败不阻塞保存 */ }
     loadNodes();
-  } catch (e) { toast('清洗失败: ' + e.message, 'error'); }
+    loadCleanRules();
+  } catch (e) { toast('保存失败: ' + e.message, 'error'); }
+}
+
+async function deleteCleanRule(id) {
+  if (!confirm('删除这条清洗规则？删除后剩余规则会立即重新应用到全部节点。')) return;
+  try {
+    await api('/nodes/clean-rules/' + id, { method: 'DELETE' });
+    // 删除后立即重应用（被删掉的规则效果会还原，如"删除XX"删掉后 XX 会重新出现）
+    try {
+      const res = await api('/nodes/clean-rules/apply', { method: 'POST' });
+      toast(\`已删除，并重应用规则（\${res.data?.changed ?? 0} 个节点受影响）\`);
+    } catch { /* 静默 */ }
+    loadNodes();
+    loadCleanRules();
+  } catch (e) { toast('删除失败: ' + e.message, 'error'); }
+}
+
+async function toggleCleanRule(id, enabled) {
+  try {
+    await api('/nodes/clean-rules/' + id + '/toggle', { method: 'PUT', body: JSON.stringify({ enabled }) });
+    toast(enabled ? '规则已启用' : '规则已停用');
+  } catch (e) { toast('操作失败: ' + e.message, 'error'); }
+}
+
+async function applySavedRulesNow() {
+  if (!confirm('立即对全部节点执行已保存的清洗规则？')) return;
+  try {
+    const res = await api('/nodes/clean-rules/apply', { method: 'POST' });
+    toast(\`已重命名 \${res.data?.changed ?? 0} 个节点\`);
+    loadNodes();
+  } catch (e) { toast('执行失败: ' + e.message, 'error'); }
 }
 
 function copyNodeLink(fingerprint) {
@@ -1313,6 +1368,7 @@ async function loadSettings() {
   try {
     const data = await api('/settings');
     document.getElementById('settingAppName').value = data.data?.app_name || '';
+    document.getElementById('settingSubUpdateHour').value = data.data?.sub_auto_update_hour ?? 7;
   } catch {}
   loadCatalogStatus();
   searchCatalog(); // 默认显示前 100 个分类
@@ -1320,8 +1376,11 @@ async function loadSettings() {
 
 async function saveSettings() {
   const appName = document.getElementById('settingAppName').value.trim();
+  const hourRaw = document.getElementById('settingSubUpdateHour').value.trim();
+  const subHour = hourRaw === '' ? 7 : parseInt(hourRaw, 10);
+  if (Number.isNaN(subHour) || subHour < 0 || subHour > 23) { toast('更新时间须为 0-23 的整数', 'error'); return; }
   try {
-    await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName }) });
+    await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName, sub_auto_update_hour: subHour }) });
     toast('设置已保存');
     // 立即刷新页面标题
     document.getElementById('sidebarLogo').textContent = appName;
