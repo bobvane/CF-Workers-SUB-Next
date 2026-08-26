@@ -1062,14 +1062,12 @@ async function loadCleanRules() {
       return;
     }
     box.style.display = 'block';
-    box.innerHTML = '<b style="font-size:13px">📌 已保存的清洗规则（每次订阅更新后自动应用）</b>' + rules.map(r =>
-      `<div style="display:flex;align-items:center;gap:8px;margin-top:6px;padding:4px 0;border-bottom:1px solid var(--border)">
-        <input type="checkbox" ${r.enabled ? 'checked' : ''} onchange="toggleCleanRule('${r.id}', this.checked)">
-        <span style="color:var(--text2);font-size:12px;white-space:nowrap">${escHtml(r.pattern)}</span>
-        <span style="color:var(--text2)">→</span>
-        <b style="white-space:nowrap">${r.replacement ? escHtml(r.replacement) : '(删除)'}</b>
-        ${r.regex ? '<span class="tag">正则</span>' : ''}
-        <button class="btn btn-sm btn-danger" style="margin-left:auto" onclick="deleteCleanRule('${r.id}')">🗑</button>
+    box.innerHTML = '<b style="font-size:13px;color:var(--text1,#061b31)">已保存的清洗规则</b><span style="color:var(--text2);font-size:12px;margin-left:8px">每次订阅更新后自动应用</span>' + rules.map(r =>
+      `<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid var(--border,#e5edf5);font-size:13px">
+        <b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${escHtml(r.pattern)}">${escHtml(r.pattern)}</b>
+        <span style="color:var(--text2);white-space:nowrap;flex-shrink:0">→ ${r.replacement ? escHtml(r.replacement) : '删除'}${r.regex ? ' · 正则' : ''}</span>
+        <input type="checkbox" style="flex-shrink:0;width:16px;height:16px;cursor:pointer" ${r.enabled ? 'checked' : ''} onchange="toggleCleanRule('${r.id}', this.checked)" title="启用/停用">
+        <button class="btn btn-sm btn-danger" style="flex-shrink:0" onclick="deleteCleanRule('${r.id}')">🗑</button>
       </div>`
     ).join('');
   } catch { /* 静默 */ }

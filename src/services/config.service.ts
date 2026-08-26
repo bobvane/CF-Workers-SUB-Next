@@ -207,13 +207,14 @@ export function createConfigService(repos: Repositories): ConfigService {
 
     async applyCleanRulesNow() {
       const rules = await this.getCleanRules();
-      if (rules.length === 0) return 0;
       let changed = 0;
       for (const sub of await repos.subscriptions.list()) {
         const nodes = await repos.nodes.getBySubscription(sub.id);
         let subChanged = false;
         const transformed = nodes.map((n) => {
-          const newName = applyCleanRules(n.name, rules);
+          // 始终从原始名出发应用全部启用规则（幂等且删除规则后可正确还原）
+          const base = n.metadata?.originalName ?? n.name;
+          const newName = applyCleanRules(base, rules);
           if (newName !== n.name) {
             changed++;
             subChanged = true;
