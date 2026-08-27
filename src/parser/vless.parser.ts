@@ -49,11 +49,13 @@ export function parseVless(input: string): ParserResult {
     const type = params.get('type') ?? 'tcp';
     const path = params.get('path') ?? undefined;
     const host = params.get('host') ?? params.get('sni') ?? undefined;
+    const mode = params.get('mode') ?? undefined;
 
     const transport: Transport = {
-      type: type === 'ws' ? 'ws' : type === 'grpc' ? 'grpc' : 'tcp',
+      type: type === 'ws' ? 'ws' : type === 'grpc' ? 'grpc' : type === 'xhttp' ? 'xhttp' : 'tcp',
       path,
       host,
+      mode: type === 'xhttp' ? mode : undefined,
     };
 
     const node: Node = createNode({

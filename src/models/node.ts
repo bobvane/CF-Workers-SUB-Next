@@ -11,12 +11,14 @@ export type NodeProtocol =
   | 'hysteria2'
   | 'tuic';
 
-export type TransportType = 'tcp' | 'ws' | 'grpc' | 'h2';
+export type TransportType = 'tcp' | 'ws' | 'grpc' | 'h2' | 'xhttp';
 
 export interface Transport {
   type: TransportType;
   path?: string;
   host?: string;
+  /** xhttp 模式：auto | stream-one | stream-up | packet-up（官方 Mihomo 专有，仅 VLESS 支持） */
+  mode?: string;
 }
 
 export interface NodeMetadata {

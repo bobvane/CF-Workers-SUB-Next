@@ -28,6 +28,11 @@ interface ClashProxy {
   'grpc-opts'?: {
     'grpc-service-name'?: string;
   };
+  'xhttp-opts'?: {
+    path?: string;
+    host?: string;
+    mode?: string;
+  };
   realityOpts?: {
     'public-key'?: string;
     'short-id'?: string;
@@ -204,9 +209,18 @@ function parseClashTransport(proxy: ClashProxy): Transport | undefined {
   if (network === 'grpc' && proxy['grpc-opts']) {
     return {
       type: 'grpc',
-      path: proxy['grpc-opts']['grpc-service-name'] 
-        ? '/' + proxy['grpc-opts']['grpc-service-name'] 
+      path: proxy['grpc-opts']['grpc-service-name']
+        ? '/' + proxy['grpc-opts']['grpc-service-name']
         : undefined,
+    };
+  }
+
+  if (network === 'xhttp' && proxy['xhttp-opts']) {
+    return {
+      type: 'xhttp',
+      path: proxy['xhttp-opts'].path,
+      host: proxy['xhttp-opts'].host,
+      mode: proxy['xhttp-opts'].mode,
     };
   }
 
