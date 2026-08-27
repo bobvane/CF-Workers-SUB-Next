@@ -138,10 +138,57 @@ describe('buildRules 优先级 V3.1', () => {
     ], RULE_GROUPS);
     // 所有国内规则行的 target 必须是 DIRECT
     for (const line of rules) {
-      if (line.startsWith('RULE-SET,geosite-bilibili') || 
+      if (line.startsWith('RULE-SET,geosite-bilibili') ||
           line.startsWith('RULE-SET,geosite-cn')) {
         expect(line.endsWith(',DIRECT')).toBe(true);
       }
+    }
+  });
+});
+
+describe('国内直连组重构（v2.8.x）：@cn 属性过滤走 GEOSITE', () => {
+  it('@cn 条目输出 GEOSITE 语法且不含 @ 字符串误拼', () => {
+    const rules = buildRules([
+      rule('MICROSOFT@CN', 'DIRECT'),
+      rule('STEAM@CN', 'DIRECT'),
+      rule('CATEGORY-GAMES@CN', 'DIRECT'),
+    ], RULE_GROUPS);
+    expect(rules).toContain('GEOSITE,MICROSOFT@CN,DIRECT');
+    expect(rules).toContain('GEOSITE,STEAM@CN,DIRECT');
+    expect(rules).toContain('GEOSITE,CATEGORY-GAMES@CN,DIRECT');
+    // @attr 条目不应出现 RULE-SET + @ 的无效写法
+    expect(rules.some(l => l.includes('RULE-SET') && l.includes('@'))).toBe(false);
+  });
+
+  it('@cn 条目不生成 rule-provider（走内核 GEOSITE）', () => {
+    const providers = buildRuleProviders([
+      rule('MICROSOFT@CN', 'DIRECT'),
+      rule('APPLE-CN', 'DIRECT'),
+    ]);
+    // APPLE-CN 是真实 mrs，生成 provider；MICROSOFT@CN 不生成
+    expect(Object.keys(providers)).toContain('geosite-apple-cn');
+    expect(Object.keys(providers)).not.toContain('geosite-microsoft@cn');
+  });
+
+  it('真实独立列表（APPLE-CN）走 RULE-SET', () => {
+    const rules = buildRules([
+      rule('APPLE-CN', 'DIRECT'),
+    ], RULE_GROUPS);
+    expect(rules).toContain('RULE-SET,geosite-apple-cn,DIRECT');
+  });
+
+  it('被 geosite:cn 覆盖的冗余条目（BAIDU/ALIBABA 等）不再默认出现', () => {
+    // 用真实 RULE_GROUPS 跑，确认 BAIDU/ALIBABA/TENCENT/JD 等已从 china-direct 移除
+    const cd = RULE_GROUPS.find(g => g.key === 'china-direct')!;
+    const ids = cd.items.map(i => i.id);
+    expect(ids).toContain('PRIVATE');
+    expect(ids).toContain('CN');
+    expect(ids).toContain('APPLE-CN');
+    expect(ids).toContain('MICROSOFT@CN');
+    expect(ids).toContain('STEAM@CN');
+    expect(ids).toContain('CATEGORY-GAMES@CN');
+    for (const removed of ['BAIDU', 'ALIBABA', 'TENCENT', 'JD', 'XIAOMI', 'HUAWEI', 'UNIONPAY', 'MEITUAN', 'KUAISHOU', 'XIAOHONGSHU', 'SUNING', 'XUNLEI']) {
+      expect(ids).not.toContain(removed);
     }
   });
 });

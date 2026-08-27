@@ -36,7 +36,9 @@ export function buildRuleProvider(rule: MetaCubeXRule): {
   behavior: 'domain';
   format: 'mrs';
   type: 'http';
-} {
+} | null {
+  // @attr 属性过滤条目（如 MICROSOFT@CN）走 GEOSITE 语法，不生成 rule-provider
+  if (rule.id.includes('@')) return null;
   return {
     name: providerName(rule.id),
     type: 'http',
@@ -90,8 +92,12 @@ export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []):
   return g.name;
 }
 
-/** 单条规则的 RULE-SET 输出行（按大类分组路由） */
+/** 单条规则的 RULE-SET / GEOSITE 输出行（按大类分组路由） */
 export function ruleSetLine(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
+  // @attr 属性过滤条目（如 MICROSOFT@CN）走 GEOSITE 语法，内核按 @attr 现筛
+  if (rule.id.includes('@')) {
+    return `GEOSITE,${rule.id},${ruleActionTarget(rule, groups)}`;
+  }
   return `RULE-SET,${providerName(rule.id)},${ruleActionTarget(rule, groups)}`;
 }
 
@@ -103,6 +109,7 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
   const providers: Record<string, unknown> = {};
   for (const rule of selected) {
     const p = buildRuleProvider(rule);
+    if (!p) continue; // @attr 条目不生成 rule-provider（走 GEOSITE）
     providers[p.name] = {
       type: p.type,
       behavior: p.behavior,
@@ -176,8 +183,12 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     for (const item of g.items) {
       if (item.custom) continue; // 自定义规则已在 ② 置顶输出
       if (selectedSet.has(item.id)) {
-        // 国内规则直接写 RULE-SET,xxx,DIRECT（不走策略组）
-        lines.push(`RULE-SET,${providerName(item.id)},DIRECT`);
+        // @attr 条目走 GEOSITE 语法（内核按 @attr 现筛），其余走 RULE-SET
+        if (item.id.includes('@')) {
+          lines.push(`GEOSITE,${item.id},DIRECT`);
+        } else {
+          lines.push(`RULE-SET,${providerName(item.id)},DIRECT`);
+        }
       }
     }
   }
@@ -187,6 +198,9 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     const parts = l.split(',');
     if (parts[0] === 'RULE-SET' && parts[1].startsWith('geosite-')) {
       return parts[1].slice(8).toUpperCase();
+    }
+    if (parts[0] === 'GEOSITE') {
+      return parts[1].toUpperCase();
     }
     // 处理 GEOIP,private,DIRECT 等硬编码行
     return parts[0];
