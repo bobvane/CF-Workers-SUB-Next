@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { generateMihomoConfig, generateProxyGroups, nodeToMihomoProxy, validateMihomo } from '@/generator/mihomo';
 import { Node } from '@/models/node';
-import { RULE_GROUPS } from '@/data/metacubex-rules';
+import { RULE_GROUPS, MetaCubeXRule } from '@/data/metacubex-rules';
 
 function makeNode(overrides: Partial<Node> = {}): Node {
   return {
@@ -129,9 +129,10 @@ describe('generateMihomoConfig', () => {
     expect(byName.get('广告拦截')?.['default-selected']).toBe('REJECT');
     expect(byName.get('国外媒体')?.['default-selected']).toBe('自动选择');
     expect(byName.get('GLOBAL')?.['default-selected']).toBe('节点选择'); // V3.1: GLOBAL默认节点选择
-    // V3.1: 不再有 应用净化、国内媒体 策略组
+    // V3.1+: 国内直连/国内媒体为条件组（勾选国内规则才生成，空规则不生成）
     expect(byName.has('应用净化')).toBe(false);
     expect(byName.has('国内媒体')).toBe(false);
+    expect(byName.has('国内直连')).toBe(false);
     for (const name of ['节点选择', '广告拦截', '国外媒体', '漏网之鱼', 'GLOBAL']) {
       const group = byName.get(name);
       expect(group?.proxies).toContain(group?.['default-selected']);
@@ -152,7 +153,8 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('自动选择');
     expect(yaml).toContain('国外媒体');
     expect(yaml).toContain('广告拦截');
-    expect(yaml).not.toContain('国内媒体'); // V3.1: 移除
+    expect(yaml).toContain('国内媒体'); // V3.1+: 国内媒体作为固化策略组自动生成
+    expect(yaml).toContain('国内直连'); // V3.1+: 国内直连作为固化策略组自动生成
     expect(yaml).not.toContain('应用净化'); // V3.1: 移除
     expect(yaml).toContain('GLOBAL');
     // MATCH 兜底到漏网之鱼
@@ -166,6 +168,28 @@ describe('generateMihomoConfig', () => {
     ]);
     expect(yaml).toContain('JP-01');
     expect(yaml).toContain('US-01');
+  });
+
+  it('should generate 国内直连/国内媒体 policy groups when domestic rules selected (regression: #国内直连组可见性)', async () => {
+    const selectedRules: MetaCubeXRule[] = [
+      { id: 'CN', label: '中国直连', tag: 'geosite' as const, target: 'DIRECT' as const },
+      { id: 'BILIBILI', label: '哔哩哔哩', tag: 'geosite' as const, target: 'DIRECT' as const },
+    ];
+    const groups = await generateProxyGroups(
+      [makeNode({ name: 'JP-01' })],
+      selectedRules,
+      RULE_GROUPS
+    );
+    const byName = new Map(groups.map(g => [g.name, g]));
+    // 用户报 bug：面板看不到国内直连组 → 必须生成且默认 DIRECT
+    expect(byName.has('国内直连')).toBe(true);
+    expect(byName.has('国内媒体')).toBe(true);
+    expect(byName.get('国内直连')?.['default-selected']).toBe('DIRECT');
+    expect(byName.get('国内媒体')?.['default-selected']).toBe('DIRECT');
+    // 规则层面必须指向该组（不再是裸 DIRECT）
+    const yaml = await generateMihomoConfig([makeNode({ name: 'JP-01' })], undefined, selectedRules, RULE_GROUPS);
+    expect(yaml).toContain('RULE-SET,geosite-cn,国内直连');
+    expect(yaml).toContain('RULE-SET,geosite-bilibili,国内媒体');
   });
 
   it('should be valid YAML with proxies array', async () => {
