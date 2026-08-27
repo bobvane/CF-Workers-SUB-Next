@@ -44,10 +44,9 @@ describe('providerName / providerUrl', () => {
     expect(ruleActionTarget(rule('CATEGORY-ADS', 'REJECT'), RULE_GROUPS)).toBe('广告拦截');
   });
 
-  it('ruleActionTarget DIRECT (china-direct/china-media) → 指向对应策略组', () => {
-    // V3.1+: 国内规则指向「国内直连」/「国内媒体」策略组（组默认 DIRECT，面板可切换）
-    expect(ruleActionTarget(rule('BILIBILI', 'DIRECT'), RULE_GROUPS)).toBe('国内媒体');
-    expect(ruleActionTarget(rule('CN', 'DIRECT'), RULE_GROUPS)).toBe('国内直连');
+  it('ruleActionTarget DIRECT (china-direct/china-media) → 直接 DIRECT（面板按 →DIRECT 归类，与 v2.8.1 一致）', () => {
+    expect(ruleActionTarget(rule('BILIBILI', 'DIRECT'), RULE_GROUPS)).toBe('DIRECT');
+    expect(ruleActionTarget(rule('CN', 'DIRECT'), RULE_GROUPS)).toBe('DIRECT');
   });
 
   it('ruleActionTarget 流媒体 PROXY → 国外媒体', () => {
@@ -98,8 +97,8 @@ describe('buildRules 优先级 V3.1', () => {
     const privateIdx = rules.indexOf('GEOIP,private,DIRECT');
     const adsIdx = rules.indexOf('RULE-SET,geosite-category-ads-all,广告拦截');
     const openaiIdx = rules.indexOf('RULE-SET,geosite-openai,AI 平台');
-    const cnIdx = rules.indexOf('RULE-SET,geosite-cn,国内直连');          // china-direct 组（指向策略组）
-    const bilibiliIdx = rules.indexOf('RULE-SET,geosite-bilibili,国内媒体'); // china-media 组（指向策略组）
+    const cnIdx = rules.indexOf('RULE-SET,geosite-cn,DIRECT');          // china-direct 组
+    const bilibiliIdx = rules.indexOf('RULE-SET,geosite-bilibili,DIRECT'); // china-media 组
     const geoSiteCnIdx = rules.indexOf('GEOSITE,cn,DIRECT');
     const geoIpCnIdx = rules.indexOf('GEOIP,CN,DIRECT');
     const matchIdx = rules.indexOf('MATCH,漏网之鱼');
@@ -131,20 +130,20 @@ describe('buildRules 优先级 V3.1', () => {
     expect(rules[rules.length - 1]).toBe('MATCH,漏网之鱼');
   });
 
-  it('国内规则 RULE-SET 出口指向对应策略组（非裸 DIRECT）', () => {
+  it('国内规则 RULE-SET 出口保持 →DIRECT（面板按 →DIRECT 归类，与 v2.8.1 一致）', () => {
     const rules = buildRules([
       rule('BILIBILI', 'DIRECT'),
       rule('CN', 'DIRECT'),
     ], RULE_GROUPS);
-    // CN 在 china-direct 组 → 指向「国内直连」；BILIBILI 在 china-media 组 → 指向「国内媒体」
-    expect(rules).toContain('RULE-SET,geosite-cn,国内直连');
-    expect(rules).toContain('RULE-SET,geosite-bilibili,国内媒体');
+    // CN / BILIBILI 国内规则 → DIRECT（不被改指向组名，否则破坏面板归类显示）
+    expect(rules).toContain('RULE-SET,geosite-cn,DIRECT');
+    expect(rules).toContain('RULE-SET,geosite-bilibili,DIRECT');
     for (const line of rules) {
       if (line.startsWith('RULE-SET,geosite-cn')) {
-        expect(line.endsWith(',国内直连')).toBe(true);
+        expect(line.endsWith(',DIRECT')).toBe(true);
       }
       if (line.startsWith('RULE-SET,geosite-bilibili')) {
-        expect(line.endsWith(',国内媒体')).toBe(true);
+        expect(line.endsWith(',DIRECT')).toBe(true);
       }
     }
   });
@@ -174,11 +173,11 @@ describe('国内直连组重构（v2.8.x）：@cn 属性过滤走 GEOSITE', () =
     expect(Object.keys(providers)).not.toContain('geosite-microsoft@cn');
   });
 
-  it('真实独立列表（APPLE-CN）走 RULE-SET 指向「国内直连」策略组', () => {
+  it('真实独立列表（APPLE-CN）走 RULE-SET,geosite-apple-cn,DIRECT', () => {
     const rules = buildRules([
       rule('APPLE-CN', 'DIRECT'),
     ], RULE_GROUPS);
-    expect(rules).toContain('RULE-SET,geosite-apple-cn,国内直连');
+    expect(rules).toContain('RULE-SET,geosite-apple-cn,DIRECT');
   });
 
   it('被 geosite:cn 覆盖的冗余条目（BAIDU/ALIBABA 等）不再默认出现', () => {

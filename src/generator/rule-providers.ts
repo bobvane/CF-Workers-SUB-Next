@@ -70,9 +70,9 @@ export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []):
     return '广告拦截';
   }
 
-  // 国内直连/国内媒体规则 → 指向对应策略组（组默认 DIRECT，面板可切换）
+  // 国内直连/国内媒体规则 → 直接 DIRECT（面板按 →DIRECT 自动归类为「国内直连」）
   if (g && (g.key === 'china-direct' || g.key === 'china-media')) {
-    return g.name;
+    return 'DIRECT';
   }
 
   // DIRECT 目标：有归属按归属组，无归属直接 DIRECT
@@ -176,18 +176,17 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     }
   }
 
-  // === ⑤ 国内直连 / 国内媒体规则（生成 rule-provider，规则指向对应策略组，组默认 DIRECT）===
+  // === ⑤ 国内直连 / 国内媒体规则（生成 rule-provider，规则直接 →DIRECT，与 v2.8.1 归类显示一致）===
   for (const g of groups) {
     if (g.key !== 'china-direct' && g.key !== 'china-media') continue;
     for (const item of g.items) {
       if (item.custom) continue; // 自定义规则已在 ② 置顶输出
       if (selectedSet.has(item.id)) {
-        // @attr 属性过滤条目（如 MICROSOFT@CN）走 GEOSITE 语法直连（内核按 @attr 现筛，无 provider）
+        // @attr 条目走 GEOSITE 语法直连（内核按 @attr 现筛），其余走 RULE-SET,geosite-xxx,DIRECT
         if (item.id.includes('@')) {
           lines.push(`GEOSITE,${item.id},DIRECT`);
         } else {
-          // 真实 mrs 条目走 RULE-SET 指向对应策略组（组默认 DIRECT，面板可切换）
-          lines.push(`RULE-SET,${providerName(item.id)},${g.name}`);
+          lines.push(`RULE-SET,${providerName(item.id)},DIRECT`);
         }
       }
     }

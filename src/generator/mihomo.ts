@@ -470,24 +470,8 @@ export async function generateProxyGroups(
     proxies: ['REJECT', 'DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
   });
 
-  // 7. 国内直连 / 国内媒体（默认 DIRECT，固化策略组，面板可见可切换）
-  //    规则层面 RULE-SET,xxx,国内直连 → 组内默认 DIRECT；用户可在面板切换为代理以调试
-  const domesticGroupDefs = [
-    { key: 'china-direct', icon: 'CN.png' },
-    { key: 'china-media', icon: 'Global.png' },
-  ];
-  for (const def of domesticGroupDefs) {
-    if (!hasSelected(def.key)) continue;
-    const g = ruleGroups.find(gr => gr.key === def.key);
-    if (!g) continue;
-    groups.push({
-      name: g.name,
-      type: 'select',
-      icon: `https://raw.githubusercontent.com/Orz-3/mini/master/Color/${def.icon}`,
-      'default-selected': 'DIRECT',
-      proxies: ['DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
-    });
-  }
+  // 7. 国内直连 / 国内媒体（规则直接 RULE-SET,xxx,DIRECT，面板按 →DIRECT 自动归类为「国内直连」分类，与 v2.8.1 一致）
+  //    注：v2.8.1 不生成独立 proxy-group，靠规则目标 DIRECT 在面板自动归类显示；此处不新增组以免破坏分组方式
 
   // 8. 业务分类策略组（仅当勾选该大类规则时才生成，条件组）
   //    ads(广告拦截) / media(国外媒体) 已由上方固化策略组承接；
@@ -567,8 +551,6 @@ export async function generateProxyGroups(
     '自动选择',
     '广告拦截',
     '国外媒体',
-    '国内直连',
-    '国内媒体',
     ...ruleClassGroupNames,
     '漏网之鱼',
     ...geoGroupNames,
