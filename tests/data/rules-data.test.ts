@@ -41,9 +41,7 @@ describe('MetaCubeX 规则数据完整性', () => {
     const missing: string[] = [];
     for (const g of RULE_GROUPS) {
       for (const it of g.items) {
-        // @attr 属性过滤条目（如 MICROSOFT@CN）基名需在 catalog 中；其余整体匹配
-        const catalogKey = it.id.includes('@') ? it.id.split('@')[0].toUpperCase() : it.id.toUpperCase();
-        if (!catalogIds.has(catalogKey)) {
+        if (!catalogIds.has(it.id.toUpperCase())) {
           missing.push(`${g.key}/${it.id}`);
         }
       }

@@ -43,11 +43,6 @@ function nodeToVlessUrl(node: Node): string {
   } else if (node.transport?.type === 'grpc') {
     params.set('type', 'grpc');
     if (node.transport.path) params.set('serviceName', node.transport.path.replace(/^\//, ''));
-  } else if (node.transport?.type === 'xhttp') {
-    params.set('type', 'xhttp');
-    if (node.transport.path) params.set('path', node.transport.path);
-    if (node.transport.host) params.set('host', node.transport.host);
-    if (node.transport.mode) params.set('mode', node.transport.mode);
   } else {
     params.set('type', 'tcp');
   }

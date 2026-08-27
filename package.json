@@ -1,6 +1,6 @@
 {
   "name": "cf-workers-sub-next",
-  "version": "2.8.4",
+  "version": "2.8.5",
   "description": "CF-Workers-SUB-Next V2 - Cloudflare Native 订阅管理与配置生成平台",
   "type": "module",
   "private": true,

@@ -169,14 +169,6 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
           grpcServiceName: node.transport.path?.replace(/^\/+/, '') || '',
         };
       }
-      if (node.transport?.type === 'xhttp') {
-        base.network = 'xhttp';
-        base['xhttp-opts'] = {
-          path: node.transport.path,
-          host: node.transport.host,
-          mode: node.transport.mode,
-        };
-      }
       // Reality：字段名用连字符 reality-opts，加 client-fingerprint 做 TLS 指纹伪装
       if (node.pbk) {
         const realityOpts: Record<string, string> = {

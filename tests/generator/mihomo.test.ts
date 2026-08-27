@@ -303,31 +303,3 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('其他');
   });
 });
-
-describe('VLESS + XHTTP 传输层支持（v2.8.x 修复）', () => {
-  it('nodeToMihomoProxy 应输出 network: xhttp + xhttp-opts', async () => {
-    const proxy = nodeToMihomoProxy(
-      makeNode({
-        tls: true,
-        transport: { type: 'xhttp', path: '/upload', host: 'x.example.com', mode: 'stream-one' },
-      })
-    );
-    expect(proxy.network).toBe('xhttp');
-    const xhttpOpts = proxy['xhttp-opts'] as Record<string, unknown>;
-    expect(xhttpOpts.path).toBe('/upload');
-    expect(xhttpOpts.host).toBe('x.example.com');
-    expect(xhttpOpts.mode).toBe('stream-one');
-  });
-
-  it('xhttp 节点不应退化为裸 TCP（generateMihomoConfig 全链路）', async () => {
-    const yaml = await generateMihomoConfig([
-      makeNode({
-        name: 'XHTTP-节点',
-        transport: { type: 'xhttp', path: '/', host: 'x.example.com' },
-      }),
-    ]);
-    expect(yaml).toContain('network: xhttp');
-    expect(yaml).toContain('xhttp-opts');
-    expect(yaml).not.toMatch(/XHTTP-节点[\s\S]*?network: tcp/);
-  });
-});
