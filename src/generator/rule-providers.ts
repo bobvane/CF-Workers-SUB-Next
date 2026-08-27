@@ -36,9 +36,7 @@ export function buildRuleProvider(rule: MetaCubeXRule): {
   behavior: 'domain';
   format: 'mrs';
   type: 'http';
-} | null {
-  // @attr 属性过滤条目（如 MICROSOFT@CN）走 GEOSITE 语法，不生成 rule-provider
-  if (rule.id.includes('@')) return null;
+} {
   return {
     name: providerName(rule.id),
     type: 'http',
@@ -70,7 +68,7 @@ export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []):
     return '广告拦截';
   }
 
-  // 国内直连/国内媒体规则 → 直接 DIRECT（面板按 →DIRECT 自动归类为「国内直连」）
+  // 国内直连/国内媒体规则 → 直接 DIRECT（不建策略组）
   if (g && (g.key === 'china-direct' || g.key === 'china-media')) {
     return 'DIRECT';
   }
@@ -92,12 +90,8 @@ export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []):
   return g.name;
 }
 
-/** 单条规则的 RULE-SET / GEOSITE 输出行（按大类分组路由） */
+/** 单条规则的 RULE-SET 输出行（按大类分组路由） */
 export function ruleSetLine(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
-  // @attr 属性过滤条目（如 MICROSOFT@CN）走 GEOSITE 语法，内核按 @attr 现筛
-  if (rule.id.includes('@')) {
-    return `GEOSITE,${rule.id},${ruleActionTarget(rule, groups)}`;
-  }
   return `RULE-SET,${providerName(rule.id)},${ruleActionTarget(rule, groups)}`;
 }
 
@@ -109,7 +103,6 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
   const providers: Record<string, unknown> = {};
   for (const rule of selected) {
     const p = buildRuleProvider(rule);
-    if (!p) continue; // @attr 条目不生成 rule-provider（走 GEOSITE）
     providers[p.name] = {
       type: p.type,
       behavior: p.behavior,
@@ -164,7 +157,8 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   }
 
   // === ④ 业务分类：按 RULE_GROUPS 顺序输出（细分在前、宽泛在后）===
-  // 跳过 ads（已在第③步处理）；跳过 china-direct / china-media（国内直连规则在⑤步统一输出为指向策略组）
+  // 关键：跳过 china-direct / china-media（它们直接 DIRECT，不生成规则行）
+  // 跳过 ads（已在第③步处理）
   const skipKeys = new Set(['ads', 'china-direct', 'china-media']);
   for (const g of groups) {
     if (skipKeys.has(g.key)) continue;
@@ -176,18 +170,14 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     }
   }
 
-  // === ⑤ 国内直连 / 国内媒体规则（生成 rule-provider，规则直接 →DIRECT，与 v2.8.1 归类显示一致）===
+  // === ⑤ 国内直连规则（china-direct / china-media 组内规则 → 直接 DIRECT）===
   for (const g of groups) {
     if (g.key !== 'china-direct' && g.key !== 'china-media') continue;
     for (const item of g.items) {
       if (item.custom) continue; // 自定义规则已在 ② 置顶输出
       if (selectedSet.has(item.id)) {
-        // @attr 条目走 GEOSITE 语法直连（内核按 @attr 现筛），其余走 RULE-SET,geosite-xxx,DIRECT
-        if (item.id.includes('@')) {
-          lines.push(`GEOSITE,${item.id},DIRECT`);
-        } else {
-          lines.push(`RULE-SET,${providerName(item.id)},DIRECT`);
-        }
+        // 国内规则直接写 RULE-SET,xxx,DIRECT（不走策略组）
+        lines.push(`RULE-SET,${providerName(item.id)},DIRECT`);
       }
     }
   }
@@ -197,9 +187,6 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     const parts = l.split(',');
     if (parts[0] === 'RULE-SET' && parts[1].startsWith('geosite-')) {
       return parts[1].slice(8).toUpperCase();
-    }
-    if (parts[0] === 'GEOSITE') {
-      return parts[1].toUpperCase();
     }
     // 处理 GEOIP,private,DIRECT 等硬编码行
     return parts[0];

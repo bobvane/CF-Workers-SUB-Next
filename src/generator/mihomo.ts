@@ -470,9 +470,6 @@ export async function generateProxyGroups(
     proxies: ['REJECT', 'DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
   });
 
-  // 7. 国内直连 / 国内媒体（规则直接 RULE-SET,xxx,DIRECT，面板按 →DIRECT 自动归类为「国内直连」分类，与 v2.8.1 一致）
-  //    注：v2.8.1 不生成独立 proxy-group，靠规则目标 DIRECT 在面板自动归类显示；此处不新增组以免破坏分组方式
-
   // 8. 业务分类策略组（仅当勾选该大类规则时才生成，条件组）
   //    ads(广告拦截) / media(国外媒体) 已由上方固化策略组承接；
   // Orz-3/mini Color 图标映射：仓库实际文件名（英文），无对应图标时用 Global.png 兜底

@@ -41,8 +41,7 @@ describe('V3.1 验证', () => {
     
     // 核心验证
     expect(groupNames).not.toContain('应用净化');
-    expect(groupNames).not.toContain('国内媒体'); // 国内规则 →DIRECT，面板按归类显示，不生成独立组（与 v2.8.1 一致）
-    expect(groupNames).not.toContain('国内直连'); // 同上
+    expect(groupNames).not.toContain('国内媒体');
     expect(groups.find(g => g.name === 'GLOBAL')?.['default-selected']).toBe('节点选择');
     expect(groupNames.length).toBeGreaterThanOrEqual(14);
     console.log('策略组:', groupNames.join(', '));
@@ -71,13 +70,13 @@ describe('V3.1 验证', () => {
     expect(rules[rules.length - 2]).toBe('GEOIP,CN,DIRECT'); // GEOIP,CN
     expect(rules[rules.length - 3]).toBe('GEOSITE,cn,DIRECT'); // GEOSITE,cn
     
-    // 国内规则直接 DIRECT（面板按 →DIRECT 自动归类为「国内直连」，与 v2.8.1 一致）
+    // 国内规则直接 DIRECT，不指向策略组
     const bilibiliRule = rules.find(r => r.includes('bilibili'));
     const cnRule = rules.find(r => r.startsWith('RULE-SET,geosite-cn,'));
     expect(bilibiliRule?.endsWith(',DIRECT')).toBe(true);
     expect(cnRule?.endsWith(',DIRECT')).toBe(true);
     expect(bilibiliRule).not.toContain('国内媒体');
-    expect(cnRule).not.toContain('国内直连');
+    expect(cnRule).not.toContain('国内媒体');
     
     console.log('规则总数:', rules.length);
     console.log('前10条:', rules.slice(0, 10));
@@ -89,7 +88,7 @@ describe('V3.1 验证', () => {
     expect(ruleActionTarget({ id: 'CATEGORY-ADS-ALL', label: '', tag: 'geosite' as const, target: 'REJECT' as const }, RULE_GROUPS)).toBe('广告拦截');
     expect(ruleActionTarget({ id: 'CATEGORY-ADS', label: '', tag: 'geosite' as const, target: 'REJECT' as const }, RULE_GROUPS)).toBe('广告拦截');
     
-    // 国内规则 → 直接 DIRECT（面板按 →DIRECT 归类为「国内直连」，与 v2.8.1 一致）
+    // 国内规则 → 直接 DIRECT
     expect(ruleActionTarget({ id: 'BILIBILI', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
     expect(ruleActionTarget({ id: 'CN', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
     

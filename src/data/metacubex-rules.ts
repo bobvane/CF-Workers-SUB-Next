@@ -84,17 +84,22 @@ export const RULE_GROUPS: RuleGroup[] = [
   {
     key: 'china-direct', name: '国内直连', icon: '🇨🇳',
     items: [
-      // ① 私有/局域网地址（最前放行，防内网误代理）
+      // 私有/基础直连（LAN 必须最先放行，防内网误代理）
       { id: 'PRIVATE', label: '私有地址', tag: 'geosite', target: 'DIRECT' },
-      // ② 国内域名主力（已覆盖 baidu/阿里/腾讯/京东/小米/华为/银联/美团/快手/小红书/苏宁/迅雷等常见域名）
       { id: 'CN', label: '中国直连域名', tag: 'geosite', target: 'DIRECT' },
-      // ③ @cn 属性标签精修：名义海外但国内有节点的专属服务（走 GEOSITE 语法，内核按 @attr 现筛）
-      { id: 'MICROSOFT@CN', label: '微软国内服务', tag: 'geosite', target: 'DIRECT' },
-      { id: 'STEAM@CN', label: 'Steam 国区/国内 CDN', tag: 'geosite', target: 'DIRECT' },
-      { id: 'CATEGORY-GAMES@CN', label: '游戏类国内可直连', tag: 'geosite', target: 'DIRECT' },
-      // ③ 真实独立列表（有对应 mrs 文件，走 RULE-SET）
-      { id: 'APPLE-CN', label: '苹果国区服务', tag: 'geosite', target: 'DIRECT' },
-      // 注：ONEDRIVE 已归属「微软云盘」组（PROXY），不在此重复添加
+      // 国内常用网站（原"中国内地常用"并入）
+      { id: 'BAIDU', label: '百度', tag: 'geosite', target: 'DIRECT' },
+      { id: 'ALIBABA', label: '阿里巴巴(含淘宝/支付宝)', tag: 'geosite', target: 'DIRECT' },
+      { id: 'TENCENT', label: '腾讯(含微信/QQ)', tag: 'geosite', target: 'DIRECT' },
+      { id: 'JD', label: '京东', tag: 'geosite', target: 'DIRECT' },
+      { id: 'XIAOMI', label: '小米', tag: 'geosite', target: 'DIRECT' },
+      { id: 'HUAWEI', label: '华为', tag: 'geosite', target: 'DIRECT' },
+      { id: 'UNIONPAY', label: '银联', tag: 'geosite', target: 'DIRECT' },
+      { id: 'MEITUAN', label: '美团', tag: 'geosite', target: 'DIRECT' },
+      { id: 'KUAISHOU', label: '快手', tag: 'geosite', target: 'DIRECT' },
+      { id: 'XIAOHONGSHU', label: '小红书', tag: 'geosite', target: 'DIRECT' },
+      { id: 'SUNING', label: '苏宁', tag: 'geosite', target: 'DIRECT' },
+      { id: 'XUNLEI', label: '迅雷', tag: 'geosite', target: 'DIRECT' },
     ],
   },
   {

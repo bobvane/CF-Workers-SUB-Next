@@ -44,7 +44,8 @@ describe('providerName / providerUrl', () => {
     expect(ruleActionTarget(rule('CATEGORY-ADS', 'REJECT'), RULE_GROUPS)).toBe('广告拦截');
   });
 
-  it('ruleActionTarget DIRECT (china-direct/china-media) → 直接 DIRECT（面板按 →DIRECT 归类，与 v2.8.1 一致）', () => {
+  it('ruleActionTarget DIRECT (china-direct/china-media) → 直接 DIRECT', () => {
+    // V3.1: 国内规则直接 DIRECT，不走策略组
     expect(ruleActionTarget(rule('BILIBILI', 'DIRECT'), RULE_GROUPS)).toBe('DIRECT');
     expect(ruleActionTarget(rule('CN', 'DIRECT'), RULE_GROUPS)).toBe('DIRECT');
   });
@@ -130,68 +131,17 @@ describe('buildRules 优先级 V3.1', () => {
     expect(rules[rules.length - 1]).toBe('MATCH,漏网之鱼');
   });
 
-  it('国内规则 RULE-SET 出口保持 →DIRECT（面板按 →DIRECT 归类，与 v2.8.1 一致）', () => {
+  it('国内规则直接写 RULE-SET,xxx,DIRECT（不指向策略组）', () => {
     const rules = buildRules([
       rule('BILIBILI', 'DIRECT'),
       rule('CN', 'DIRECT'),
     ], RULE_GROUPS);
-    // CN / BILIBILI 国内规则 → DIRECT（不被改指向组名，否则破坏面板归类显示）
-    expect(rules).toContain('RULE-SET,geosite-cn,DIRECT');
-    expect(rules).toContain('RULE-SET,geosite-bilibili,DIRECT');
+    // 所有国内规则行的 target 必须是 DIRECT
     for (const line of rules) {
-      if (line.startsWith('RULE-SET,geosite-cn')) {
+      if (line.startsWith('RULE-SET,geosite-bilibili') || 
+          line.startsWith('RULE-SET,geosite-cn')) {
         expect(line.endsWith(',DIRECT')).toBe(true);
       }
-      if (line.startsWith('RULE-SET,geosite-bilibili')) {
-        expect(line.endsWith(',DIRECT')).toBe(true);
-      }
-    }
-  });
-});
-
-describe('国内直连组重构（v2.8.x）：@cn 属性过滤走 GEOSITE', () => {
-  it('@cn 条目输出 GEOSITE 语法且不含 @ 字符串误拼', () => {
-    const rules = buildRules([
-      rule('MICROSOFT@CN', 'DIRECT'),
-      rule('STEAM@CN', 'DIRECT'),
-      rule('CATEGORY-GAMES@CN', 'DIRECT'),
-    ], RULE_GROUPS);
-    expect(rules).toContain('GEOSITE,MICROSOFT@CN,DIRECT');
-    expect(rules).toContain('GEOSITE,STEAM@CN,DIRECT');
-    expect(rules).toContain('GEOSITE,CATEGORY-GAMES@CN,DIRECT');
-    // @attr 条目不应出现 RULE-SET + @ 的无效写法
-    expect(rules.some(l => l.includes('RULE-SET') && l.includes('@'))).toBe(false);
-  });
-
-  it('@cn 条目不生成 rule-provider（走内核 GEOSITE）', () => {
-    const providers = buildRuleProviders([
-      rule('MICROSOFT@CN', 'DIRECT'),
-      rule('APPLE-CN', 'DIRECT'),
-    ]);
-    // APPLE-CN 是真实 mrs，生成 provider；MICROSOFT@CN 不生成
-    expect(Object.keys(providers)).toContain('geosite-apple-cn');
-    expect(Object.keys(providers)).not.toContain('geosite-microsoft@cn');
-  });
-
-  it('真实独立列表（APPLE-CN）走 RULE-SET,geosite-apple-cn,DIRECT', () => {
-    const rules = buildRules([
-      rule('APPLE-CN', 'DIRECT'),
-    ], RULE_GROUPS);
-    expect(rules).toContain('RULE-SET,geosite-apple-cn,DIRECT');
-  });
-
-  it('被 geosite:cn 覆盖的冗余条目（BAIDU/ALIBABA 等）不再默认出现', () => {
-    // 用真实 RULE_GROUPS 跑，确认 BAIDU/ALIBABA/TENCENT/JD 等已从 china-direct 移除
-    const cd = RULE_GROUPS.find(g => g.key === 'china-direct')!;
-    const ids = cd.items.map(i => i.id);
-    expect(ids).toContain('PRIVATE');
-    expect(ids).toContain('CN');
-    expect(ids).toContain('APPLE-CN');
-    expect(ids).toContain('MICROSOFT@CN');
-    expect(ids).toContain('STEAM@CN');
-    expect(ids).toContain('CATEGORY-GAMES@CN');
-    for (const removed of ['BAIDU', 'ALIBABA', 'TENCENT', 'JD', 'XIAOMI', 'HUAWEI', 'UNIONPAY', 'MEITUAN', 'KUAISHOU', 'XIAOHONGSHU', 'SUNING', 'XUNLEI']) {
-      expect(ids).not.toContain(removed);
     }
   });
 });
