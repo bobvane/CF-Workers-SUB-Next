@@ -295,6 +295,11 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
         <button class="btn btn-sm" onclick="cycleTheme()" id="themeBtn">🌙</button>
         <span id="userBadge" style="font-size:12.5px;color:var(--text2)">admin</span>
         <button class="btn btn-sm" onclick="logout()">🚪 退出</button>
+        <div class="sidebar-version" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);display:flex;flex-direction:column;gap:4px;align-items:center">
+          <span>🔐 CF-Workers-SUB-Next <span class="dot">·</span> v<span id="appVersion">-</span></span>
+          <a href="https://github.com/bobvane/CF-Workers-SUB-Next" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">GitHub</a>
+          <span id="upgradeStatusSidebar" style="font-size:10px"></span>
+        </div>
       </div>
     </aside>
     <div class="main-col">
@@ -498,23 +503,12 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
         <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="confirmAddRule()">✅ 加入规则</button>
       </div>
     </div>
-  </div>
+        </div>
 
-  <!-- 全局页脚（项目信息 + 升级检测） -->
-  <footer class="app-footer">
-    <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
-      <span>🔐 CF-Workers-SUB-Next <span class="dot">·</span> v<span id="appVersion">-</span></span>
-      <span class="dot">·</span>
-      <a href="https://github.com/bobvane/CF-Workers-SUB-Next" target="_blank" rel="noopener">GitHub</a>
-      <span class="dot">·</span>
-      <span id="upgradeStatus"></span>
+      </div><!-- /app-shell -->
     </div>
-  </footer>
-    </div><!-- /main-col -->
-  </div><!-- /app-shell -->
-</div>
 
-<!-- Login -->
+    <!-- Login -->
 <div class="login-page" id="loginPage" style="display:none">
   <div class="login-card">
     <h1 id="loginTitle">🔐 CF-Workers-SUB-Next</h1>
@@ -1666,8 +1660,11 @@ async function loadMeta() {
     const meta = metaRes.data?.meta || {};
     const appName = metaRes.data?.app_name || meta.name || 'CF-Workers-SUB-Next';
     const ver = meta.version || '-';
-    document.getElementById('appVersion').textContent = ver;
-    document.getElementById('loginVersion').textContent = ver;
+    // 同时更新 sidebar 和 login 页的版本号
+    const av = document.getElementById('appVersion');
+    if (av) av.textContent = ver;
+    const lv = document.getElementById('loginVersion');
+    if (lv) lv.textContent = ver;
     // 动态替换站点名称
     document.getElementById('sidebarLogo').textContent = appName;
     document.getElementById('loginTitle').textContent = '🔐 ' + appName;
@@ -1678,9 +1675,10 @@ async function loadMeta() {
   try {
     const upRes = await api('/meta/check-upgrade');
     const up = upRes.data || {};
-    const el = document.getElementById('upgradeStatus');
-    if (up.hasUpdate && up.latest) {
-      el.innerHTML = '<span class="upgrade-banner">🆕 发现新版本 <a href="' + escHtml(up.releaseUrl || '') + '" target="_blank" rel="noopener">v' + escHtml(up.latest) + '</a></span>';
+    // 更新 sidebar 升级状态
+    const elSidebar = document.getElementById('upgradeStatusSidebar');
+    if (up.hasUpdate && up.latest && elSidebar) {
+      elSidebar.innerHTML = '<span class="upgrade-banner" style="padding:2px 8px;font-size:10px">🆕 <a href="' + escHtml(up.releaseUrl || '') + '" target="_blank" rel="noopener">v' + escHtml(up.latest) + '</a></span>';
     }
   } catch { /* 升级检测失败忽略 */ }
 }
