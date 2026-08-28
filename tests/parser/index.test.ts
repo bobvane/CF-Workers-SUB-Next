@@ -60,8 +60,8 @@ describe('Detector', () => {
     expect(detectProtocol('ss://abc')).toBe('ss');
   });
   it('should return unknown for unsupported', () => {
-    expect(detectProtocol('hysteria2://abc')).toBe('unknown');
     expect(detectProtocol('random text')).toBe('unknown');
+    expect(detectProtocol('ssr://abc')).toBe('unknown');
   });
 });
 

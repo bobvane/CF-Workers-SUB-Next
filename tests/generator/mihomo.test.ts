@@ -29,6 +29,21 @@ describe('nodeToMihomoProxy', () => {
     expect(proxy.tls).toBe(true);
   });
 
+  it('should convert vless node with xhttp transport', async () => {
+    const proxy = nodeToMihomoProxy(
+      makeNode({
+        transport: { type: 'xhttp', path: '/my-xhttp', host: 'xhttp.domain.com', mode: 'stream-up' },
+      })
+    );
+    expect(proxy.type).toBe('vless');
+    expect(proxy.network).toBe('xhttp');
+    const xhttpOpts = proxy['xhttp-opts'] as Record<string, unknown>;
+    expect(xhttpOpts).toBeDefined();
+    expect(xhttpOpts.path).toBe('/my-xhttp');
+    expect(xhttpOpts.host).toBe('xhttp.domain.com');
+    expect(xhttpOpts.mode).toBe('stream-up');
+  });
+
   it('should convert vmess node with ws transport', async () => {
     const proxy = nodeToMihomoProxy(
       makeNode({

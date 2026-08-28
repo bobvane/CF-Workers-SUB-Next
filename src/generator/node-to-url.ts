@@ -1,7 +1,7 @@
 /**
  * Node → 标准节点链接序列化
  * 用于 Base64 输出格式（V2RAY/V2RAYNG/NEKORAY/Shadowrocket/Loon）
- * 把统一 Node 模型转回 vless:// vmess:// trojan:// ss:// 链接
+ * 把统一 Node 模型转回 vless:// vmess:// trojan:// ss:// hysteria2:// tuic:// wireguard:// anytls:// 链接
  */
 
 import { Node } from '@/models/node';
@@ -20,6 +20,14 @@ export function nodeToUrl(node: Node): string {
       return nodeToTrojanUrl(node);
     case 'ss':
       return nodeToSsUrl(node);
+    case 'hysteria2':
+      return nodeToHysteria2Url(node);
+    case 'tuic':
+      return nodeToTuicUrl(node);
+    case 'wireguard':
+      return nodeToWireguardUrl(node);
+    case 'anytls':
+      return nodeToAnytlsUrl(node);
     default:
       return '';
   }
@@ -43,6 +51,11 @@ function nodeToVlessUrl(node: Node): string {
   } else if (node.transport?.type === 'grpc') {
     params.set('type', 'grpc');
     if (node.transport.path) params.set('serviceName', node.transport.path.replace(/^\//, ''));
+  } else if (node.transport?.type === 'xhttp') {
+    params.set('type', 'xhttp');
+    if (node.transport.mode) params.set('mode', node.transport.mode);
+    if (node.transport.path) params.set('path', node.transport.path);
+    if (node.transport.host) params.set('host', node.transport.host);
   } else {
     params.set('type', 'tcp');
   }
@@ -109,6 +122,89 @@ function nodeToSsUrl(node: Node): string {
   }
   const name = encodeURIComponent(node.metadata?.originalName || node.name);
   return `${url}#${name}`;
+}
+
+/**
+ * Hysteria2 → hysteria2://password@server:port?params#name
+ */
+function nodeToHysteria2Url(node: Node): string {
+  const params = new URLSearchParams();
+  if (node.sni) params.set('sni', node.sni);
+  if (node.allowInsecure) params.set('insecure', '1');
+  if (node.obfs) {
+    params.set('obfs', node.obfs);
+    if (node.obfsPassword) params.set('obfs-password', node.obfsPassword);
+  }
+  if (node.ports) params.set('mport', node.ports);
+  if (node.up) params.set('up', node.up);
+  if (node.down) params.set('down', node.down);
+  if (node.alpn?.length) params.set('alpn', node.alpn.join(','));
+  const server = formatHost(node.server, node.port);
+  const query = params.toString();
+  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const qs = query ? '?' + query : '';
+  return `hysteria2://${encodeURIComponent(node.password || '')}@${server}${qs}#${name}`;
+}
+
+/**
+ * TUIC → tuic://uuid:password@server:port?params#name (V5)
+ *        tuic://token@server:port?params#name (V4)
+ */
+function nodeToTuicUrl(node: Node): string {
+  const params = new URLSearchParams();
+  if (node.sni) params.set('sni', node.sni);
+  if (node.allowInsecure) params.set('allowInsecure', '1');
+  if (node.udpRelayMode) params.set('udp-relay-mode', node.udpRelayMode);
+  if (node.congestionController) params.set('congestion-controller', node.congestionController);
+  if (node.disableSni) params.set('disable-sni', '1');
+  if (node.reduceRtt) params.set('reduce-rtt', '1');
+  if (node.fastOpen) params.set('fast-open', '1');
+  if (node.alpn?.length) params.set('alpn', node.alpn.join(','));
+  const server = formatHost(node.server, node.port);
+  const query = params.toString();
+  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const qs = query ? '?' + query : '';
+  if (node.token) {
+    // V4
+    return `tuic://${encodeURIComponent(node.token)}@${server}${qs}#${name}`;
+  }
+  // V5
+  const userInfo = `${node.uuid}:${encodeURIComponent(node.password || '')}`;
+  return `tuic://${userInfo}@${server}${qs}#${name}`;
+}
+
+/**
+ * WireGuard → wireguard://private-key@server:port?params#name
+ */
+function nodeToWireguardUrl(node: Node): string {
+  const params = new URLSearchParams();
+  if (node.wgIp) params.set('ip', node.wgIp);
+  if (node.wgIpv6) params.set('ipv6', node.wgIpv6);
+  if (node.wgPublicKey) params.set('public-key', node.wgPublicKey);
+  if (node.wgAllowedIps) params.set('allowed-ips', node.wgAllowedIps);
+  if (node.wgPreSharedKey) params.set('pre-shared-key', node.wgPreSharedKey);
+  if (node.wgReserved?.length) params.set('reserved', node.wgReserved.join(','));
+  if (node.wgMtu) params.set('mtu', String(node.wgMtu));
+  const server = formatHost(node.server, node.port);
+  const query = params.toString();
+  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const qs = query ? '?' + query : '';
+  return `wireguard://${node.wgPrivateKey}@${server}${qs}#${name}`;
+}
+
+/**
+ * AnyTLS → anytls://password@server:port?params#name
+ */
+function nodeToAnytlsUrl(node: Node): string {
+  const params = new URLSearchParams();
+  if (node.sni) params.set('sni', node.sni);
+  if (node.allowInsecure) params.set('insecure', '1');
+  if (node.alpn?.length) params.set('alpn', node.alpn.join(','));
+  const server = formatHost(node.server, node.port);
+  const query = params.toString();
+  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const qs = query ? '?' + query : '';
+  return `anytls://${encodeURIComponent(node.password || '')}@${server}${qs}#${name}`;
 }
 
 /**

@@ -4,7 +4,7 @@
 > 无需 VPS / Docker / 本地数据库，Fork 即用
 
 [![CI/CD](https://github.com/bobvane/CF-Workers-SUB-Next/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/bobvane/CF-Workers-SUB-Next/actions/workflows/ci-cd.yml)
-![Version](https://img.shields.io/badge/version-2.8.5-533afd)
+![Version](https://img.shields.io/badge/version-2.9.0-533afd)
 
 ---
 

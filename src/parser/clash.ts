@@ -28,6 +28,11 @@ interface ClashProxy {
   'grpc-opts'?: {
     'grpc-service-name'?: string;
   };
+  'xhttp-opts'?: {
+    path?: string;
+    host?: string;
+    mode?: string;
+  };
   realityOpts?: {
     'public-key'?: string;
     'short-id'?: string;
@@ -36,11 +41,42 @@ interface ClashProxy {
     'public-key'?: string;
     'short-id'?: string;
   };
-  // sing-box 兼容字段
-  server_port?: number;
+  /** Hysteria2 专用 */
+  ports?: string;
+  'hop-interval'?: number | string;
+  up?: string;
+  down?: string;
+  obfs?: string;
+  'obfs-password'?: string;
+  /** TUIC 专用 */
+  token?: string;
+  'udp-relay-mode'?: string;
+  'congestion-controller'?: string;
+  'disable-sni'?: boolean;
+  'reduce-rtt'?: boolean;
+  'fast-open'?: boolean;
+  /** WireGuard 专用 */
+  ip?: string;
+  ipv6?: string;
+  'private-key'?: string;
+  'public-key'?: string;
+  'allowed-ips'?: string[] | string;
+  'pre-shared-key'?: string;
+  reserved?: number[] | string;
+  mtu?: number;
+  'remote-dns-resolve'?: boolean;
+  dns?: string[];
+  /** AnyTLS 专用 */
+  'idle-session-check-interval'?: number;
+  'idle-session-timeout'?: number;
+  'min-idle-session'?: number;
+  'client-metadata'?: string;
+  /** 通用 TLS */
+  alpn?: string[] | string;
+  fingerprint?: string;
   method?: string;
   plugin?: string;
-  'plugin-opts'?: Record<string, string>;
+  server_port?: number;
 }
 
 /**
@@ -166,7 +202,7 @@ function clashProxyToNode(proxy: ClashProxy): Node | null {
       case 'ss': {
         const method = cipher || proxy.method || 'aes-256-gcm';
         if (!password) return null;
-        const node = createNode({
+        const ssNode = createNode({
           name,
           protocol: 'ss',
           server,
@@ -175,7 +211,96 @@ function clashProxyToNode(proxy: ClashProxy): Node | null {
           plugin: proxy.plugin,
           metadata: { source: 'clash', originalName: name, tags: [method] },
         });
-        return node;
+        return ssNode;
+      }
+
+      case 'hysteria2': {
+        if (!password) return null;
+        return createNode({
+          name,
+          protocol: 'hysteria2',
+          server,
+          port: serverPort,
+          password,
+          tls: true,
+          sni: sni || server,
+          allowInsecure: proxy['skip-cert-verify'] ?? false,
+          ports: proxy.ports,
+          up: proxy.up,
+          down: proxy.down,
+          obfs: proxy.obfs,
+          obfsPassword: proxy['obfs-password'],
+          alpn: parseAlpn(proxy.alpn),
+          fingerprint: proxy.fingerprint,
+          metadata: { source: 'clash', originalName: name, tags: [] },
+        });
+      }
+
+      case 'tuic': {
+        // V5: uuid+password; V4: token
+        if (!uuid && !proxy.token) return null;
+        return createNode({
+          name,
+          protocol: 'tuic',
+          server,
+          port: serverPort,
+          uuid,
+          password,
+          token: proxy.token,
+          tls: true,
+          sni: sni || server,
+          allowInsecure: proxy['skip-cert-verify'] ?? false,
+          udpRelayMode: proxy['udp-relay-mode'],
+          congestionController: proxy['congestion-controller'],
+          disableSni: proxy['disable-sni'] ?? false,
+          reduceRtt: proxy['reduce-rtt'] ?? false,
+          fastOpen: proxy['fast-open'] ?? false,
+          alpn: parseAlpn(proxy.alpn),
+          metadata: { source: 'clash', originalName: name, tags: [] },
+        });
+      }
+
+      case 'wireguard': {
+        const privateKey = proxy['private-key'];
+        const publicKey = proxy['public-key'];
+        if (!privateKey) return null;
+        return createNode({
+          name,
+          protocol: 'wireguard',
+          server: server || '',
+          port: serverPort || 0,
+          tls: false,
+          wgIp: proxy.ip,
+          wgIpv6: proxy.ipv6,
+          wgPrivateKey: privateKey,
+          wgPublicKey: publicKey,
+          wgAllowedIps: parseAllowedIps(proxy['allowed-ips']) ?? '0.0.0.0/0',
+          wgPreSharedKey: proxy['pre-shared-key'],
+          wgReserved: parseReserved(proxy.reserved),
+          wgMtu: proxy.mtu,
+          metadata: { source: 'clash', originalName: name, tags: [] },
+        });
+      }
+
+      case 'anytls': {
+        if (!password) return null;
+        return createNode({
+          name,
+          protocol: 'anytls',
+          server,
+          port: serverPort,
+          password,
+          tls: true,
+          sni: sni || server,
+          allowInsecure: proxy['skip-cert-verify'] ?? false,
+          idleSessionCheckInterval: proxy['idle-session-check-interval'],
+          idleSessionTimeout: proxy['idle-session-timeout'],
+          minIdleSession: proxy['min-idle-session'],
+          clientMetadata: proxy['client-metadata'],
+          alpn: parseAlpn(proxy.alpn),
+          fingerprint: proxy.fingerprint,
+          metadata: { source: 'clash', originalName: name, tags: [] },
+        });
       }
 
       default:
@@ -184,6 +309,28 @@ function clashProxyToNode(proxy: ClashProxy): Node | null {
   } catch {
     return null;
   }
+}
+
+// Helper: parse alpn from string or array
+function parseAlpn(val: string[] | string | undefined): string[] | undefined {
+  if (!val) return undefined;
+  if (Array.isArray(val)) return val.length > 0 ? val : undefined;
+  return val.split(',').map((s) => s.trim()).filter(Boolean);
+}
+
+// Helper: parse allowed-ips from string or array
+function parseAllowedIps(val: string[] | string | undefined): string | undefined {
+  if (!val) return undefined;
+  if (Array.isArray(val)) return val.join(',') ;
+  return val;
+}
+
+// Helper: parse reserved from string or array
+function parseReserved(val: number[] | string | undefined): number[] | undefined {
+  if (!val) return undefined;
+  if (Array.isArray(val)) return val.length > 0 ? val : undefined;
+  // string format like "U4An" - not parsed to number[], kept as-is in node.wgReserved
+  return undefined;
 }
 
 /**
@@ -207,6 +354,15 @@ function parseClashTransport(proxy: ClashProxy): Transport | undefined {
       path: proxy['grpc-opts']['grpc-service-name'] 
         ? '/' + proxy['grpc-opts']['grpc-service-name'] 
         : undefined,
+    };
+  }
+
+  if (network === 'xhttp' && proxy['xhttp-opts']) {
+    return {
+      type: 'xhttp',
+      path: proxy['xhttp-opts'].path,
+      host: proxy['xhttp-opts'].host,
+      mode: proxy['xhttp-opts'].mode,
     };
   }
 

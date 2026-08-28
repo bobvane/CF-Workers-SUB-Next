@@ -50,6 +50,17 @@ describe('VLESS parser', () => {
     expect(result.node?.transport?.type).toBe('grpc');
   });
 
+  it('should parse xhttp transport with mode and path', () => {
+    const result = parseVless(
+      `vless://${uuid}@example.com:443?type=xhttp&mode=stream-up&path=%2Fcustom-path&host=xhttp.example.com&security=reality`
+    );
+    expect(result.success).toBe(true);
+    expect(result.node?.transport?.type).toBe('xhttp');
+    expect(result.node?.transport?.mode).toBe('stream-up');
+    expect(result.node?.transport?.path).toBe('/custom-path');
+    expect(result.node?.transport?.host).toBe('xhttp.example.com');
+  });
+
   it('should default to tcp transport', () => {
     const result = parseVless(`vless://${uuid}@example.com:443`);
     expect(result.node?.transport?.type).toBe('tcp');

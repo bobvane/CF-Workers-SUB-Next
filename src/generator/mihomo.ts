@@ -169,6 +169,14 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
           grpcServiceName: node.transport.path?.replace(/^\/+/, '') || '',
         };
       }
+      if (node.transport?.type === 'xhttp') {
+        base.network = 'xhttp';
+        base['xhttp-opts'] = {
+          path: node.transport.path || '/',
+          host: node.transport.host || undefined,
+          mode: node.transport.mode || 'auto',
+        };
+      }
       // Reality：字段名用连字符 reality-opts，加 client-fingerprint 做 TLS 指纹伪装
       if (node.pbk) {
         const realityOpts: Record<string, string> = {
@@ -219,6 +227,67 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
         }
         if (Object.keys(opts).length > 0) base['plugin-opts'] = opts;
       }
+      break;
+
+    case 'hysteria2':
+      base.password = node.password;
+      base.tls = true;
+      if (node.sni) base.sni = node.sni;
+      if (node.allowInsecure) base['skip-cert-verify'] = true;
+      if (node.ports) base.ports = node.ports;
+      if (node.up) base.up = node.up;
+      if (node.down) base.down = node.down;
+      if (node.obfs) {
+        base.obfs = node.obfs;
+        if (node.obfsPassword) base['obfs-password'] = node.obfsPassword;
+      }
+      if (node.alpn) base.alpn = node.alpn;
+      if (node.fingerprint) base.fingerprint = node.fingerprint;
+      break;
+
+    case 'tuic':
+      if (node.token) {
+        // TUIC V4
+        base.token = node.token;
+      } else {
+        // TUIC V5
+        base.uuid = node.uuid;
+        base.password = node.password;
+      }
+      base.tls = true;
+      if (node.sni) base.sni = node.sni;
+      if (node.allowInsecure) base['skip-cert-verify'] = true;
+      if (node.udpRelayMode) base['udp-relay-mode'] = node.udpRelayMode;
+      if (node.congestionController) base['congestion-controller'] = node.congestionController;
+      if (node.disableSni) base['disable-sni'] = node.disableSni;
+      if (node.reduceRtt) base['reduce-rtt'] = node.reduceRtt;
+      if (node.fastOpen) base['fast-open'] = node.fastOpen;
+      if (node.alpn) base.alpn = node.alpn;
+      break;
+
+    case 'wireguard':
+      base['private-key'] = node.wgPrivateKey ?? '';
+      base.udp = true;
+      if (node.wgIp) base.ip = node.wgIp;
+      if (node.wgIpv6) base.ipv6 = node.wgIpv6;
+      if (node.wgPublicKey) base['public-key'] = node.wgPublicKey;
+      if (node.wgAllowedIps) base['allowed-ips'] = [node.wgAllowedIps];
+      if (node.wgPreSharedKey) base['pre-shared-key'] = node.wgPreSharedKey;
+      if (node.wgReserved) base.reserved = node.wgReserved;
+      if (node.wgMtu) base.mtu = node.wgMtu;
+      break;
+
+    case 'anytls':
+      base.password = node.password;
+      base.tls = true;
+      if (node.sni) base.sni = node.sni;
+      if (node.allowInsecure) base['skip-cert-verify'] = true;
+      if (node.alpn) base.alpn = node.alpn;
+      if (node.fingerprint) base.fingerprint = node.fingerprint;
+      if (node.idleSessionCheckInterval !== undefined) base['idle-session-check-interval'] = node.idleSessionCheckInterval;
+      if (node.idleSessionTimeout !== undefined) base['idle-session-timeout'] = node.idleSessionTimeout;
+      if (node.minIdleSession !== undefined) base['min-idle-session'] = node.minIdleSession;
+      if (node.clientMetadata) base['client-metadata'] = node.clientMetadata;
       break;
   }
 

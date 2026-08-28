@@ -11,6 +11,10 @@ import { parseVmess } from './vmess.parser';
 import { parseVless } from './vless.parser';
 import { parseTrojan } from './trojan.parser';
 import { parseShadowsocks } from './shadowsocks.parser';
+import { parseHysteria2 } from './hysteria2.parser';
+import { parseTuic } from './tuic.parser';
+import { parseWireguard } from './wireguard.parser';
+import { parseAnytls } from './anytls.parser';
 import { isClashYaml, parseClashYaml } from './clash';
 import { ParserResult } from './types';
 
@@ -70,6 +74,18 @@ export function parseSubscriptionContent(content: string, source: string): Parse
         break;
       case 'ss':
         result = parseShadowsocks(line);
+        break;
+      case 'hysteria2':
+        result = parseHysteria2(line);
+        break;
+      case 'tuic':
+        result = parseTuic(line);
+        break;
+      case 'wireguard':
+        result = parseWireguard(line);
+        break;
+      case 'anytls':
+        result = parseAnytls(line);
         break;
       default:
         result = { success: false, error: { code: 'UNKNOWN_PROTOCOL', message: 'Unsupported protocol' } };
