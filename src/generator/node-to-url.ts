@@ -24,6 +24,8 @@ export function nodeToUrl(node: Node): string {
       return nodeToTrojanUrl(node);
     case 'ss':
       return nodeToSsUrl(node);
+    case 'ssr':
+      return nodeToSsrUrl(node);
     case 'hysteria2':
       return nodeToHysteria2Url(node);
     case 'tuic':
@@ -209,6 +211,36 @@ function nodeToAnytlsUrl(node: Node): string {
   const name = encodeURIComponent(node.metadata?.originalName || node.name);
   const qs = query ? '?' + query : '';
   return `anytls://${encodeURIComponent(node.password || '')}@${server}${qs}#${name}`;
+}
+
+/**
+ * SSR → ssr://base64(server:port:protocol:method:obfs:base64(password)?obfsparam=...&protoparam=...&remarks=...&group=...)
+ * 用于无 originalUrl 时从字段重建（正常情况下走整链保真返回原文）
+ */
+function nodeToSsrUrl(node: Node): string {
+  const method = node.username || node.metadata?.tags?.[0] || 'aes-256-cfb';
+  const protocol = node.ssrProtocol || 'origin';
+  const obfs = node.obfs || 'plain';
+  const pwB64 = urlSafeBase64Encode(node.password || '');
+  const core = `${node.server}:${node.port}:${protocol}:${method}:${obfs}:${pwB64}`;
+
+  const params = new URLSearchParams();
+  if (node.ssrObfsParam) params.set('obfsparam', urlSafeBase64Encode(node.ssrObfsParam));
+  if (node.ssrProtocolParam) params.set('protoparam', urlSafeBase64Encode(node.ssrProtocolParam));
+  const name = node.metadata?.originalName || node.name;
+  if (name) params.set('remarks', urlSafeBase64Encode(name));
+  if (node.ssrGroup) params.set('group', urlSafeBase64Encode(node.ssrGroup));
+
+  const queryStr = params.toString();
+  const body = queryStr ? `${core}?${queryStr}` : core;
+  return `ssr://${urlSafeBase64Encode(body)}`;
+}
+
+/**
+ * 标准 Base64 → URL-safe Base64（SSR 链接体要求，无 +/=）
+ */
+function urlSafeBase64Encode(input: string): string {
+  return safeBase64Encode(input).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 /**

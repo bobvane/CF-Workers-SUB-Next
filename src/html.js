@@ -143,6 +143,18 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
 [data-theme="dark"] .tag-vless { background: rgba(29,145,89,0.2); color: #4fd183; }
 [data-theme="dark"] .tag-trojan { background: rgba(189,86,29,0.2); color: #ffa657; }
 [data-theme="dark"] .tag-ss { background: rgba(130,80,223,0.2); color: #d2a8ff; }
+.tag-ssr { background: #ffe8ef; color: #c2255c; }
+.tag-hysteria2 { background: #e0f7fa; color: #0891b2; }
+.tag-tuic { background: #fff8e1; color: #b45309; }
+.tag-wireguard { background: #e0e7ff; color: #4338ca; }
+.tag-anytls { background: #fce7f3; color: #be185d; }
+.tag-other { background: #f1f5f9; color: #475569; }
+[data-theme="dark"] .tag-ssr { background: rgba(194,37,92,0.2); color: #ff7aa2; }
+[data-theme="dark"] .tag-hysteria2 { background: rgba(8,145,178,0.2); color: #67e8f9; }
+[data-theme="dark"] .tag-tuic { background: rgba(180,83,9,0.2); color: #fbbf24; }
+[data-theme="dark"] .tag-wireguard { background: rgba(67,56,202,0.2); color: #a5b4fc; }
+[data-theme="dark"] .tag-anytls { background: rgba(190,24,93,0.2); color: #f9a8d4; }
+[data-theme="dark"] .tag-other { background: rgba(71,85,105,0.25); color: #94a3b8; }
 /* ===== Status ===== */
 .status-active { color: var(--green); }
 .status-error { color: var(--red); }
@@ -1007,6 +1019,38 @@ async function loadNodes() {
   loadCleanRules();
 }
 
+// ============ 协议显示名（独立链路，只影响展示） ============
+// VLESS 子类型按官方标准：安全层(none/tls/reality) × 传输层 的笛卡尔积，由字段动态拼接
+function displayProtocol(n) {
+  const p = n.protocol;
+  if (p === 'vmess') return 'VMess';
+  if (p === 'trojan') return 'Trojan';
+  if (p === 'ss') return 'Shadowsocks';
+  if (p === 'ssr') return 'ShadowsocksR';
+  if (p === 'hysteria2') return 'Hysteria2';
+  if (p === 'tuic') return 'TUIC';
+  if (p === 'wireguard') return 'WireGuard';
+  if (p === 'anytls') return 'AnyTLS';
+  if (p === 'vless') {
+    const t = (n.transport && n.transport.type) || 'tcp';
+    const segs = [];
+    if (n.pbk) segs.push('Reality');
+    // XTLS Vision 仅 TCP 系有效；XHTTP/WS/gRPC 与 Vision 互斥，无效组合忽略 flow
+    if (n.flow && t === 'tcp') segs.push('XTLS Vision');
+    if (t === 'xhttp') segs.push('XHTTP');
+    else if (t === 'ws') segs.push('WebSocket');
+    else if (t === 'grpc') segs.push('gRPC');
+    if (segs.length === 0) return 'VLESS TCP';
+    return 'VLESS + ' + segs.join(' + ');
+  }
+  return p;
+}
+// VLESS 全子类型共享 tag-vless 一色，其余协议各一色
+function protocolTagClass(protocol) {
+  const known = ['vless', 'vmess', 'trojan', 'ss', 'ssr', 'hysteria2', 'tuic', 'wireguard', 'anytls'];
+  return 'tag-' + (known.indexOf(protocol) >= 0 ? protocol : 'other');
+}
+
 function renderNodes() {
   const tbody = document.getElementById('nodesTableBody');
   const empty = document.getElementById('nodesEmpty');
@@ -1020,11 +1064,11 @@ function renderNodes() {
   }
   empty.style.display = 'none';
   tbody.innerHTML = filtered.map(n => {
-    const tagClass = 'tag-' + (n.protocol === 'vmess' ? 'vmess' : n.protocol === 'vless' ? 'vless' : n.protocol === 'trojan' ? 'trojan' : 'ss');
+    const tagClass = protocolTagClass(n.protocol);
     return \`<tr>
       <td><input type="checkbox" data-fp="\${escHtml(n.fingerprint)}" \${n.enabled ? 'checked' : ''} onchange="updateNodeEnabled(this)"></td>
       <td>\${escHtml(n.name)}</td>
-      <td><span class="tag \${tagClass}">\${n.protocol}</span></td>
+      <td><span class="tag \${tagClass}">\${displayProtocol(n)}</span></td>
       <td style="font-size:12px">\${escHtml(n.server)}</td>
       <td>\${n.port}</td>
       <td>\${n.tls ? '✅' : '❌'}</td>

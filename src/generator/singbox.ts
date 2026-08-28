@@ -129,7 +129,7 @@ export function generateSingboxConfig(
   selectedRules: MetaCubeXRule[] = [],
   ruleGroups: RuleGroup[] = []
 ): string {
-  const uniqueNodes = makeUniqueNames(nodes);
+  const uniqueNodes = makeUniqueNames(nodes).filter((n) => n.protocol !== 'ssr');
   const nodeTags = uniqueNodes.map((n) => n.name);
   const outbounds: Record<string, unknown>[] = [
     { type: 'direct', tag: 'direct' },

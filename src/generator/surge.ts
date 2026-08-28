@@ -67,7 +67,7 @@ export function generateSurgeConfig(
   selectedRules: MetaCubeXRule[] = [],
   ruleGroups: RuleGroup[] = []
 ): string {
-  const uniqueNodes = makeUniqueNames(nodes);
+  const uniqueNodes = makeUniqueNames(nodes).filter((n) => n.protocol !== 'ssr');
   const lines: string[] = [];
 
   // [Proxy] 段

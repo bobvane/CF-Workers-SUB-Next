@@ -11,6 +11,7 @@ import { parseVmess } from './vmess.parser';
 import { parseVless } from './vless.parser';
 import { parseTrojan } from './trojan.parser';
 import { parseShadowsocks } from './shadowsocks.parser';
+import { parseShadowsocksR } from './shadowsocksr.parser';
 import { parseHysteria2 } from './hysteria2.parser';
 import { parseTuic } from './tuic.parser';
 import { parseWireguard } from './wireguard.parser';
@@ -74,6 +75,9 @@ export function parseSubscriptionContent(content: string, source: string): Parse
         break;
       case 'ss':
         result = parseShadowsocks(line);
+        break;
+      case 'ssr':
+        result = parseShadowsocksR(line);
         break;
       case 'hysteria2':
         result = parseHysteria2(line);

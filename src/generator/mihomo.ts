@@ -276,6 +276,16 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
       }
       break;
 
+    case 'ssr':
+      base.cipher = node.username ?? node.metadata.tags[0] ?? 'aes-256-cfb';
+      base.password = node.password;
+      if (node.ssrProtocol) base.protocol = node.ssrProtocol;
+      if (node.ssrProtocolParam) base['protocol-param'] = node.ssrProtocolParam;
+      if (node.obfs) base.obfs = node.obfs;
+      if (node.ssrObfsParam) base['obfs-param'] = node.ssrObfsParam;
+      if (node.ssrGroup) base.group = node.ssrGroup;
+      break;
+
     case 'hysteria2':
       base.password = node.password;
       base.tls = true;

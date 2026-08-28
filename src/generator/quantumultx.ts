@@ -75,7 +75,7 @@ export function generateQuantumultXConfig(
   selectedRules: MetaCubeXRule[] = [],
   ruleGroups: RuleGroup[] = []
 ): string {
-  const uniqueNodes = makeUniqueNames(nodes);
+  const uniqueNodes = makeUniqueNames(nodes).filter((n) => n.protocol !== 'ssr');
   const lines: string[] = [];
 
   lines.push('; Quantumult X 订阅配置');

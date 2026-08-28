@@ -59,9 +59,11 @@ describe('Detector', () => {
   it('should detect ss', () => {
     expect(detectProtocol('ss://abc')).toBe('ss');
   });
+  it('should detect ssr', () => {
+    expect(detectProtocol('ssr://abc')).toBe('ssr');
+  });
   it('should return unknown for unsupported', () => {
     expect(detectProtocol('random text')).toBe('unknown');
-    expect(detectProtocol('ssr://abc')).toBe('unknown');
   });
 });
 

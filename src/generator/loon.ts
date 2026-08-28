@@ -18,7 +18,7 @@ export function generateLoonConfig(
   selectedRules: MetaCubeXRule[] = [],
   ruleGroups: RuleGroup[] = []
 ): string {
-  const uniqueNodes = makeUniqueNames(nodes);
+  const uniqueNodes = makeUniqueNames(nodes).filter((n) => n.protocol !== 'ssr');
   const lines: string[] = [];
 
   lines.push('# Loon 订阅配置');

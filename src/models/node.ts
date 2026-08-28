@@ -8,6 +8,7 @@ export type NodeProtocol =
   | 'vless'
   | 'trojan'
   | 'ss'
+  | 'ssr'
   | 'hysteria2'
   | 'tuic'
   | 'wireguard'
@@ -112,6 +113,15 @@ export interface Node {
   minIdleSession?: number;
   /** AnyTLS client-metadata */
   clientMetadata?: string;
+  /** ShadowsocksR 专用字段 */
+  /** SSR 协议方式 (origin / auth_aes128_md5 等) */
+  ssrProtocol?: string;
+  /** SSR 协议参数 */
+  ssrProtocolParam?: string;
+  /** SSR 混淆参数 */
+  ssrObfsParam?: string;
+  /** SSR 组名 */
+  ssrGroup?: string;
   /** TLS alpn */
   alpn?: string[];
   /** TLS fingerprint (client-fingerprint) */
@@ -164,6 +174,10 @@ export function createNode(partial: Partial<Node> & { name: string }): Node {
     idleSessionTimeout: partial.idleSessionTimeout,
     minIdleSession: partial.minIdleSession,
     clientMetadata: partial.clientMetadata,
+    ssrProtocol: partial.ssrProtocol,
+    ssrProtocolParam: partial.ssrProtocolParam,
+    ssrObfsParam: partial.ssrObfsParam,
+    ssrGroup: partial.ssrGroup,
     alpn: partial.alpn,
     fingerprint: partial.fingerprint,
     metadata: {
