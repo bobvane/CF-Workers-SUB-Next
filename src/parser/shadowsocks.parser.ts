@@ -78,6 +78,8 @@ export function parseShadowsocks(input: string): ParserResult {
         source: 'unknown',
         originalName: name || `${server}:${port}`,
         tags: [],
+        originalUrl: input.trim(),
+        extra: Object.keys(params).length > 0 ? Object.fromEntries(params.entries()) : undefined,
       },
     });
 

@@ -28,10 +28,18 @@ export interface NodeMetadata {
   source: string;
   originalName: string;
   tags: string[];
-  /** TLS 指纹（Reality 用，如 chrome/firefox/safari） */
+  /** TLS 客户端指纹（client-fingerprint / fp，如 chrome/firefox/safari） */
   fingerprint?: string;
-  /** 保留链接中的其他参数（如 spx） */
+  /**
+   * 订阅原始链接中未被结构化字段吸收的全部 query 参数（保真用）。
+   * 生成器按协议按需读取；序列化回分享链接时优先用 originalUrl，否则合并回写。
+   */
   extra?: Record<string, string>;
+  /**
+   * 订阅原文中的完整节点链接（URI 方案）。有值时复制/Base64 输出优先原样返回，保证零丢失。
+   * Clash YAML 来源无 URI 时为空。
+   */
+  originalUrl?: string;
 }
 
 export interface Node {
@@ -164,6 +172,9 @@ export function createNode(partial: Partial<Node> & { name: string }): Node {
       tags: partial.metadata?.tags ?? [],
       country: partial.metadata?.country,
       region: partial.metadata?.region,
+      fingerprint: partial.metadata?.fingerprint ?? partial.fingerprint,
+      extra: partial.metadata?.extra,
+      originalUrl: partial.metadata?.originalUrl,
     },
     version: 1,
   };

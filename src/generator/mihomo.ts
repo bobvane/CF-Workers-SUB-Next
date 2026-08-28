@@ -177,7 +177,7 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
           mode: node.transport.mode || 'auto',
         };
       }
-      // Reality：字段名用连字符 reality-opts，加 client-fingerprint 做 TLS 指纹伪装
+      // Reality:字段名用连字符 reality-opts,加 client-fingerprint 做 TLS 指纹伪装
       if (node.pbk) {
         const realityOpts: Record<string, string> = {
           'public-key': node.pbk,
@@ -189,6 +189,53 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
         }
         base['reality-opts'] = realityOpts;
         base['client-fingerprint'] = node.metadata?.fingerprint ?? 'chrome';
+      }
+
+      // 非 Reality 的 TLS VLESS 也要写 client-fingerprint(订阅原文带 fp 时)
+      if (!node.pbk && node.metadata?.fingerprint) {
+        base['client-fingerprint'] = node.metadata.fingerprint;
+      }
+
+      // ECH(加密 Client Hello):从 extra.ech 读取,写入 ech-opts
+      // ech 值格式通常为 "域名+DoH地址"(如 "cloudflare-ech.com+https://dns.alidns.com/dns-query")
+      // 或 base64 编码的 echConfig
+      if (node.metadata?.extra?.ech) {
+        const echVal = node.metadata.extra.ech;
+        const echParts = echVal.split('+');
+        const echOpts: Record<string, unknown> = { enable: true };
+        // 若含 "+" 分隔,前面是域名(query-server-name),后面是 DoH/配置
+        if (echParts.length >= 2) {
+          echOpts['query-server-name'] = echParts[0];
+          echOpts.config = echParts.slice(1).join('+');
+        } else {
+          echOpts.config = echVal;
+        }
+        base['ech-opts'] = echOpts;
+      }
+
+      // XHTTP 额外字段:从 extra 中读取 x-padding-* / reuse-settings 等
+      // 官方文档的 xhttp-opts 字段全量映射
+      if (node.transport?.type === 'xhttp' && node.metadata?.extra) {
+        const xOpts = base['xhttp-opts'] as Record<string, unknown> || {};
+        const ex = node.metadata.extra;
+        if (ex['x-padding-obfs-mode']) xOpts['x-padding-obfs-mode'] = ex['x-padding-obfs-mode'] === 'true';
+        if (ex['x-padding-key']) xOpts['x-padding-key'] = ex['x-padding-key'];
+        if (ex['x-padding-header']) xOpts['x-padding-header'] = ex['x-padding-header'];
+        if (ex['x-padding-placement']) xOpts['x-padding-placement'] = ex['x-padding-placement'];
+        if (ex['x-padding-method']) xOpts['x-padding-method'] = ex['x-padding-method'];
+        if (ex['x-padding-bytes']) xOpts['x-padding-bytes'] = ex['x-padding-bytes'];
+        if (ex['no-grpc-header']) xOpts['no-grpc-header'] = ex['no-grpc-header'] === 'true';
+        if (ex['uplink-http-method']) xOpts['uplink-http-method'] = ex['uplink-http-method'];
+        if (ex['session-placement']) xOpts['session-placement'] = ex['session-placement'];
+        if (ex['session-key']) xOpts['session-key'] = ex['session-key'];
+        if (ex['session-table']) xOpts['session-table'] = ex['session-table'];
+        if (ex['session-length']) xOpts['session-length'] = ex['session-length'];
+        if (ex['seq-placement']) xOpts['seq-placement'] = ex['seq-placement'];
+        if (ex['seq-key']) xOpts['seq-key'] = ex['seq-key'];
+        if (ex['uplink-data-placement']) xOpts['uplink-data-placement'] = ex['uplink-data-placement'];
+        if (ex['uplink-data-key']) xOpts['uplink-data-key'] = ex['uplink-data-key'];
+        if (ex['uplink-chunk-size']) xOpts['uplink-chunk-size'] = parseInt(ex['uplink-chunk-size'], 10) || 0;
+        if (Object.keys(xOpts).length > 0) base['xhttp-opts'] = xOpts;
       }
       break;
 

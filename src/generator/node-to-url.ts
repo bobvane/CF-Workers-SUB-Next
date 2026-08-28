@@ -11,6 +11,10 @@ import { safeBase64Encode } from './base64';
  * 将 Node 序列化为标准链接
  */
 export function nodeToUrl(node: Node): string {
+  // 整链保真:订阅原文若带有原始链接,直接原样返回,参数零丢失
+  if (node.metadata?.originalUrl) {
+    return node.metadata.originalUrl;
+  }
   switch (node.protocol) {
     case 'vless':
       return nodeToVlessUrl(node);

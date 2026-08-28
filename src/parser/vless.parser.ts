@@ -34,7 +34,7 @@ export function parseVless(input: string): ParserResult {
 
     if (!uuid) return makeError('MISSING_UUID', 'VLESS missing uuid');
 
-    // server:port（支持 IPv6 [::1]:443）
+    // server:port(支持 IPv6 [::1]:443)
     const server = parseHost(hostPort).server;
     const port = parseHost(hostPort).port;
     if (!server) return makeError('MISSING_SERVER', 'VLESS missing server');
@@ -50,6 +50,16 @@ export function parseVless(input: string): ParserResult {
     const path = params.get('path') ?? undefined;
     const host = params.get('host') ?? params.get('sni') ?? undefined;
     const mode = params.get('mode') ?? undefined;
+    // 保真:识别指纹与保留未知参数(ech/extra/insecure 等都不丢)
+    const fp = params.get('fp') ?? undefined;
+    const allowInsecure =
+      params.get('insecure') === '1' ||
+      params.get('insecure') === 'true' ||
+      params.get('allowInsecure') === '1';
+    const extra = collectExtraParams(
+      params,
+      new Set(['security', 'flow', 'pbk', 'sid', 'sni', 'type', 'path', 'host', 'mode', 'fp'])
+    );
 
     const transport: Transport = {
       type: type === 'ws' ? 'ws' 
@@ -72,14 +82,15 @@ export function parseVless(input: string): ParserResult {
       pbk,
       sid,
       sni,
+      allowInsecure,
       transport,
       metadata: {
         source: 'unknown',
         originalName: name || `${server}:${port}`,
         tags: [],
-        // Reality 参数：TLS 指纹 + spx
-        fingerprint: params.get('fp') ?? undefined,
-        extra: spxParams(params),
+        fingerprint: fp ?? undefined,
+        extra,
+        originalUrl: input.trim(),
       },
     });
 
@@ -90,14 +101,15 @@ export function parseVless(input: string): ParserResult {
 }
 
 /**
- * 提取保留的 Reality 扩展参数（如 spx）
+ * 收集链接中未被结构化字段吸收的全部 query 参数(保真用)。
+ * 生成器写客户端配置时可从 metadata.extra 按需读取。
  */
-function spxParams(params: URLSearchParams): Record<string, string> | undefined {
-  const spx = params.get('spx');
-  if (spx) {
-    return { spx };
+function collectExtraParams(params: URLSearchParams, ignored: Set<string>): Record<string, string> | undefined {
+  const extra: Record<string, string> = {};
+  for (const [k, v] of params.entries()) {
+    if (!ignored.has(k)) extra[k] = v;
   }
-  return undefined;
+  return Object.keys(extra).length > 0 ? extra : undefined;
 }
 
 /**

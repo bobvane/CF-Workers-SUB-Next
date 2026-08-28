@@ -56,6 +56,7 @@ export function parseTrojan(input: string): ParserResult {
         source: 'unknown',
         originalName: name || `${server}:${port}`,
         tags: [],
+        originalUrl: input.trim(),
       },
     });
 

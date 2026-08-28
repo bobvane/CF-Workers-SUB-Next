@@ -58,6 +58,7 @@ export function parseAnytls(input: string): ParserResult {
         source: 'unknown',
         originalName: name || `${server}:${port}`,
         tags: [],
+        originalUrl: input.trim(),
       },
     });
 

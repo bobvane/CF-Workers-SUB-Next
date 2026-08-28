@@ -58,6 +58,7 @@ export function parseVmess(input: string): ParserResult {
         source: 'unknown',
         originalName: asString(data.ps) || `${server}:${port}`,
         tags: [],
+        extra: vmessExtra(data),
       },
     });
 
@@ -65,6 +66,17 @@ export function parseVmess(input: string): ParserResult {
   } catch {
     return makeError('PARSE_FAILED', 'VMess parse failed');
   }
+}
+
+/** 保留 VMess JSON 中非结构化字段(保真用) */
+const KNOWN_VMESS_KEYS = new Set(['v','ps','add','port','id','aid','scy','net','type','host','path','tls','alpn','sni','fp','cid','spx']);
+
+function vmessExtra(data: Record<string, unknown>): Record<string, string> | undefined {
+  const extra: Record<string, string> = {};
+  for (const [k, v] of Object.entries(data)) {
+    if (!KNOWN_VMESS_KEYS.has(k) && v !== undefined && v !== null) extra[k] = String(v);
+  }
+  return Object.keys(extra).length > 0 ? extra : undefined;
 }
 
 function tryDecode(input: string): string | null {
