@@ -86,7 +86,7 @@ describe('Rules API', () => {
       }
     }
     const names = groupList.map((g) => g.key);
-    for (const k of ['ads', 'china-direct', 'china-media', 'google-fcm', 'bing', 'onedrive', 'microsoft', 'apple', 'media', 'crypto', 'ai', 'social', 'game', 'user']) {
+    for (const k of ['ads', 'china-direct', 'google-fcm', 'microsoft', 'apple', 'media', 'crypto', 'ai', 'social', 'game', 'user']) {
       expect(names).toContain(k);
     }
     // 已删除的组不得再出现

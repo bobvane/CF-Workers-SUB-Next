@@ -70,8 +70,8 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
  *   8. MATCH → 漏网之鱼
  *
  * 分组顺序即策略组生成顺序（generateProxyGroups 按此数组输出）。
- * 注意：`china-direct` / `china-media` 内规则统一 RULE-SET,xxx,DIRECT，
- *       不生成「全球直连」「国内媒体」策略组（国内直连用 DIRECT 本身）。
+ * 注意：`china-direct` 内规则统一 RULE-SET,xxx,DIRECT，
+ *       不生成「全球直连」策略组（国内直连用 DIRECT 本身）。
  *       应用净化（CATEGORY-ADS）已合并进广告拦截（ADS⊂ADS-ALL，93% 重叠）。
  */
 export const RULE_GROUPS: RuleGroup[] = [
@@ -79,6 +79,8 @@ export const RULE_GROUPS: RuleGroup[] = [
     key: 'ads', name: '广告拦截', icon: '🔥',
     items: [
       { id: 'CATEGORY-ADS-ALL', label: '广告拦截通用合集', tag: 'geosite', target: 'REJECT' },
+      // 跟踪器（与广告拦截同组，跟随广告拦截组启用而启用）
+      { id: 'TRACKER', label: '追踪器(Tracker)', tag: 'geosite', target: 'REJECT' },
     ],
   },
   {
@@ -100,16 +102,6 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'XIAOHONGSHU', label: '小红书', tag: 'geosite', target: 'DIRECT' },
       { id: 'SUNING', label: '苏宁', tag: 'geosite', target: 'DIRECT' },
       { id: 'XUNLEI', label: '迅雷', tag: 'geosite', target: 'DIRECT' },
-    ],
-  },
-  {
-    key: 'china-media', name: '国内媒体', icon: '🎬',
-    items: [
-      // 国内流媒体（从原"国内直连"拆出，前端分开展示，后端都 DIRECT）
-      { id: 'CATEGORY-ENTERTAINMENT-CN', label: '中国娱乐聚合', tag: 'geosite', target: 'DIRECT' },
-      { id: 'BILIBILI', label: '哔哩哔哩', tag: 'geosite', target: 'DIRECT' },
-      { id: 'IQIYI', label: '爱奇艺', tag: 'geosite', target: 'DIRECT' },
-      { id: 'YOUKU', label: '优酷', tag: 'geosite', target: 'DIRECT' },
     ],
   },
   {
@@ -192,22 +184,12 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'bing', name: '微软Bing', icon: '🔍',
-    items: [
-      { id: 'BING', label: '微软必应(含国际版)', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
-    key: 'onedrive', name: '微软云盘', icon: '☁️',
-    items: [
-      { id: 'ONEDRIVE', label: '微软 OneDrive', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
     key: 'microsoft', name: '微软服务', icon: '🪟',
     items: [
       // 微软服务整体（cn.* 子域会被国内直连先命中走 DIRECT，更稳）
       { id: 'MICROSOFT', label: '微软服务', tag: 'geosite', target: 'PROXY' },
+      { id: 'BING', label: '微软必应(含国际版)', tag: 'geosite', target: 'PROXY' },
+      { id: 'ONEDRIVE', label: '微软 OneDrive', tag: 'geosite', target: 'PROXY' },
     ],
   },
   {

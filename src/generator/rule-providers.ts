@@ -68,8 +68,8 @@ export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []):
     return '广告拦截';
   }
 
-  // 国内直连/国内媒体规则 → 直接 DIRECT（不建策略组）
-  if (g && (g.key === 'china-direct' || g.key === 'china-media')) {
+  // 国内直连规则 → 直接 DIRECT（不建策略组）
+  if (g && g.key === 'china-direct') {
     return 'DIRECT';
   }
 
@@ -122,8 +122,8 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
  *   ② 用户自定义规则（按用户定义顺序，高于 CN/GEOIP）
  *   ③ 广告拦截 (CATEGORY-ADS-ALL) → REJECT
  *   ④ 业务分类（细分在前、宽泛在后）：
- *       谷歌FCM/微软Bing/微软云盘/微软服务/苹果服务/游戏平台/AI/社交/加密货币/用户规则
- *   ⑤ 国内直连规则 (RULE-SET,xxx,DIRECT) —— china-direct / china-media 组内规则
+ *       谷歌FCM/微软服务/苹果服务/游戏平台/AI/社交/加密货币/用户规则
+ *   ⑤ 国内直连规则 (RULE-SET,xxx,DIRECT) —— china-direct 组内规则（含原国内媒体）
  *   ⑥ GEOSITE,cn,DIRECT
  *   ⑦ GEOIP,CN,DIRECT
  *   ⑧ MATCH,漏网之鱼
@@ -151,15 +151,20 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   }
 
   // === ③ 广告拦截（REJECT，最高业务优先级）===
-  // 在业务分类前输出 CATEGORY-ADS-ALL（若勾选）
-  if (selectedSet.has('CATEGORY-ADS-ALL')) {
-    lines.push(ruleSetLine({ id: 'CATEGORY-ADS-ALL', target: 'REJECT' } as MetaCubeXRule, groups));
+  // 遍历 ads 组所有选中项（CATEGORY-ADS-ALL + TRACKER 等），全部输出到广告拦截组
+  const adsGroup = groups.find(g => g.key === 'ads');
+  if (adsGroup) {
+    for (const item of adsGroup.items) {
+      if (selectedSet.has(item.id)) {
+        lines.push(ruleSetLine(item, groups));
+      }
+    }
   }
 
   // === ④ 业务分类：按 RULE_GROUPS 顺序输出（细分在前、宽泛在后）===
-  // 关键：跳过 china-direct / china-media（它们直接 DIRECT，不生成规则行）
+  // 关键：跳过 china-direct（它们直接 DIRECT，不生成规则行）
   // 跳过 ads（已在第③步处理）
-  const skipKeys = new Set(['ads', 'china-direct', 'china-media']);
+  const skipKeys = new Set(['ads', 'china-direct']);
   for (const g of groups) {
     if (skipKeys.has(g.key)) continue;
     for (const item of g.items) {
@@ -170,9 +175,9 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     }
   }
 
-  // === ⑤ 国内直连规则（china-direct / china-media 组内规则 → 直接 DIRECT）===
+  // === ⑤ 国内直连规则（china-direct 组内规则 → 直接 DIRECT）===
   for (const g of groups) {
-    if (g.key !== 'china-direct' && g.key !== 'china-media') continue;
+    if (g.key !== 'china-direct') continue;
     for (const item of g.items) {
       if (item.custom) continue; // 自定义规则已在 ② 置顶输出
       if (selectedSet.has(item.id)) {
@@ -191,7 +196,9 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     // 处理 GEOIP,private,DIRECT 等硬编码行
     return parts[0];
   }));
-  const orphanSelected = selected.filter(r => !matchedIds.has(r.id));
+  // 只对仍存在于某个组中的规则做兜底；已删除组的规则（如国内媒体）不再输出
+  const validGroupIds = new Set(groups.flatMap(g => g.items.map(i => i.id)));
+  const orphanSelected = selected.filter(r => !matchedIds.has(r.id) && validGroupIds.has(r.id));
   for (const r of orphanSelected) {
     lines.push(ruleSetLine(r, groups));
   }

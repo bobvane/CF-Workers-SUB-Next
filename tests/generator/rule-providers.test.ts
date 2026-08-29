@@ -44,7 +44,7 @@ describe('providerName / providerUrl', () => {
     expect(ruleActionTarget(rule('CATEGORY-ADS', 'REJECT'), RULE_GROUPS)).toBe('广告拦截');
   });
 
-  it('ruleActionTarget DIRECT (china-direct/china-media) → 直接 DIRECT', () => {
+  it('ruleActionTarget DIRECT (china-direct) → 直接 DIRECT', () => {
     // V3.1: 国内规则直接 DIRECT，不走策略组
     expect(ruleActionTarget(rule('BILIBILI', 'DIRECT'), RULE_GROUPS)).toBe('DIRECT');
     expect(ruleActionTarget(rule('CN', 'DIRECT'), RULE_GROUPS)).toBe('DIRECT');
@@ -88,7 +88,6 @@ describe('buildRuleProviders', () => {
 describe('buildRules 优先级 V3.1', () => {
   it('输出顺序：PRIVATE最前 → 广告拦截 → 业务分类 → 国内规则DIRECT → GEOSITE,cn → GEOIP,CN → MATCH', () => {
     const rules = buildRules([
-      rule('BILIBILI', 'DIRECT'),      // china-media 组
       rule('OPENAI', 'PROXY'),         // ai 组
       rule('CATEGORY-ADS-ALL', 'REJECT'), // ads 组
       rule('CN', 'DIRECT'),            // china-direct 组
@@ -99,7 +98,6 @@ describe('buildRules 优先级 V3.1', () => {
     const adsIdx = rules.indexOf('RULE-SET,geosite-category-ads-all,广告拦截');
     const openaiIdx = rules.indexOf('RULE-SET,geosite-openai,AI 平台');
     const cnIdx = rules.indexOf('RULE-SET,geosite-cn,DIRECT');          // china-direct 组
-    const bilibiliIdx = rules.indexOf('RULE-SET,geosite-bilibili,DIRECT'); // china-media 组
     const geoSiteCnIdx = rules.indexOf('GEOSITE,cn,DIRECT');
     const geoIpCnIdx = rules.indexOf('GEOIP,CN,DIRECT');
     const matchIdx = rules.indexOf('MATCH,漏网之鱼');
@@ -108,8 +106,7 @@ describe('buildRules 优先级 V3.1', () => {
     expect(privateIdx).toBeLessThan(adsIdx);      // PRIVATE < 广告拦截
     expect(adsIdx).toBeLessThan(openaiIdx);       // 广告拦截 < 业务分类
     expect(openaiIdx).toBeLessThan(cnIdx);        // 业务分类 < 国内直连规则
-    expect(cnIdx).toBeLessThan(bilibiliIdx);      // china-direct 组 < china-media 组
-    expect(bilibiliIdx).toBeLessThan(geoSiteCnIdx); // 国内规则 < GEOSITE,cn
+    expect(cnIdx).toBeLessThan(geoSiteCnIdx); // 国内规则 < GEOSITE,cn
     expect(geoSiteCnIdx).toBeLessThan(geoIpCnIdx);  // GEOSITE,cn < GEOIP,CN
     expect(geoIpCnIdx).toBeLessThan(matchIdx);      // GEOIP,CN < MATCH
   });

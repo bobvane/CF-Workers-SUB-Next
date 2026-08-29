@@ -513,7 +513,7 @@ export interface GeoResolver {
  *   3. 自动选择（url-test：具体节点，自动测速）
  *   4. 国外媒体（流媒体 PROXY，默认 自动选择）——固化组
  *   5. 广告拦截（默认 REJECT）——固化组
- *   6. 业务分类组（谷歌FCM/微软Bing/微软云盘/微软服务/苹果服务/游戏平台/AI/社交/加密货币/用户规则，
+ *   6. 业务分类组（谷歌FCM/微软服务/苹果服务/游戏平台/AI/社交/加密货币/用户规则，
  *      仅勾选该大类规则才生成；默认值遵循最小代理原则：苹果→DIRECT，其余→节点选择）
  *   7. 漏网之鱼（MATCH 兜底，默认 节点选择）
  *   8. GLOBAL（显式定义，完整列出所有组，决定面板显示顺序，默认 节点选择）
@@ -593,8 +593,6 @@ export async function generateProxyGroups(
   // Orz-3/mini Color 图标映射：仓库实际文件名（英文），无对应图标时用 Global.png 兜底
   const groupIconMap: Record<string, string> = {
     'google-fcm': 'Google.png',
-    'bing': 'Bing.png',
-    'onedrive': 'GoogleDrive.png', // 无 OneDrive 图标，用云盘类近似
     'microsoft': 'Microsoft.png',
     'apple': 'Apple.png',
     'game': 'GAME.png',
@@ -605,8 +603,6 @@ export async function generateProxyGroups(
   };
   const groupDefaults: Record<string, { name: string; default: string }> = {
     'google-fcm': { name: '谷歌FCM', default: 'DIRECT' },
-    'bing': { name: '微软Bing', default: 'DIRECT' },
-    'onedrive': { name: '微软云盘', default: 'DIRECT' },
     'microsoft': { name: '微软服务', default: 'DIRECT' },
     'apple': { name: '苹果服务', default: 'DIRECT' },
     'game': { name: '游戏平台', default: 'DIRECT' },

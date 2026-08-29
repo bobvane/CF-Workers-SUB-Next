@@ -42,7 +42,7 @@ describe('V3.1 验证', () => {
     expect(groupNames).not.toContain('应用净化');
     expect(groupNames).not.toContain('国内媒体');
     expect(groups.find(g => g.name === 'GLOBAL')?.['default-selected']).toBe('节点选择');
-    expect(groupNames.length).toBeGreaterThanOrEqual(14);
+    expect(groupNames.length).toBeGreaterThanOrEqual(13);
     console.log('策略组:', groupNames.join(', '));
   });
 
@@ -71,9 +71,9 @@ describe('V3.1 验证', () => {
     // 国内规则直接 DIRECT，不指向策略组
     const bilibiliRule = rules.find(r => r.includes('bilibili'));
     const cnRule = rules.find(r => r.startsWith('RULE-SET,geosite-cn,'));
-    expect(bilibiliRule?.endsWith(',DIRECT')).toBe(true);
+    // 国内媒体组已删除 → BILIBILI 不再作为规则输出
+    expect(bilibiliRule).toBeUndefined();
     expect(cnRule?.endsWith(',DIRECT')).toBe(true);
-    expect(bilibiliRule).not.toContain('国内媒体');
     expect(cnRule).not.toContain('国内媒体');
     
     console.log('规则总数:', rules.length);
@@ -90,10 +90,10 @@ describe('V3.1 验证', () => {
     expect(ruleActionTarget({ id: 'BILIBILI', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
     expect(ruleActionTarget({ id: 'CN', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
     
-    // 业务条件组
+    // 业务条件组（BING/ONEDRIVE 已合并入微软服务组）
     expect(ruleActionTarget({ id: 'GOOGLEFCM', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('谷歌FCM');
-    expect(ruleActionTarget({ id: 'BING', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软Bing');
-    expect(ruleActionTarget({ id: 'ONEDRIVE', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软云盘');
+    expect(ruleActionTarget({ id: 'BING', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软服务');
+    expect(ruleActionTarget({ id: 'ONEDRIVE', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软服务');
     expect(ruleActionTarget({ id: 'MICROSOFT', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软服务');
     expect(ruleActionTarget({ id: 'APPLE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('苹果服务');
     // 已删除的组（如网易音乐）无归属：DIRECT 目标直接兜底 DIRECT
