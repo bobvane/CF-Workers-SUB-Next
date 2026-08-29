@@ -41,7 +41,7 @@ body {
 a { color: var(--accent); text-decoration: none; }
 a:hover { text-decoration: underline; }
 /* ===== Sidebar Layout ===== */
-.app-shell { display: flex; min-height: 100vh; }
+.app-shell { display: flex; min-height: 100vh; max-width: 1400px; margin: 0 auto; width: 100%; }
 .sidebar {
   width: 208px; flex-shrink: 0;
   background: var(--side-bg); border-right: 1px solid var(--border);
