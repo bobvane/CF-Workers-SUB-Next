@@ -6,8 +6,10 @@
  *
  * 判定字段来源：
  * - pbk: Reality 公钥（vless.parser.ts / clash.ts 产出）
- * - flow: XTLS Vision 流控（仅 TCP 系有效）
+ * - flow: XTLS 流控（仅 TCP 系有效，官方唯一合法值 xtls-rprx-vision）
  * - transport.type: tcp / xhttp / grpc / ws（解析器只产出这四种，其余归一 tcp）
+ *
+ * 显示规则（用户拍板）：XTLS Vision 直接表达为 XTLS（XTLS 隐含 TCP，不叠加 TCP 段）。
  */
 
 import { Node } from '@/models/node';
@@ -43,7 +45,7 @@ export function displayProtocol(node: Node): string {
 
 /**
  * VLESS 子类型：按官方矩阵动态拼接
- * 附加段固定顺序：Reality → XTLS Vision → 传输层
+ * 附加段固定顺序：Reality → XTLS → 传输层
  */
 function displayVlessProtocol(node: Node): string {
   const transportType = node.transport?.type ?? 'tcp';
@@ -52,8 +54,9 @@ function displayVlessProtocol(node: Node): string {
   // Reality（pbk 存在即 Reality，可配 TCP/XHTTP/gRPC）
   if (node.pbk) segments.push('Reality');
 
-  // XTLS Vision 仅 TCP 系有效；官方确认 XHTTP/WS/gRPC 与 Vision 互斥，无效组合忽略 flow
-  if (node.flow && transportType === 'tcp') segments.push('XTLS Vision');
+  // XTLS 仅 TCP 系有效；官方确认 XHTTP/WS/gRPC 与 Vision 互斥，无效组合忽略 flow
+  // 用户拍板：XTLS Vision 直接表达为 XTLS（XTLS 隐含 TCP）
+  if (node.flow && transportType === 'tcp') segments.push('XTLS');
 
   // 传输层（tcp 不单独显示，作为兜底 VLESS TCP）
   if (transportType === 'xhttp') segments.push('XHTTP');

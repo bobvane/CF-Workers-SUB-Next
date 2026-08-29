@@ -1016,7 +1016,25 @@ async function loadNodes() {
 }
 
 // ============ 协议显示名（独立链路，只影响展示） ============
-// VLESS 子类型按官方标准：安全层(none/tls/reality) × 传输层 的笛卡尔积，由字段动态拼接
+// VLESS 子类型判定源 = 节点链接原始表达式（type/security/pbk/flow），
+// 因节点列表 API 未返回 transport/pbk/flow 字段，前端优先从整链保真 n.link 解析，
+// 拿不到 link 参数再回退到节点字段。XTLS Vision 直接表达为 XTLS（XTLS 隐含 TCP）。
+function parseVlessLink(n) {
+  const out = { type: '', pbk: '', flow: '', security: '' };
+  const link = n.link || '';
+  const q = link.indexOf('?');
+  if (q < 0) return out;
+  const query = link.slice(q + 1).split('#')[0];
+  query.split('&').forEach((pair) => {
+    const eq = pair.indexOf('=');
+    if (eq < 0) return;
+    const k = pair.slice(0, eq);
+    let v = pair.slice(eq + 1);
+    try { v = decodeURIComponent(v); } catch { /* 保留原值 */ }
+    if (k in out) out[k] = v;
+  });
+  return out;
+}
 function displayProtocol(n) {
   const p = n.protocol;
   if (p === 'vmess') return 'VMess';
@@ -1028,11 +1046,16 @@ function displayProtocol(n) {
   if (p === 'wireguard') return 'WireGuard';
   if (p === 'anytls') return 'AnyTLS';
   if (p === 'vless') {
-    const t = (n.transport && n.transport.type) || 'tcp';
+    const link = parseVlessLink(n);
+    const t = link.type || (n.transport && n.transport.type) || 'tcp';
+    const pbk = link.pbk || n.pbk;
+    const flow = link.flow || n.flow;
+    const security = link.security;
     const segs = [];
-    if (n.pbk) segs.push('Reality');
-    // XTLS Vision 仅 TCP 系有效；XHTTP/WS/gRPC 与 Vision 互斥，无效组合忽略 flow
-    if (n.flow && t === 'tcp') segs.push('XTLS Vision');
+    // Reality（security=reality 或 pbk 存在即 Reality，可配 TCP/XHTTP/gRPC）
+    if (security === 'reality' || pbk) segs.push('Reality');
+    // XTLS 仅 TCP 系有效；XHTTP/WS/gRPC 与 Vision 互斥，无效组合忽略 flow
+    if (flow && t === 'tcp') segs.push('XTLS');
     if (t === 'xhttp') segs.push('XHTTP');
     else if (t === 'ws') segs.push('WebSocket');
     else if (t === 'grpc') segs.push('gRPC');

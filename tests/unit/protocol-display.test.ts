@@ -51,12 +51,12 @@ describe('displayProtocol - VLESS 官方标准子类型', () => {
   it('TCP + Reality → VLESS + Reality', () => {
     expect(displayProtocol(vlessNode({ pbk: 'k' }))).toBe('VLESS + Reality');
   });
-  it('TCP + Vision → VLESS + XTLS Vision', () => {
-    expect(displayProtocol(vlessNode({ flow: 'xtls-rprx-vision' }))).toBe('VLESS + XTLS Vision');
+  it('TCP + Vision → VLESS + XTLS', () => {
+    expect(displayProtocol(vlessNode({ flow: 'xtls-rprx-vision' }))).toBe('VLESS + XTLS');
   });
-  it('TCP + Reality + Vision → VLESS + Reality + XTLS Vision', () => {
+  it('TCP + Reality + Vision → VLESS + Reality + XTLS', () => {
     expect(displayProtocol(vlessNode({ pbk: 'k', flow: 'xtls-rprx-vision' }))).toBe(
-      'VLESS + Reality + XTLS Vision'
+      'VLESS + Reality + XTLS'
     );
   });
   it('XHTTP → VLESS + XHTTP', () => {
