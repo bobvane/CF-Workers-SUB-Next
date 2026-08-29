@@ -128,6 +128,7 @@ export const RULE_GROUPS: RuleGroup[] = [
     items: [
       // 原生 GEOSITE 输出，普通可勾选
       { id: 'category-communication', label: '社交通讯聚合', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'category-social-media-!cn', label: '海外社交(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
       { id: 'telegram', label: 'Telegram', tag: 'geosite', target: 'PROXY', native: true },
       { id: 'discord', label: 'Discord', tag: 'geosite', target: 'PROXY', native: true },
       { id: 'twitter', label: 'X / Twitter', tag: 'geosite', target: 'PROXY', native: true },
@@ -142,7 +143,6 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'signal', label: 'Signal', tag: 'geosite', target: 'PROXY', native: true },
       { id: 'linkedin', label: 'LinkedIn', tag: 'geosite', target: 'PROXY', native: true },
       { id: 'pinterest', label: 'Pinterest', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'category-social-media-!cn', label: '海外社交(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
