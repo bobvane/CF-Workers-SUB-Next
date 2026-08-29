@@ -735,7 +735,7 @@ function renderRulesTree() {
     const cls = ruleExpanded[g.key] ? 'open' : '';
     // 大类 checkbox：全选时打勾，部分选时半选（CSS 用 indeterminate）
     // 空组（如 user 组 v2.9.5 起无预置规则）显示占位，等待用户添加
-    let itemsHTML: string;
+    let itemsHTML;
     if (g.items.length === 0) {
       itemsHTML = \`<div class="rules-empty" style="padding:10px 14px;font-size:12px;color:var(--text2)">暂无预置规则，从右侧规则库添加</div>\`;
     } else {
