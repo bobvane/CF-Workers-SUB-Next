@@ -4,21 +4,6 @@
 import { describe, it, expect } from 'vitest';
 import { MemoryKvAdapter, createRepositories } from '@/storage/kv';
 import { createConfigService } from '@/services/config.service';
-import { Node } from '@/models/node';
-
-function makeNode(name: string): Node {
-  return {
-    id: name,
-    name,
-    protocol: 'vless',
-    server: 'example.com',
-    port: 443,
-    uuid: '550e8400-e29b-41d4-a716-446655440000',
-    tls: true,
-    metadata: { source: 'manual', originalName: name, tags: [] },
-    version: 1,
-  };
-}
 
 describe('ConfigService 分流规则注入', () => {
   it('未保存规则时，mihomo 配置仍包含 base 规则（如 MATCH），且 native 固定规则自动注入', async () => {
