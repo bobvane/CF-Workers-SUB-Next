@@ -1,16 +1,15 @@
-
 import { describe, it, expect } from 'vitest';
 import { buildRules } from '@/generator/rule-providers';
 import { RULE_GROUPS } from '@/data/metacubex-rules';
 describe('rule order', () => {
-  it('github (dev) before microsoft', () => {
+  it('openai (ai) before microsoft', () => {
     const all = RULE_GROUPS.flatMap(g => g.items).filter(i => !i.custom);
     const lines = buildRules(all, RULE_GROUPS);
-    const gh = lines.findIndex(l => l.includes('geosite-github,'));
+    const oi = lines.findIndex(l => l.includes('geosite-openai,'));
     const ms = lines.findIndex(l => l.includes('geosite-microsoft,'));
-    console.log('github idx', gh, 'microsoft idx', ms);
-    expect(gh).toBeGreaterThan(-1);
+    console.log('openai idx', oi, 'microsoft idx', ms);
+    expect(oi).toBeGreaterThan(-1);
     expect(ms).toBeGreaterThan(-1);
-    expect(gh).toBeLessThan(ms);
+    expect(oi).toBeLessThan(ms);
   });
 });

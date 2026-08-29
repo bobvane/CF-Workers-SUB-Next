@@ -28,7 +28,12 @@ describe('MetaCubeX 规则数据完整性', () => {
       expect(g.key).toBeTruthy();
       expect(g.name).toBeTruthy();
       expect(g.icon).toBeTruthy();
-      expect(g.items.length).toBeGreaterThan(0);
+      // user 组初始为空（v2.9.5 起无预置规则，等待用户添加），其余组必须有内容
+      if (g.key === 'user') {
+        expect(Array.isArray(g.items)).toBe(true);
+      } else {
+        expect(g.items.length).toBeGreaterThan(0);
+      }
       for (const it of g.items) {
         expect(it.id).toBeTruthy();
         expect(['geosite', 'geoip', 'ruleset']).toContain(it.tag);

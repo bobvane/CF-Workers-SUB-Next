@@ -18,7 +18,6 @@ import {
   RuleCatalog,
   RuleCatalogEntry,
   RuleCatalogMeta,
-  RuleCatalogRemovedEntry,
   RuleCatalogType,
   createCatalogMeta,
 } from '@/models/rule-catalog';
@@ -150,18 +149,8 @@ export function createCatalogSyncService(
           };
         });
 
-        // 5. 移入黑名单
-        const removedEntries: RuleCatalogRemovedEntry[] = removed.map((id) => ({
-          id,
-          removedAt: fetchedAt,
-          reason: 'upstream-gone',
-        }));
-
-        const existingRemoved = await repos.ruleCatalog.getRemoved();
-        const mergedRemoved = [...existingRemoved];
-        for (const r of removedEntries) {
-          if (!mergedRemoved.some((m) => m.id === r.id)) mergedRemoved.push(r);
-        }
+        // 5. 失效分类不再持久化黑名单历史（v2.9.5：以官方规则库为准，失效即删，不留累积历史）
+        //    removed 仍作为本次返回值保留，供前端在更新提示处显示"本次移除 N 条"
 
         // 6. 清理用户 selection 中的失效 id
         const selected = await repos.settings.get('selected_rules');
@@ -178,7 +167,7 @@ export function createCatalogSyncService(
           }
         }
 
-        // 7. 写回
+        // 7. 写回（黑名单写空数组：不再累积失效历史）
         const version = String(fetchedAt);
         const catalog: RuleCatalog = {
           version,
@@ -190,10 +179,10 @@ export function createCatalogSyncService(
           version,
           fetchedAt,
           total: entries.length,
-          removedCount: mergedRemoved.length,
+          removedCount: 0,
           status: 'ok',
         });
-        await repos.ruleCatalog.setCatalog(catalog, mergedRemoved, meta);
+        await repos.ruleCatalog.setCatalog(catalog, [], meta);
 
         return { fetchedAt, total: entries.length, added, removed, kept: kept.length, status: 'ok' };
       } catch (err) {

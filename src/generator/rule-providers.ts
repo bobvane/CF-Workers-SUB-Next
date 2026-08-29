@@ -122,7 +122,7 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
  *   ② 用户自定义规则（按用户定义顺序，高于 CN/GEOIP）
  *   ③ 广告拦截 (CATEGORY-ADS-ALL) → REJECT
  *   ④ 业务分类（细分在前、宽泛在后）：
- *       谷歌FCM/微软Bing/微软云盘/微软服务/苹果服务/游戏平台/网易音乐/AI/开发/社交/云/加密货币/用户规则
+ *       谷歌FCM/微软Bing/微软云盘/微软服务/苹果服务/游戏平台/AI/社交/加密货币/用户规则
  *   ⑤ 国内直连规则 (RULE-SET,xxx,DIRECT) —— china-direct / china-media 组内规则
  *   ⑥ GEOSITE,cn,DIRECT
  *   ⑦ GEOIP,CN,DIRECT

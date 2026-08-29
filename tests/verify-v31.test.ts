@@ -29,7 +29,6 @@ describe('V3.1 验证', () => {
       { id: 'ONEDRIVE', label: '微软云盘', tag: 'geosite' as const, target: 'PROXY' as const },
       { id: 'MICROSOFT', label: '微软服务', tag: 'geosite' as const, target: 'PROXY' as const },
       { id: 'APPLE', label: '苹果服务', tag: 'geosite' as const, target: 'DIRECT' as const },
-      { id: 'NETEASE', label: '网易音乐', tag: 'geosite' as const, target: 'DIRECT' as const },
       { id: 'OPENAI', label: 'OpenAI', tag: 'geosite' as const, target: 'PROXY' as const },
       { id: 'NETFLIX', label: 'Netflix', tag: 'geosite' as const, target: 'PROXY' as const },
       { id: 'BILIBILI', label: '哔哩哔哩', tag: 'geosite' as const, target: 'DIRECT' as const },
@@ -55,7 +54,6 @@ describe('V3.1 验证', () => {
       { id: 'ONEDRIVE', label: '微软云盘', tag: 'geosite' as const, target: 'PROXY' as const },
       { id: 'MICROSOFT', label: '微软服务', tag: 'geosite' as const, target: 'PROXY' as const },
       { id: 'APPLE', label: '苹果服务', tag: 'geosite' as const, target: 'DIRECT' as const },
-      { id: 'NETEASE', label: '网易音乐', tag: 'geosite' as const, target: 'DIRECT' as const },
       { id: 'OPENAI', label: 'OpenAI', tag: 'geosite' as const, target: 'PROXY' as const },
       { id: 'NETFLIX', label: 'Netflix', tag: 'geosite' as const, target: 'PROXY' as const },
       { id: 'BILIBILI', label: '哔哩哔哩', tag: 'geosite' as const, target: 'DIRECT' as const },
@@ -98,7 +96,9 @@ describe('V3.1 验证', () => {
     expect(ruleActionTarget({ id: 'ONEDRIVE', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软云盘');
     expect(ruleActionTarget({ id: 'MICROSOFT', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软服务');
     expect(ruleActionTarget({ id: 'APPLE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('苹果服务');
-    expect(ruleActionTarget({ id: 'NETEASE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('网易音乐');
+    // 已删除的组（如网易音乐）无归属：DIRECT 目标直接兜底 DIRECT
+    expect(ruleActionTarget({ id: 'NETEASE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
+    expect(ruleActionTarget({ id: 'GITHUB', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('漏网之鱼');
     expect(ruleActionTarget({ id: 'OPENAI', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('AI 平台');
     expect(ruleActionTarget({ id: 'NETFLIX', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('国外媒体');
   });

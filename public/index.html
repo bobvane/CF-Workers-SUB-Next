@@ -407,15 +407,8 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
           <button class="btn btn-sm" onclick="refreshCatalog()" id="catalogRefreshBtn">🔄 立即刷新</button>
         </div>
       </div>
-      <!-- 同步状态 / 失效历史（展开式） -->
+      <!-- 同步状态（失效分类以官方规则库为准自动清理，不保留历史） -->
       <div id="catalogStatus" style="color:var(--text2);font-size:12px;padding:6px 12px;background:var(--bg);border-radius:8px;margin-bottom:12px">加载中…</div>
-      <div id="catalogRemovedSection" style="display:none;margin-bottom:12px">
-        <div style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleRemovedHistory()">
-          <span id="catalogRemovedToggle">▶</span>
-          <span style="font-size:12px;color:var(--text2)">失效分类历史 (<span id="catalogRemovedCount">0</span>)</span>
-        </div>
-        <div id="catalogRemovedList" style="display:none;margin-top:8px;max-height:200px;overflow-y:auto;border:1px solid var(--border);border-radius:12px;padding:8px;font-size:13px"></div>
-      </div>
       <!-- 分类筛选 chips（方案 A：缩小范围再挑，避免平铺几千条） -->
       <div id="catalogTypeFilter" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
         <button class="catalog-chip active" data-type="" onclick="setCatalogType(this)">全部</button>
@@ -737,14 +730,20 @@ function renderRulesTree() {
     const checkedCount = g.items.filter(it => ruleSelected[it.id]).length;
     const cls = ruleExpanded[g.key] ? 'open' : '';
     // 大类 checkbox：全选时打勾，部分选时半选（CSS 用 indeterminate）
-    const itemsHTML = g.items.map(it => {
-      const isCustom = window._customRules && window._customRules.includes(it.id);
-      return `<label class="rules-item">
-        <input type="checkbox" data-rule-check data-g="${gi}" data-id="${it.id}" ${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
-        <span class="rule-label"><span class="rule-name">${it.label}</span><span class="rule-id">${it.tag}:${it.id}</span></span>
-        ${isCustom ? `<span style="cursor:pointer;color:var(--red);font-size:14px;margin-left:4px" onclick="event.stopPropagation();deleteCustomRule('${it.id}')" title="删除此规则">✕</span>` : ''}
-      </label>`;
-    }).join('');
+    // 空组（如 user 组 v2.9.5 起无预置规则）显示占位，等待用户添加
+    let itemsHTML: string;
+    if (g.items.length === 0) {
+      itemsHTML = `<div class="rules-empty" style="padding:10px 14px;font-size:12px;color:var(--text2)">暂无预置规则，从右侧规则库添加</div>`;
+    } else {
+      itemsHTML = g.items.map(it => {
+        const isCustom = window._customRules && window._customRules.includes(it.id);
+        return `<label class="rules-item">
+          <input type="checkbox" data-rule-check data-g="${gi}" data-id="${it.id}" ${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
+          <span class="rule-label"><span class="rule-name">${it.label}</span><span class="rule-id">${it.tag}:${it.id}</span></span>
+          ${isCustom ? `<span style="cursor:pointer;color:var(--red);font-size:14px;margin-left:4px" onclick="event.stopPropagation();deleteCustomRule('${it.id}')" title="删除此规则">✕</span>` : ''}
+        </label>`;
+      }).join('');
+    }
     return `
       <div class="rules-group">
         <div class="rules-group-head ${cls}" data-g="${gi}" onclick="toggleRuleGroup(${gi})">
@@ -810,10 +809,10 @@ function selectAllRules(check) {
 // ============ 快速预设 ============
 // 以"组"为单位：选中组全组勾选，未选组全组取消；组内规则目标配置不变
 const RULE_PRESETS = [
-  { key: 'mini', label: '🟢 极简', groups: ['ads','china-direct','china-media','netease','media','ai'] },
-  { key: 'mini-crypto', label: '🟢 极简+加密', groups: ['ads','china-direct','china-media','netease','media','ai','crypto'] },
-  { key: 'standard', label: '🔵 标准', groups: ['ads','china-direct','china-media','netease','media','ai','google-fcm','bing','onedrive','microsoft','apple','game'] },
-  { key: 'standard-crypto', label: '🔵 标准+加密', groups: ['ads','china-direct','china-media','netease','media','ai','google-fcm','bing','onedrive','microsoft','apple','game','crypto'] },
+  { key: 'mini', label: '🟢 极简', groups: ['ads','china-direct','china-media','media','ai'] },
+  { key: 'mini-crypto', label: '🟢 极简+加密', groups: ['ads','china-direct','china-media','media','ai','crypto'] },
+  { key: 'standard', label: '🔵 标准', groups: ['ads','china-direct','china-media','media','ai','google-fcm','bing','onedrive','microsoft','apple','game'] },
+  { key: 'standard-crypto', label: '🔵 标准+加密', groups: ['ads','china-direct','china-media','media','ai','google-fcm','bing','onedrive','microsoft','apple','game','crypto'] },
   { key: 'full', label: '🟣 完全体', groups: null },  // null = 除 crypto 外全部
   { key: 'full-crypto', label: '🟣 完全+加密', groups: 'ALL' },
 ];
@@ -1485,15 +1484,12 @@ async function changePassword() {
 
 // ============ 规则库管理（设置页） ============
 
-/** 加载目录状态（更新时间/总数/失效数） */
+/** 加载目录状态（更新时间/总数） */
 async function loadCatalogStatus() {
   try {
     const res = await api('/rules/catalog/meta');
     const meta = res.data?.meta || {};
-    const removed = res.data?.removed || [];
     const statusEl = document.getElementById('catalogStatus');
-    const removedSection = document.getElementById('catalogRemovedSection');
-    const removedCount = document.getElementById('catalogRemovedCount');
 
     if (meta.status === 'never') {
       statusEl.innerHTML = '⚠️ 尚未同步过规则库，点击「立即刷新」开始同步';
@@ -1507,21 +1503,9 @@ async function loadCatalogStatus() {
         <span>${statusText}</span>
         <span>上次更新: ${lastUpdate}</span>
         <span>分类总数: ${meta.total ?? 0}</span>
-        <span>已失效移除: ${meta.removedCount ?? 0}</span>
       </div>
       ${meta.lastError ? `<div style="color:var(--red);font-size:12px;margin-top:4px">上次错误: ${escHtml(meta.lastError)}</div>` : ''}
     `;
-
-    if (removed.length > 0) {
-      removedSection.style.display = 'block';
-      removedCount.textContent = removed.length;
-      document.getElementById('catalogRemovedList').innerHTML = removed.map(r =>
-        `<div style="display:flex;justify-content:space-between;padding:6px 8px;border-bottom:1px solid var(--border);font-size:12px">
-          <span style="color:var(--red)">${escHtml(r.id)}</span>
-          <span style="color:var(--text2)">${new Date(r.removedAt).toLocaleString('zh-CN')}</span>
-        </div>`
-      ).join('');
-    }
   } catch {
     document.getElementById('catalogStatus').innerHTML = '❌ 加载规则库状态失败';
   }
@@ -1535,7 +1519,8 @@ async function refreshCatalog() {
   try {
     const res = await api('/rules/catalog/refresh', { method: 'POST' });
     if (res.success) {
-      toast('✅ 规则库刷新完成');
+      const removedCount = (res.data?.removed || []).length;
+      toast(removedCount > 0 ? `✅ 规则库刷新完成，本次移除 ${removedCount} 条失效规则` : '✅ 规则库刷新完成');
       // 重新加载状态和搜索
       loadCatalogStatus();
       // 清空搜索缓存，下次搜索走新数据
@@ -1550,19 +1535,6 @@ async function refreshCatalog() {
   } finally {
     btn.disabled = false;
     btn.textContent = '🔄 立即刷新';
-  }
-}
-
-/** 展开/收起失效历史 */
-function toggleRemovedHistory() {
-  const list = document.getElementById('catalogRemovedList');
-  const toggle = document.getElementById('catalogRemovedToggle');
-  if (list.style.display === 'none') {
-    list.style.display = 'block';
-    toggle.textContent = '▼';
-  } else {
-    list.style.display = 'none';
-    toggle.textContent = '▶';
   }
 }
 

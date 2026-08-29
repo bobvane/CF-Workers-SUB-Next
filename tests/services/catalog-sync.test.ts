@@ -66,7 +66,7 @@ describe('catalog-sync 扫描服务', () => {
     expect(result2.kept).toBe(1);
   });
 
-  it('上游删除分类 → 移入黑名单 + 清理 selection', async () => {
+  it('上游删除分类 → 清理 selection 并返回本次 removed', async () => {
     // 第一次：Netflix 存在，且用户勾选了 NETFLIX 和 OPENAI
     const service = createCatalogSyncService(repos, mockTreeFetcher(['geo/geosite/netflix.mrs', 'geo/geosite/openai.mrs']));
     await service.sync();
@@ -81,10 +81,9 @@ describe('catalog-sync 扫描服务', () => {
     const selected = JSON.parse((await repos.settings.get('selected_rules')) ?? '[]') as string[];
     expect(selected).toEqual(['NETFLIX']);
 
-    // 黑名单记录
+    // v2.9.5：失效历史不再持久化黑名单，removed 仅作为本次返回值
     const removed = await repos.ruleCatalog.getRemoved();
-    expect(removed.map((r) => r.id)).toContain('OPENAI');
-    expect(removed.find((r) => r.id === 'OPENAI')?.reason).toBe('upstream-gone');
+    expect(removed).toEqual([]);
   });
 
   it('上游返回截断 → 失败兜底 old 库保留 + status=stale', async () => {

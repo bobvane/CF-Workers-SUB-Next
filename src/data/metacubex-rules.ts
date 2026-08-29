@@ -63,7 +63,7 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
  *   1. PRIVATE / LAN（GEOIP,private → DIRECT，必须最前，防内网误代理）
  *   2. 用户自定义规则（可覆盖业务分类和 CN，但不能覆盖 LAN）
  *   3. 广告拦截（CATEGORY-ADS-ALL → REJECT）
- *   4. 业务分类（细分在前，宽泛在后；FCM/AI/开发/社交/云/加密/用户规则/游戏/媒体 → 宽泛厂商组 Bing/OneDrive/微软/苹果最后——geosite-microsoft 包含 github.com，微软服务必须排在开发工具之后）
+ *   4. 业务分类（细分在前，宽泛在后；FCM/AI/社交/加密/用户规则/游戏/媒体 → 宽泛厂商组 Bing/OneDrive/微软/苹果最后——geosite-microsoft 包含 github.com，微软服务必须排在业务细分之后）
  *   5. 国内直连规则（RULE-SET,xxx → DIRECT，不建策略组）
  *   6. GEOSITE,cn → DIRECT
  *   7. GEOIP,CN → DIRECT
@@ -113,13 +113,6 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'netease', name: '网易音乐', icon: '🎵',
-    items: [
-      // 网易音乐默认 DIRECT（国内服务）。APPLE-MUSIC 不在此组（仅在苹果服务，避免重复）。
-      { id: 'NETEASE', label: '网易音乐', tag: 'geosite', target: 'DIRECT' },
-    ],
-  },
-  {
     key: 'google-fcm', name: '谷歌FCM', icon: '📲',
     items: [
       // 细分规则（FCM）放在宽泛规则（GOOGLE）之前，防被先命中
@@ -138,22 +131,6 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'dev', name: '开发工具', icon: '💻',
-    items: [
-      // GitHub 并入开发工具（不独立成组）
-      { id: 'GITHUB', label: 'GitHub', tag: 'geosite', target: 'PROXY' },
-      { id: 'GITLAB', label: 'GitLab', tag: 'geosite', target: 'PROXY' },
-      { id: 'NPMJS', label: 'npm', tag: 'geosite', target: 'PROXY' },
-      { id: 'STACKEXCHANGE', label: 'StackExchange', tag: 'geosite', target: 'PROXY' },
-      { id: 'NOTION', label: 'Notion', tag: 'geosite', target: 'PROXY' },
-      { id: 'FIGMA', label: 'Figma', tag: 'geosite', target: 'PROXY' },
-      { id: 'CANVA', label: 'Canva', tag: 'geosite', target: 'PROXY' },
-      { id: 'MEDIUM', label: 'Medium', tag: 'geosite', target: 'PROXY' },
-      { id: 'JSDELIVR', label: 'jsDelivr', tag: 'geosite', target: 'DIRECT' },
-      { id: 'CATEGORY-DEV', label: '开发聚合', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
     key: 'social', name: '社交', icon: '📱',
     items: [
       { id: 'TELEGRAM', label: 'Telegram', tag: 'geosite', target: 'PROXY' },
@@ -164,20 +141,6 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'REDDIT', label: 'Reddit', tag: 'geosite', target: 'PROXY' },
       { id: 'WHATSAPP', label: 'WhatsApp', tag: 'geosite', target: 'PROXY' },
       { id: 'SIGNAL', label: 'Signal', tag: 'geosite', target: 'PROXY' },
-    ],
-  },
-  {
-    key: 'cloud', name: '云服务', icon: '☁️',
-    items: [
-      // 移除 MICROSOFT（已拆到"微软服务"组）。GOOGLE 保留（细分 GEMINI/FCM 已在前置组）
-      { id: 'CLOUDFLARE', label: 'Cloudflare', tag: 'geosite', target: 'DIRECT' },
-      { id: 'GOOGLE', label: 'Google', tag: 'geosite', target: 'PROXY' },
-      { id: 'AMAZON', label: 'Amazon/AWS', tag: 'geosite', target: 'PROXY' },
-      { id: 'DIGITALOCEAN', label: 'DigitalOcean', tag: 'geosite', target: 'PROXY' },
-      { id: 'ORACLE', label: 'Oracle', tag: 'geosite', target: 'PROXY' },
-      { id: 'VERCEL', label: 'Vercel', tag: 'geosite', target: 'PROXY' },
-      { id: 'HEROKU', label: 'Heroku', tag: 'geosite', target: 'PROXY' },
-      { id: 'DOCKER', label: 'Docker', tag: 'geosite', target: 'PROXY' },
     ],
   },
   {
@@ -196,15 +159,9 @@ export const RULE_GROUPS: RuleGroup[] = [
   {
     key: 'user', name: '用户规则', icon: '👑',
     items: [
-      // 移除 APPLE（已拆到"苹果服务"组）
-      { id: 'ADOBE', label: 'Adobe', tag: 'geosite', target: 'PROXY' },
-      { id: 'ZOOM', label: 'Zoom', tag: 'geosite', target: 'DIRECT' },
-      { id: 'SLACK', label: 'Slack', tag: 'geosite', target: 'PROXY' },
-      { id: 'SPEEDTEST', label: 'Speedtest', tag: 'geosite', target: 'DIRECT' },
-      { id: 'FASTLY', label: 'Fastly', tag: 'geosite', target: 'DIRECT' },
-      { id: 'CLOUDINARY', label: 'Cloudinary', tag: 'geosite', target: 'DIRECT' },
+      // 用户规则组初始为空，规则由用户从右侧规则库自行添加
     ],
-  },  {
+  }, {
     key: 'game', name: '游戏平台', icon: '🎮',
     items: [
       { id: 'STEAM', label: 'Steam', tag: 'geosite', target: 'PROXY' },
@@ -256,7 +213,7 @@ export const RULE_GROUPS: RuleGroup[] = [
   {
     key: 'apple', name: '苹果服务', icon: '🍎',
     items: [
-      // 苹果服务默认 DIRECT（中国区直连更稳）。APPLE-MUSIC 只放本组，不在网易音乐。
+      // 苹果服务默认 DIRECT（中国区直连更稳）。APPLE-MUSIC 只放本组。
       { id: 'APPLE', label: '苹果服务', tag: 'geosite', target: 'DIRECT' },
       { id: 'APPLE-MUSIC', label: 'Apple Music', tag: 'geosite', target: 'DIRECT' },
       { id: 'APPLE-UPDATE', label: 'Apple 系统更新', tag: 'geosite', target: 'DIRECT' },

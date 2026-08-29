@@ -78,11 +78,20 @@ describe('Rules API', () => {
     for (const g of groupList) {
       expect(g.key).toBeTruthy();
       expect(g.icon).toBeTruthy();
-      expect(g.items.length).toBeGreaterThan(0);
+      // user 组初始为空（v2.9.5 起无预置规则，等待用户添加），其余组必须有内容
+      if (g.key === 'user') {
+        expect(Array.isArray(g.items)).toBe(true);
+      } else {
+        expect(g.items.length).toBeGreaterThan(0);
+      }
     }
     const names = groupList.map((g) => g.key);
-    for (const k of ['ads', 'china-direct', 'china-media', 'google-fcm', 'bing', 'onedrive', 'microsoft', 'apple', 'netease', 'media', 'crypto', 'ai', 'social', 'game', 'cloud', 'dev', 'user']) {
+    for (const k of ['ads', 'china-direct', 'china-media', 'google-fcm', 'bing', 'onedrive', 'microsoft', 'apple', 'media', 'crypto', 'ai', 'social', 'game', 'user']) {
       expect(names).toContain(k);
+    }
+    // 已删除的组不得再出现
+    for (const k of ['netease', 'cloud', 'dev']) {
+      expect(names).not.toContain(k);
     }
   });
 

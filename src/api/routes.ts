@@ -445,11 +445,10 @@ export function createApp(deps: AppDeps): Hono {
     });
   });
 
-  // 获取规则目录状态 + 失败黑名单（需登录，含内部状态）
+  // 获取规则目录状态（需登录，含内部状态）
   app.get('/api/rules/catalog/meta', requireAuth(auth), async (c) => {
     const catalogMeta: RuleCatalogMeta = await repos.ruleCatalog.getMeta();
-    const removed = await repos.ruleCatalog.getRemoved();
-    return c.json({ success: true, data: { meta: catalogMeta, removed } });
+    return c.json({ success: true, data: { meta: catalogMeta } });
   });
 
   // 手动刷新规则库（需登录；触发一次扫描，失败时返回 stale 状态）
