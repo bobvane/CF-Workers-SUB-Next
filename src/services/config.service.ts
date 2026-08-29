@@ -128,7 +128,12 @@ export function createConfigService(repos: Repositories): ConfigService {
     async getSelectedRules(): Promise<MetaCubeXRule[]> {
       const ids = await this.getSelectedRuleIds();
       const groups = await this.getMergedGroups();
-      return ids
+      // 自动注入 native 固定规则：即使未勾选也要输出（承重墙）
+      const fixedNativeIds = new Set(
+        groups.flatMap(g => g.items.filter(it => it.fixed && it.native).map(it => it.id))
+      );
+      const mergedIds = [...new Set([...ids, ...fixedNativeIds])];
+      return mergedIds
         .map((id) => findRuleInGroups(groups, id))
         .filter((r): r is MetaCubeXRule => r !== undefined);
     },

@@ -8,7 +8,7 @@
 import catalogRaw from './metacubex-catalog.json';
 
 export interface MetaCubeXRule {
-  /** 规则 id（geosite category 名，大写） */
+  /** 规则 id（geosite category 名。原生规则为小写分类名，可含 @cn/!cn 属性；provider 规则为大写 catalog id） */
   id: string;
   /** 显示名 */
   label: string;
@@ -18,6 +18,10 @@ export interface MetaCubeXRule {
   target: 'PROXY' | 'DIRECT' | 'REJECT';
   /** 用户自定义规则（在输出配置中享有最高优先级，紧跟 PRIVATE 之后第一个命中） */
   custom?: boolean;
+  /** 原生 GEOSITE/GEOIP 输出（不走 rule-provider）；缺省=false → 走 RULE-SET provider */
+  native?: boolean;
+  /** 灰色固定（承重墙）：UI 展示但不可取消，输出端始终输出 */
+  fixed?: boolean;
 }
 
 export interface RuleGroup {
@@ -78,74 +82,85 @@ export const RULE_GROUPS: RuleGroup[] = [
   {
     key: 'ads', name: '广告拦截', icon: '🔥',
     items: [
-      { id: 'CATEGORY-ADS-ALL', label: '广告拦截通用合集', tag: 'geosite', target: 'REJECT' },
-      // 跟踪器（与广告拦截同组，跟随广告拦截组启用而启用）
-      { id: 'TRACKER', label: '追踪器(Tracker)', tag: 'geosite', target: 'REJECT' },
+      // 广告拦截 — 原生 GEOSITE 输出，不走 rule-provider
+      { id: 'category-ads-all', label: '广告拦截通用合集', tag: 'geosite', target: 'REJECT', native: true, fixed: true },
+      { id: 'tracker', label: '追踪器(Tracker)', tag: 'geosite', target: 'REJECT', native: true, fixed: true },
     ],
   },
   {
     key: 'china-direct', name: '国内直连', icon: '🇨🇳',
     items: [
-      // 私有/基础直连（LAN 必须最先放行，防内网误代理）
-      { id: 'PRIVATE', label: '私有地址', tag: 'geosite', target: 'DIRECT' },
-      { id: 'CN', label: '中国直连域名', tag: 'geosite', target: 'DIRECT' },
-      // 国内常用网站（原"中国内地常用"并入）
-      { id: 'BAIDU', label: '百度', tag: 'geosite', target: 'DIRECT' },
-      { id: 'ALIBABA', label: '阿里巴巴(含淘宝/支付宝)', tag: 'geosite', target: 'DIRECT' },
-      { id: 'TENCENT', label: '腾讯(含微信/QQ)', tag: 'geosite', target: 'DIRECT' },
-      { id: 'JD', label: '京东', tag: 'geosite', target: 'DIRECT' },
-      { id: 'XIAOMI', label: '小米', tag: 'geosite', target: 'DIRECT' },
-      { id: 'HUAWEI', label: '华为', tag: 'geosite', target: 'DIRECT' },
-      { id: 'UNIONPAY', label: '银联', tag: 'geosite', target: 'DIRECT' },
-      { id: 'MEITUAN', label: '美团', tag: 'geosite', target: 'DIRECT' },
-      { id: 'KUAISHOU', label: '快手', tag: 'geosite', target: 'DIRECT' },
-      { id: 'XIAOHONGSHU', label: '小红书', tag: 'geosite', target: 'DIRECT' },
-      { id: 'SUNING', label: '苏宁', tag: 'geosite', target: 'DIRECT' },
-      { id: 'XUNLEI', label: '迅雷', tag: 'geosite', target: 'DIRECT' },
+      // 承重墙 — 固定灰色，不可取消；末尾去重，只留 MATCH
+      { id: 'cn', label: '中国直连域名', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
+      { id: 'geoip,cn', label: '中国 IP 段', tag: 'geoip', target: 'DIRECT', native: true, fixed: true },
+      { id: 'apple-cn', label: '苹果服务(中国区)', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'microsoft@cn', label: '微软服务(中国区)', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'steam@cn', label: 'Steam 中国区', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'category-games@cn', label: '游戏中国区', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'onedrive', label: '微软 OneDrive', tag: 'geosite', target: 'DIRECT', native: true },
     ],
   },
   {
     key: 'google-fcm', name: '谷歌FCM', icon: '📲',
     items: [
-      // 细分规则（FCM）放在宽泛规则（GOOGLE）之前，防被先命中
-      { id: 'GOOGLEFCM', label: '谷歌推送(GoogFCM)', tag: 'geosite', target: 'PROXY' },
+      // 保持 RULE-SET provider（例外组）
+      { id: 'googlefcm', label: '谷歌推送(Google FCM)', tag: 'geosite', target: 'PROXY' },
     ],
   },
   {
     key: 'ai', name: 'AI 平台', icon: '🤖',
     items: [
-      { id: 'OPENAI', label: 'OpenAI / ChatGPT', tag: 'geosite', target: 'PROXY' },
-      { id: 'ANTHROPIC', label: 'Claude (Anthropic)', tag: 'geosite', target: 'PROXY' },
-      { id: 'GOOGLE-GEMINI', label: 'Gemini', tag: 'geosite', target: 'PROXY' },
-      { id: 'PERPLEXITY', label: 'Perplexity', tag: 'geosite', target: 'PROXY' },
-      { id: 'GITHUB-COPILOT', label: 'GitHub Copilot', tag: 'geosite', target: 'PROXY' },
-      { id: 'CATEGORY-AI-CHAT-!CN', label: 'AI 对话(非中国)', tag: 'geosite', target: 'PROXY' },
+      // 原生 GEOSITE 输出，全部灰色固定
+      { id: 'category-ai-!cn', label: 'AI 平台(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'category-ai-chat-!cn', label: 'AI 对话(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'openai', label: 'OpenAI / ChatGPT', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'anthropic', label: 'Claude (Anthropic)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'google-gemini', label: 'Gemini', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'github-copilot', label: 'GitHub Copilot', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'perplexity', label: 'Perplexity', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'poe', label: 'POE', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'bytedance-ai-!cn', label: '字节跳动 AI(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'jetbrains-ai', label: 'JetBrains AI', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
     key: 'social', name: '社交', icon: '📱',
     items: [
-      { id: 'TELEGRAM', label: 'Telegram', tag: 'geosite', target: 'PROXY' },
-      { id: 'DISCORD', label: 'Discord', tag: 'geosite', target: 'PROXY' },
-      { id: 'TWITTER', label: 'X / Twitter', tag: 'geosite', target: 'PROXY' },
-      { id: 'FACEBOOK', label: 'Facebook', tag: 'geosite', target: 'PROXY' },
-      { id: 'INSTAGRAM', label: 'Instagram', tag: 'geosite', target: 'PROXY' },
-      { id: 'REDDIT', label: 'Reddit', tag: 'geosite', target: 'PROXY' },
-      { id: 'WHATSAPP', label: 'WhatsApp', tag: 'geosite', target: 'PROXY' },
-      { id: 'SIGNAL', label: 'Signal', tag: 'geosite', target: 'PROXY' },
+      // 原生 GEOSITE 输出，普通可勾选
+      { id: 'category-communication', label: '社交通讯聚合', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'telegram', label: 'Telegram', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'discord', label: 'Discord', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'twitter', label: 'X / Twitter', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'x', label: 'X (原Twitter)', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'meta', label: 'Meta 系列(Facebook/Instagram)', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'facebook', label: 'Facebook', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'instagram', label: 'Instagram', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'tiktok', label: 'TikTok', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'reddit', label: 'Reddit', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'line', label: 'Line', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'whatsapp', label: 'WhatsApp', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'signal', label: 'Signal', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'linkedin', label: 'LinkedIn', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'pinterest', label: 'Pinterest', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'category-social-media-!cn', label: '海外社交(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
     key: 'crypto', name: '加密货币', icon: '💰',
     items: [
-      { id: 'CATEGORY-CRYPTOCURRENCY', label: '加密货币通用合集', tag: 'geosite', target: 'PROXY' },
-      { id: 'BINANCE', label: '币安 Binance', tag: 'geosite', target: 'PROXY' },
-      { id: 'HUOBI', label: '火币 Huobi', tag: 'geosite', target: 'PROXY' },
-      { id: 'BYBIT', label: 'Bybit', tag: 'geosite', target: 'PROXY' },
-      { id: 'GATEIO', label: 'Gate.io', tag: 'geosite', target: 'PROXY' },
-      { id: 'COINONE', label: 'CoinOne', tag: 'geosite', target: 'PROXY' },
-      { id: 'LOCALBITCOINS', label: 'LocalBitcoins', tag: 'geosite', target: 'PROXY' },
-      { id: '8BTC', label: '巴比特', tag: 'geosite', target: 'PROXY' },
+      // 原生 GEOSITE 输出；category-cryptocurrency 灰色固定，其余可选
+      { id: 'category-cryptocurrency', label: '加密货币通用合集', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'binance', label: '币安 Binance', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'okx', label: 'OKX', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'bybit', label: 'Bybit', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'gateio', label: 'Gate.io', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'kraken', label: 'Kraken', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'kucoin', label: 'KuCoin', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'huobi', label: '火币 Huobi', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'onekey', label: 'OneKey', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'trustwallet', label: 'Trust Wallet', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'deribit', label: 'Deribit', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'safepal', label: 'SafePal', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {

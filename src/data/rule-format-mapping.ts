@@ -170,9 +170,8 @@ export function metacubexJsonUrl(geositeName: string): string {
  * PRIVATE、CN 等基础规则由硬编码 GEOIP 兜底处理，不走 RULE-SET
  */
 export function hasBlackmatrix7Mapping(ruleId: string): boolean {
-  // PRIVATE 和 CN 由 GEOIP,private / GEOSITE,cn 兜底，不需要 RULE-SET
-  if (ruleId === 'PRIVATE' || ruleId === 'CN') return false;
-  return ruleId in BLACKMATRIX7_MAP;
+  // 大小写不敏感匹配（原生规则 id 为小写 geosite 名，映射表键为大写）
+  return ruleId.toUpperCase() in BLACKMATRIX7_MAP;
 }
 
 /**
@@ -181,7 +180,7 @@ export function hasBlackmatrix7Mapping(ruleId: string): boolean {
  */
 export function getBlackmatrix7Name(ruleId: string): string | null {
   if (!hasBlackmatrix7Mapping(ruleId)) return null;
-  return BLACKMATRIX7_MAP[ruleId] ?? null;
+  return BLACKMATRIX7_MAP[ruleId.toUpperCase()] ?? null;
 }
 
 /**

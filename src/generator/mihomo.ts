@@ -717,8 +717,12 @@ export async function generateMihomoConfig(
   }
 
   // 分流规则：用户勾选了规则才生成 rule-providers + 有序 rules
+  const nonNativeRules = selectedRules.filter(r => !r.native);
   if (selectedRules.length > 0) {
-    config['rule-providers'] = buildRuleProviders(selectedRules);
+    // 只有非 native 规则才生成 rule-providers（原生规则走 GEOSITE 直出）
+    if (nonNativeRules.length > 0) {
+      config['rule-providers'] = buildRuleProviders(nonNativeRules);
+    }
     config.rules = buildRules(selectedRules, ruleGroups);
   }
 

@@ -153,12 +153,22 @@ export function createCatalogSyncService(
         //    removed 仍作为本次返回值保留，供前端在更新提示处显示"本次移除 N 条"
 
         // 6. 清理用户 selection 中的失效 id
+        // 注意：原生规则 id 可能是小写含 @cn/!cn 属性的分类名（如 microsoft@cn、category-ai-chat-!cn），
+        // 不能简单 .toUpperCase()，因为 @ 符号在 .mrs 文件名中会不同。
+        // 统一用规范化比较：去掉 @属性、转小写后与上游集合比较（catalog-sync 的上游 id 是纯分类名，不含属性）
         const selected = await repos.settings.get('selected_rules');
         if (selected && removed.length > 0) {
           try {
             const ids = JSON.parse(selected) as string[];
-            // 只保留仍然存在于上游的（过滤掉已失效的）
-            const next = ids.filter((id) => upstreamSet.has(id.toUpperCase()));
+            // 规范化：提取分类名主体（去掉 @cn/@!cn 等属性），转小写，用于比对
+            const normalizeId = (id: string) => id.toLowerCase().replace(/@[^,]+/, '').replace(',geoip', '');
+            const upstreamNormSet = new Set(Array.from(upstreamSet).map(normalizeId));
+            const next = ids.filter((id) => {
+              const norm = normalizeId(id);
+              return norm === norm.toUpperCase()
+                ? upstreamSet.has(id.toUpperCase())   // 大写 catalog id（provider 规则）
+                : upstreamNormSet.has(norm);          // 小写原生分类名（含 @ 属性）
+            });
             if (next.length !== ids.length) {
               await repos.settings.set('selected_rules', JSON.stringify(next));
             }

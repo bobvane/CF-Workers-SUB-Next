@@ -60,8 +60,8 @@ export function providerUrl(id: string): string {
 
 /** 计算规则的出口目标（按 V3.1 三层架构路由） */
 export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
-  // 定位所属分组
-  const g = groups.find(gr => gr.items.some(i => i.id === rule.id));
+  // 定位所属分组：native 规则用大小写不敏感匹配（原生 id 为小写 geosite 分类名）
+  const g = groups.find(gr => gr.items.some(i => i.id.toLowerCase() === rule.id.toLowerCase()));
 
   // REJECT 统一 → 广告拦截（应用净化已移除，ADS⊂ADS-ALL 93% 重叠）
   if (rule.target === 'REJECT') {
@@ -90,8 +90,19 @@ export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []):
   return g.name;
 }
 
-/** 单条规则的 RULE-SET 输出行（按大类分组路由） */
+/**
+ * 单条规则的原生/Provider 输出行：
+ *   - native=true → GEOSITE/<GEOIP>,<分类名>,<出口>（原生规则集，客户端内置 geodata 匹配）
+ *   - native=false（或无）→ RULE-SET,geosite-<id>,<出口>（HTTP 规则集下载，用于例外组如 google-fcm）
+ */
 export function ruleSetLine(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
+  if (rule.native) {
+    const action = ruleActionTarget(rule, groups);
+    // 原生规则 id 统一用小写（geosite 分类名规范）
+    const normalizedId = rule.id.toLowerCase();
+    if (rule.tag === 'geoip') return `GEOIP,${normalizedId},${action}`;
+    return `GEOSITE,${normalizedId},${action}`;
+  }
   return `RULE-SET,${providerName(rule.id)},${ruleActionTarget(rule, groups)}`;
 }
 
@@ -102,6 +113,8 @@ export function ruleSetLine(rule: MetaCubeXRule, groups: RuleGroup[] = []): stri
 export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<string, unknown> {
   const providers: Record<string, unknown> = {};
   for (const rule of selected) {
+    // native 规则走原生 GEOSITE/GEOIP 输出，不生成 provider
+    if (rule.native) continue;
     const p = buildRuleProvider(rule);
     providers[p.name] = {
       type: p.type,
@@ -162,52 +175,54 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   }
 
   // === ④ 业务分类：按 RULE_GROUPS 顺序输出（细分在前、宽泛在后）===
-  // 关键：跳过 china-direct（它们直接 DIRECT，不生成规则行）
-  // 跳过 ads（已在第③步处理）
+  // 跳过 china-direct（由第⑤步单独处理）和 ads（已在第③步处理）
   const skipKeys = new Set(['ads', 'china-direct']);
   for (const g of groups) {
     if (skipKeys.has(g.key)) continue;
     for (const item of g.items) {
       if (item.custom) continue; // 自定义规则已在 ② 置顶输出
-      if (selectedSet.has(item.id)) {
-        lines.push(ruleSetLine(item, groups));
+      // native 规则 id 可能小写（如 'netflix'），用大小写不敏感匹配
+      const match = selected.find(r => r.id.toLowerCase() === item.id.toLowerCase());
+      if (match) {
+        lines.push(ruleSetLine(match, groups));
       }
     }
   }
 
   // === ⑤ 国内直连规则（china-direct 组内规则 → 直接 DIRECT）===
+  // 注意：china-direct 是承重墙，所有 item 均为 native + fixed，直接输出原生规则
   for (const g of groups) {
     if (g.key !== 'china-direct') continue;
     for (const item of g.items) {
-      if (item.custom) continue; // 自定义规则已在 ② 置顶输出
-      if (selectedSet.has(item.id)) {
-        // 国内规则直接写 RULE-SET,xxx,DIRECT（不走策略组）
-        lines.push(`RULE-SET,${providerName(item.id)},DIRECT`);
-      }
+      if (item.custom) continue;
+      // native 规则使用 GEOSITE/GEOIP 原生输出；无 native 标记的 fallback 到 RULE-SET
+      lines.push(ruleSetLine(item, groups));
     }
   }
 
   // === ⑥ 兜底去重：防止孤儿规则重复 ===
-  const matchedIds = new Set(lines.map(l => {
+  const matchedIds = new Set<string>();
+  for (const l of lines) {
     const parts = l.split(',');
     if (parts[0] === 'RULE-SET' && parts[1].startsWith('geosite-')) {
-      return parts[1].slice(8).toUpperCase();
+      matchedIds.add(parts[1].slice(8));
+    } else if (parts[0] === 'GEOSITE' || parts[0] === 'GEOIP') {
+      matchedIds.add(parts[1]); // 保留 @cn/!cn 属性
+    } else {
+      matchedIds.add(parts[0]);
     }
-    // 处理 GEOIP,private,DIRECT 等硬编码行
-    return parts[0];
-  }));
-  // 只对仍存在于某个组中的规则做兜底；已删除组的规则（如国内媒体）不再输出
+  }
   const validGroupIds = new Set(groups.flatMap(g => g.items.map(i => i.id)));
   const orphanSelected = selected.filter(r => !matchedIds.has(r.id) && validGroupIds.has(r.id));
   for (const r of orphanSelected) {
     lines.push(ruleSetLine(r, groups));
   }
 
-  // === ⑦⑧⑨ 硬编码最终防线 ===
+  // === ⑦⑧ 硬编码最终防线 ===
+  // 国内直连承重墙已写进组内固定规则（第⑤步），末尾不再硬编码 GEOSITE,cn / GEOIP,CN
+  // 注：GEOIP,private,DIRECT（第①步）由固定配置覆盖，不在 buildRules 中硬编码
   return [
     ...lines,
-    'GEOSITE,cn,DIRECT',
-    'GEOIP,CN,DIRECT',
     'MATCH,漏网之鱼',
   ];
 }

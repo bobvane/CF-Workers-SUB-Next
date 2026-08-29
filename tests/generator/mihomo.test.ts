@@ -219,19 +219,25 @@ describe('generateMihomoConfig', () => {
   });
 
   it('should generate rule-class groups when rules selected', async () => {
+    // 使用 native=true 规则触发原生 GEOSITE 输出路径
     const yaml = await generateMihomoConfig(
       [makeNode()],
       undefined,
       [
-        { id: 'OPENAI', label: 'OpenAI', tag: 'geosite', target: 'PROXY' },
-        { id: 'NETFLIX', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
+        { id: 'openai', label: 'OpenAI', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
+        { id: 'netflix', label: 'Netflix', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
       ],
       RULE_GROUPS
     );
-    // AI 服务组（OPENAI 属于 AI 服务） - V3.1: ai 组条件生成
-    expect(yaml).toContain('AI 平台'); // V3.1: 名称改为"AI 平台"
-    // 流媒体规则 → 国外媒体（不生成独立流媒体组）
+    // AI 平台组（openai 属于 AI 平台组）
+    expect(yaml).toContain('AI 平台');
+    // 国外媒体组（netflix 属于国外媒体组）
     expect(yaml).toContain('国外媒体');
+    // 原生规则不生成 rule-providers
+    expect(yaml).not.toContain('rule-providers');
+    // 原生规则以 GEOSITE 形式输出
+    expect(yaml).toContain('GEOSITE,openai,AI 平台');
+    expect(yaml).toContain('GEOSITE,netflix,国外媒体');
   });
 
   it('should generate geo groups for recognized node names', async () => {
