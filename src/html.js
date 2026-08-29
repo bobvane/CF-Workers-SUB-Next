@@ -34,7 +34,7 @@ const HTML = `<!DOCTYPE html>
 body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei', sans-serif;
   background: var(--bg); color: var(--text);
-  font-size: 17px; line-height: 1.47059; font-weight: 400;
+  font-size: 19px; line-height: 1.47059; font-weight: 400;
   letter-spacing: -0.022em;
   -webkit-font-smoothing: antialiased;
 }
@@ -49,16 +49,16 @@ a:hover { text-decoration: underline; }
   position: sticky; top: 0; height: 100vh; overflow-y: auto;
 }
 .sidebar .logo {
-  font-weight: 600; font-size: 17px; letter-spacing: -0.02em;
+  font-weight: 600; font-size: 19px; letter-spacing: -0.02em;
   color: var(--text); padding: 2px 10px 16px;
 }
 .sidebar .logo span { color: var(--accent); }
-.sgroup { font-size: 11px; color: var(--text2); letter-spacing: .1em; text-transform: uppercase; padding: 14px 10px 5px; font-weight: 600; }
+.sgroup { font-size: 12px; color: var(--text2); letter-spacing: .1em; text-transform: uppercase; padding: 14px 10px 5px; font-weight: 600; }
 .nav-tab {
   display: flex; align-items: center; gap: 9px;
   padding: 8px 10px; cursor: pointer;
   color: var(--text2); border-radius: 5px;
-  font-size: 15px; font-weight: 400; white-space: nowrap;
+  font-size: 17px; font-weight: 400; white-space: nowrap;
   transition: all .15s;
 }
 .nav-tab:hover { color: var(--accent); background: rgba(83,58,253,0.05); }
@@ -72,7 +72,7 @@ a:hover { text-decoration: underline; }
   padding: 7px 15px; border-radius: 4px;
   border: 1px solid var(--border);
   background: var(--bg2); color: var(--text);
-  cursor: pointer; font-size: 15px; font-weight: 400;
+  cursor: pointer; font-size: 17px; font-weight: 400;
   letter-spacing: -0.01em;
   transition: all .15s;
 }
@@ -81,11 +81,11 @@ a:hover { text-decoration: underline; }
 .btn-primary:hover { background: var(--accent-hover); color: #fff; }
 .btn-danger { color: var(--red); border-color: rgba(234,34,97,0.35); }
 .btn-danger:hover { background: var(--red); color: #fff; border-color: var(--red); }
-.btn-sm { padding: 3px 10px; font-size: 13px; }
+.btn-sm { padding: 3px 10px; font-size: 15px; }
 .nav-tab {
   padding: 8px 16px; cursor: pointer;
   color: var(--text2); border-radius: 25px;
-  font-size: 15px; font-weight: 500; white-space: nowrap;
+  font-size: 17px; font-weight: 500; white-space: nowrap;
   letter-spacing: -0.01em;
   transition: all .2s;
 }
@@ -94,10 +94,10 @@ a:hover { text-decoration: underline; }
 .nav-tab.active { color: #fff; background: var(--accent); font-weight: 600; box-shadow: 0 2px 10px rgba(44,5,116,0.3); }
 [data-theme="dark"] .nav-tab.active { color: #1c0738; }
 /* ===== Page ===== */
-.page { display: none; padding: 26px 30px; max-width: 1060px; }
+.page { display: none; padding: 26px 30px; max-width: 1060px; width: 100%; margin: 0 auto; }
 .page.active { display: block; animation: fadeUp .25s ease; }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
-.page h2 { font-size: 24px; font-weight: 300; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 18px; }
+.page h2 { font-size: 26px; font-weight: 300; letter-spacing: -0.02em; line-height: 1.15; margin-bottom: 18px; }
 /* ===== Cards ===== */
 .card {
   background: var(--bg2); border-radius: 6px;
@@ -105,15 +105,15 @@ a:hover { text-decoration: underline; }
   border: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
 }
-.card-title { font-size: 12px; color: var(--text2); margin-bottom: 4px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
-.card-value { font-size: 28px; font-weight: 300; letter-spacing: -0.02em; line-height: 1.15; font-feature-settings: 'tnum'; }
+.card-title { font-size: 13px; color: var(--text2); margin-bottom: 4px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; }
+.card-value { font-size: 30px; font-weight: 300; letter-spacing: -0.02em; line-height: 1.15; font-feature-settings: 'tnum'; }
 /* ===== Stats Grid ===== */
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 14px; margin-bottom: 28px; }
 /* ===== Forms ===== */
 input, select {
   padding: 10px 14px; border: 1px solid var(--border);
   border-radius: 4px; background: var(--bg2); color: var(--text);
-  font-size: 16px; width: 100%; font-family: inherit;
+  font-size: 18px; width: 100%; font-family: inherit;
   letter-spacing: -0.01em;
   transition: all .2s;
 }
@@ -122,18 +122,18 @@ input:focus, select:focus {
   box-shadow: 0 0 0 4px rgba(13,75,188,0.15);
 }
 .form-group { margin-bottom: 14px; }
-.form-group label { display: block; font-size: 13px; color: var(--text2); margin-bottom: 6px; font-weight: 500; letter-spacing: 0; }
+.form-group label { display: block; font-size: 14px; color: var(--text2); margin-bottom: 6px; font-weight: 500; letter-spacing: 0; }
 .form-row { display: flex; gap: 12px; align-items: flex-end; }
 .form-row .form-group { flex: 1; }
 /* ===== Tables ===== */
 table { width: 100%; border-collapse: collapse; }
-th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 15px; }
-th { color: var(--text2); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+th, td { padding: 12px 10px; text-align: left; border-bottom: 1px solid var(--border); font-size: 17px; }
+th { color: var(--text2); font-weight: 600; font-size: 13px; text-transform: uppercase; letter-spacing: 0.04em; }
 tbody tr { transition: background .15s; }
 tbody tr:hover { background: rgba(44,5,116,0.04); }
 [data-theme="dark"] tbody tr:hover { background: rgba(167,139,250,0.08); }
 /* ===== Tags ===== */
-.tag { display: inline-block; padding: 2px 8px; border-radius: 980px; font-size: 12px; font-weight: 600; letter-spacing: 0; }
+.tag { display: inline-block; padding: 2px 8px; border-radius: 980px; font-size: 13px; font-weight: 600; letter-spacing: 0; }
 .tag-vmess { background: #e8f4ff; color: #0071e3; }
 .tag-vless { background: #e3f7ec; color: #1a8f4a; }
 .tag-trojan { background: #fff1e5; color: #bd561d; }
@@ -171,7 +171,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
   box-shadow: 0 20px 60px rgba(0,0,0,0.2);
 }
 .modal-header { padding: 18px 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
-.modal-header h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.02em; }
+.modal-header h3 { font-size: 19px; font-weight: 600; letter-spacing: -0.02em; }
 .modal-body { padding: 24px; }
 .modal-close {
   cursor: pointer; font-size: 18px; color: var(--text2);
@@ -189,9 +189,9 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
   transition: all .2s;
 }
 .sub-item:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-.sub-item .name { font-weight: 600; min-width: 120px; font-size: 15px; }
-.sub-item .desc { color: var(--text2); font-size: 13px; min-width: 150px; }
-.sub-item input { flex: 1; font-size: 13px; padding: 6px 10px; border: none; border-radius: 4px; background: var(--bg3); color: var(--text); }
+.sub-item .name { font-weight: 600; min-width: 120px; font-size: 17px; }
+.sub-item .desc { color: var(--text2); font-size: 14px; min-width: 150px; }
+.sub-item input { flex: 1; font-size: 14px; padding: 6px 10px; border: none; border-radius: 4px; background: var(--bg3); color: var(--text); }
 /* ===== Login ===== */
 .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; position: relative; overflow: hidden; background: linear-gradient(150deg, #1c1e54 0%, #2e2b8c 55%, #533afd 120%); }
 .login-page::before { content:''; position:absolute; width:420px; height:420px; border-radius:50%; background:radial-gradient(circle,#f96bee33,transparent 70%); top:-140px; right:-90px; }
@@ -202,18 +202,18 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
   padding: 38px 34px; width: 100%; max-width: 380px;
   box-shadow: var(--shadow-brand); animation: fadeUp .35s ease;
 }
-.login-card h1 { text-align: center; margin-bottom: 26px; font-size: 26px; font-weight: 300; letter-spacing: -0.02em; }
-.login-footer { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 22px; font-size: 13px; color: var(--text2); }
+.login-card h1 { text-align: center; margin-bottom: 26px; font-size: 28px; font-weight: 300; letter-spacing: -0.02em; }
+.login-footer { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 22px; font-size: 14px; color: var(--text2); }
 .login-footer a, .app-footer a { color: var(--accent); text-decoration: none; }
 .login-footer a:hover, .app-footer a:hover { text-decoration: underline; }
 .dot { opacity: 0.4; }
-.app-footer { border-top: 1px solid var(--border); margin-top: 32px; padding: 16px 4px; font-size: 13px; color: var(--text2); }
+.app-footer { border-top: 1px solid var(--border); margin-top: 32px; padding: 16px 4px; font-size: 14px; color: var(--text2); }
 /* ===== Upgrade Banner ===== */
-.upgrade-banner { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 20px; font-size: 13px; font-weight: 600; background: #fff8e1; color: #b45309; }
+.upgrade-banner { display: inline-flex; align-items: center; gap: 6px; padding: 3px 12px; border-radius: 20px; font-size: 14px; font-weight: 600; background: #fff8e1; color: #b45309; }
 .upgrade-banner a { color: #b45309; text-decoration: none; }
 .upgrade-banner a:hover { text-decoration: underline; }
 /* ===== Toast ===== */
-.toast { position: fixed; bottom: 24px; right: 24px; z-index: 99999; padding: 12px 20px; border-radius: 14px; color: #fff; font-size: 15px; font-weight: 500; max-width: 360px; animation: fadeIn .3s; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
+.toast { position: fixed; bottom: 24px; right: 24px; z-index: 99999; padding: 12px 20px; border-radius: 14px; color: #fff; font-size: 17px; font-weight: 500; max-width: 360px; animation: fadeIn .3s; box-shadow: 0 8px 30px rgba(0,0,0,0.25); }
 .toast-success { background: #1d9159; }
 .toast-error { background: #ff3b30; }
 /* ===== Rules Tree ===== */
@@ -224,8 +224,8 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
 [data-theme="dark"] .rules-group-head:hover { background: rgba(255,255,255,0.04); }
 .rules-arrow { display: inline-flex; transition: transform .25s ease; color: var(--text2); font-size: 12px; width: 14px; justify-content: center; }
 .rules-group-head.open .rules-arrow { transform: rotate(90deg); }
-.rules-group-title { font-weight: 600; font-size: 16px; flex: 1; }
-.rules-group-count { font-size: 13px; color: var(--text2); background: rgba(0,0,0,0.05); padding: 2px 10px; border-radius: 999px; }
+.rules-group-title { font-weight: 600; font-size: 18px; flex: 1; }
+.rules-group-count { font-size: 14px; color: var(--text2); background: rgba(0,0,0,0.05); padding: 2px 10px; border-radius: 999px; }
 [data-theme="dark"] .rules-group-count { background: rgba(255,255,255,0.1); }
 .rules-items { display: none; padding: 6px 20px 16px 48px; gap: 8px 14px; }
 .rules-group-head.open + .rules-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
@@ -248,7 +248,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .rules-item .rule-id {
-  font-size: 12px; color: var(--text2);
+  font-size: 13px; color: var(--text2);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .rules-group-head input[type="checkbox"] { accent-color: var(--accent); cursor: pointer; width: 16px; height: 16px; }
@@ -257,12 +257,12 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
   display: inline-flex; align-items: center; gap: 6px;
   padding: 6px 14px; border-radius: 980px;
   border: 1px solid var(--border); background: var(--bg2);
-  color: var(--text2); font-size: 14px; font-weight: 500;
+  color: var(--text2); font-size: 16px; font-weight: 500;
   cursor: pointer; transition: all .2s;
 }
 .catalog-chip:hover { background: var(--bg3); }
 .catalog-chip.active { background: var(--accent); color: #fff; border-color: var(--accent); }
-.catalog-chip-count { font-size: 12px; background: rgba(0,0,0,0.08); padding: 1px 7px; border-radius: 999px; }
+.catalog-chip-count { font-size: 13px; background: rgba(0,0,0,0.08); padding: 1px 7px; border-radius: 999px; }
 .catalog-chip.active .catalog-chip-count { background: rgba(255,255,255,0.22); }
 /* ===== Scroll to Top ===== */
 .scroll-top { position: fixed; bottom: 60px; right: 20px; z-index: 999; width: 44px; height: 44px; border-radius: 50%; background: var(--accent); color: #fff; border: none; cursor: pointer; font-size: 18px; display: none; box-shadow: var(--shadow-sm); }
@@ -310,10 +310,10 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
         <button class="btn btn-sm" onclick="cycleTheme()" id="themeBtn">🌙</button>
         <span id="userBadge" style="font-size:12.5px;color:var(--text2)">admin</span>
         <button class="btn btn-sm" onclick="logout()">🚪 退出</button>
-        <div class="sidebar-version" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:11px;color:var(--text2);display:flex;flex-direction:column;gap:4px;align-items:center">
+        <div class="sidebar-version" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:14px;color:var(--text2);display:flex;flex-direction:column;gap:4px;align-items:center">
           <span>🔐 CF-Workers-SUB-Next <span class="dot">·</span> v<span id="appVersion">-</span></span>
           <a href="https://github.com/bobvane/CF-Workers-SUB-Next" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">GitHub</a>
-          <span id="upgradeStatusSidebar" style="font-size:10px"></span>
+          <span id="upgradeStatusSidebar" style="font-size:14px"></span>
         </div>
       </div>
     </aside>
@@ -327,7 +327,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <div class="card"><div class="card-title">节点总数</div><div class="card-value" id="statNodes">-</div></div>
       <div class="card"><div class="card-title">已启用节点</div><div class="card-value" id="statEnabled">-</div></div>
       <div class="card"><div class="card-title">已禁用节点</div><div class="card-value" id="statDisabled">-</div></div>
-      <div class="card"><div class="card-title">协议分布</div><div class="card-value" style="font-size:13px" id="statProto">-</div></div>
+      <div class="card"><div class="card-title">协议分布</div><div class="card-value" style="font-size:14px" id="statProto">-</div></div>
       <div class="card"><div class="card-title">最近更新</div><div class="card-value" style="font-size:14px" id="statUpdate">-</div></div>
     </div>
   </div>
@@ -350,26 +350,26 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <h2>🔗 节点列表</h2>
       <input style="width:auto;max-width:300px" placeholder="🔍 搜索节点名或地址..." id="nodeSearch" oninput="filterNodes()">
     </div>
-    <div class="card" style="padding:12px 16px;font-size:13px;color:var(--text2)">
+    <div class="card" style="padding:12px 16px;font-size:14px;color:var(--text2)">
       💡 勾选 = 该节点会进入输出配置；取消勾选 = 从输出的订阅中排除。测速请在客户端（OpenClash/Mihomo 等）导入订阅后测试。
     </div>
-    <div class="card" id="nodeStats" style="margin:12px 0;padding:10px 16px;display:flex;gap:24px;font-size:13px">
+    <div class="card" id="nodeStats" style="margin:12px 0;padding:10px 16px;display:flex;gap:24px;font-size:14px">
       <span>📥 总节点 <b id="statsOriginal">0</b></span>
       <span>🔀 重复 <b id="statsDuplicates">0</b></span>
       <span>✅ 实际 <b id="statsUnique">0</b></span>
       <span style="color:var(--text2)">（去重依据：IP + 端口 + 协议）</span>
     </div>
     <div class="card" style="margin:0 0 12px;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <label style="font-size:13px;font-weight:500">🧹 节点名清洗</label>
+      <label style="font-size:14px;font-weight:500">🧹 节点名清洗</label>
       <input id="cleanPattern" placeholder="匹配内容（片段或正则）" style="width:auto;flex:1;min-width:180px">
       <input id="cleanReplacement" placeholder="替换为（留空=删除）" style="width:auto;min-width:140px">
-      <label style="font-size:12px;color:var(--text2);display:flex;align-items:center;gap:4px"><input type="checkbox" id="cleanRegex"> 正则</label>
+      <label style="font-size:14px;color:var(--text2);display:flex;align-items:center;gap:4px"><input type="checkbox" id="cleanRegex"> 正则</label>
       <button class="btn btn-sm btn-primary" onclick="saveCleanRule()">💾 保存规则（更新后自动生效）</button>
     </div>
-    <div class="card" id="cleanRulesBox" style="display:none;margin:0 0 12px;padding:10px 16px;font-size:13px"></div>
+    <div class="card" id="cleanRulesBox" style="display:none;margin:0 0 12px;padding:10px 16px;font-size:14px"></div>
     <div class="card" style="margin:0 0 12px;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <button class="btn btn-sm" onclick="applySavedRulesNow()">⚡ 立即应用已保存规则</button>
-      <span style="color:var(--text2);font-size:12px">保存/删除规则时也会自动应用一次</span>
+      <span style="color:var(--text2);font-size:14px">保存/删除规则时也会自动应用一次</span>
     </div>
     <table id="nodesTable">
       <thead><tr><th style="width:40px"><input type="checkbox" id="nodeSelectAll" onchange="toggleSelectAll(this)" checked></th><th>名称</th><th>协议</th><th>地址</th><th>端口</th><th>TLS</th><th>操作</th></tr></thead>
@@ -382,13 +382,13 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
   <div class="page" id="page-rules">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <h2>🌐 分流规则</h2>
-      <span style="font-size:13px;color:var(--text2)">已选 <b id="rulesCount" style="color:var(--accent)">0</b> 条规则</span>
+      <span style="font-size:14px;color:var(--text2)">已选 <b id="rulesCount" style="color:var(--accent)">0</b> 条规则</span>
     </div>
-    <div class="card" style="padding:12px 16px;font-size:13px;color:var(--text2)">
+    <div class="card" style="padding:12px 16px;font-size:14px;color:var(--text2)">
       💡 勾选 MetaCubeX 规则集，生成订阅时自动写入对应分流规则。点击大类标题展开子项，可直接勾选整个大类，也可单独勾选其中几项。
     </div>
     <div class="card" style="padding:12px 16px;margin-bottom:12px">
-      <div style="font-size:13px;font-weight:500;margin-bottom:8px">⚡ 快速预设 <span style="color:var(--text2);font-weight:normal;font-size:12px">点击覆盖当前勾选，配置跟随输出</span></div>
+      <div style="font-size:14px;font-weight:500;margin-bottom:8px">⚡ 快速预设 <span style="color:var(--text2);font-weight:normal;font-size:14px">点击覆盖当前勾选，配置跟随输出</span></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap" id="presetBar"></div>
     </div>
     <div style="display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:16px;align-items:start" id="rulesTwoCol">
@@ -404,14 +404,14 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <!-- 规则库：从 MetaCubeX 全量分类挑选加入分流规则 + 同步管理（右侧栏） -->
       <div class="card" style="position:sticky;top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-        <h3 style="margin:0">📚 规则库 <span style="color:var(--text2);font-size:12px;font-weight:normal">从 1546 个 MetaCubeX 分类中挑选加入分流规则</span></h3>
+        <h3 style="margin:0">📚 规则库 <span style="color:var(--text2);font-size:14px;font-weight:normal">从 1546 个 MetaCubeX 分类中挑选加入分流规则</span></h3>
         <div style="display:flex;align-items:center;gap:12px">
-          <span style="color:var(--text2);font-size:12px" id="catalogCount"></span>
+          <span style="color:var(--text2);font-size:14px" id="catalogCount"></span>
           <button class="btn btn-sm" onclick="refreshCatalog()" id="catalogRefreshBtn">🔄 立即刷新</button>
         </div>
       </div>
       <!-- 同步状态（失效分类以官方规则库为准自动清理，不保留历史） -->
-      <div id="catalogStatus" style="color:var(--text2);font-size:12px;padding:6px 12px;background:var(--bg);border-radius:8px;margin-bottom:12px">加载中…</div>
+      <div id="catalogStatus" style="color:var(--text2);font-size:14px;padding:6px 12px;background:var(--bg);border-radius:8px;margin-bottom:12px">加载中…</div>
       <!-- 分类筛选 chips（方案 A：缩小范围再挑，避免平铺几千条） -->
       <div id="catalogTypeFilter" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px">
         <button class="catalog-chip active" data-type="" onclick="setCatalogType(this)">全部</button>
@@ -433,7 +433,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
     <!-- 格式选择器 + 主操作（A：提到主流程） -->
     <div class="card" style="display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px;margin-bottom:16px">
       <div style="flex:1;min-width:220px">
-        <label for="outputFormatSelect" style="display:block;font-size:12px;color:var(--text2);margin-bottom:6px;font-weight:500">选择客户端格式</label>
+        <label for="outputFormatSelect" style="display:block;font-size:14px;color:var(--text2);margin-bottom:6px;font-weight:500">选择客户端格式</label>
         <select id="outputFormatSelect" onchange="onOutputFormatChange()">
           <option value="mihomo">🐱 Mihomo / Clash / Stash</option>
           <option value="singbox">📦 Sing-box</option>
@@ -453,7 +453,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
         <button class="btn" onclick="previewOutputFormat()">👁️ 预览配置</button>
       </div>
     </div>
-    <div id="outputNodeCount" style="font-size:13px;color:var(--text2);margin-bottom:16px">0 个节点</div>
+    <div id="outputNodeCount" style="font-size:14px;color:var(--text2);margin-bottom:16px">0 个节点</div>
     <div id="outputLinks"></div>
   </div>
 
@@ -493,7 +493,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
         <input type="password" id="settingNewPassword2" autocomplete="new-password">
       </div>
       <button class="btn btn-primary" onclick="changePassword()">修改密码</button>
-      <p class="mt-12" style="color:var(--text2);font-size:12px">修改成功后需重新登录。</p>
+      <p class="mt-12" style="color:var(--text2);font-size:14px">修改成功后需重新登录。</p>
     </div>
   </div>
 
@@ -529,7 +529,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <input type="password" id="loginPassword" placeholder="输入密码" autocomplete="current-password" onkeydown="if(event.key==='Enter')login()">
     </div>
     <button class="btn btn-primary" style="width:100%;justify-content:center" onclick="login()">登录</button>
-    <p class="text-center mt-12" style="color:var(--text2);font-size:12px">首次登录使用 ADMIN_PASSWORD 环境变量设置的密码</p>
+    <p class="text-center mt-12" style="color:var(--text2);font-size:14px">首次登录使用 ADMIN_PASSWORD 环境变量设置的密码</p>
     <!-- 项目品牌信息 -->
     <div class="login-footer">
       <a href="https://github.com/bobvane/CF-Workers-SUB-Next" target="_blank" rel="noopener">⭐ GitHub</a>
@@ -559,7 +559,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
     <div class="modal-header"><h3>📄 配置预览</h3><button class="modal-close" onclick="closeModal('configModal')">✕</button></div>
     <div class="modal-body">
       <div style="margin-bottom:12px">
-        <label style="font-size:13px;color:var(--text2)">选择格式：</label>
+        <label style="font-size:14px;color:var(--text2)">选择格式：</label>
         <select id="previewFormatSelect" onchange="previewSelect()" style="max-width:260px">
           <option value="mihomo">🐱 Mihomo / Clash / Stash</option>
           <option value="singbox">📦 Sing-box</option>
@@ -574,7 +574,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
         <button class="btn btn-primary btn-sm" onclick="previewSelect(true)" style="margin-left:8px">👉 加载</button>
         <button class="btn btn-sm" onclick="downloadConfigByFormat()" style="margin-left:8px">💾 下载配置文件</button>
       </div>
-      <pre id="configPreview" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:12px;overflow:auto;max-height:60vh;white-space:pre-wrap;word-break:break-all">选择格式查看预览</pre>
+      <pre id="configPreview" style="background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:12px;font-size:14px;overflow:auto;max-height:60vh;white-space:pre-wrap;word-break:break-all">选择格式查看预览</pre>
     </div>
   </div>
 </div>
@@ -586,7 +586,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
     <div class="modal-body">
       <div id="qrContainer" style="display:inline-block;background:#fff;padding:16px;border-radius:12px;margin:8px 0"></div>
       <p id="qrFormatName" style="margin:8px 0 4px;font-weight:600"></p>
-      <p style="font-size:12px;color:var(--text2)">用代理客户端扫描此码导入订阅</p>
+      <p style="font-size:14px;color:var(--text2)">用代理客户端扫描此码导入订阅</p>
     </div>
   </div>
 </div>
@@ -736,7 +736,7 @@ function renderRulesTree() {
     // 空组（如 user 组 v2.9.5 起无预置规则）显示占位，等待用户添加
     let itemsHTML;
     if (g.items.length === 0) {
-      itemsHTML = \`<div class="rules-empty" style="padding:10px 14px;font-size:12px;color:var(--text2)">暂无预置规则，从右侧规则库添加</div>\`;
+      itemsHTML = \`<div class="rules-empty" style="padding:10px 14px;font-size:14px;color:var(--text2)">暂无预置规则，从右侧规则库添加</div>\`;
     } else {
       itemsHTML = g.items.map(it => {
         const isCustom = window._customRules && window._customRules.includes(it.id);
@@ -943,12 +943,12 @@ function renderSubTable() {
   tbody.innerHTML = state.subscriptions.map(s => \`
     <tr>
       <td><strong>\${escHtml(s.name)}</strong></td>
-      <td style="font-size:12px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\${escHtml(s.url || '')}">
+      <td style="font-size:14px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\${escHtml(s.url || '')}">
         \${s.url ? \`<a href="\${escHtml(s.url)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">\${escHtml(s.url)}</a>\` : '-'}
       </td>
       <td><span class="status-\${s.status}">\${s.status === 'active' ? '✅ 正常' : s.status === 'error' ? '❌ 错误' : '⏸ 停用'}</span></td>
       <td>\${s.nodeCount ?? 0}</td>
-      <td style="font-size:12px;color:var(--text2)">\${s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '-'}</td>
+      <td style="font-size:14px;color:var(--text2)">\${s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '-'}</td>
       <td>
         <button class="btn btn-sm" onclick="updateSub('\${s.id}')">🔄 更新</button>
         <button class="btn btn-sm btn-danger" onclick="deleteSub('\${s.id}')">🗑 删除</button>
@@ -1090,7 +1090,7 @@ function renderNodes() {
       <td><input type="checkbox" data-fp="\${escHtml(n.fingerprint)}" \${n.enabled ? 'checked' : ''} onchange="updateNodeEnabled(this)"></td>
       <td>\${escHtml(n.name)}</td>
       <td><span class="tag \${tagClass}">\${displayProtocol(n)}</span></td>
-      <td style="font-size:12px">\${escHtml(n.server)}</td>
+      <td style="font-size:14px">\${escHtml(n.server)}</td>
       <td>\${n.port}</td>
       <td>\${n.tls ? '✅' : '❌'}</td>
       <td><button class="btn btn-sm" onclick="copyNodeLink('\${escHtml(n.fingerprint)}')">📋 复制</button></td>
@@ -1114,8 +1114,8 @@ async function loadCleanRules() {
       return;
     }
     box.style.display = 'block';
-    box.innerHTML = '<b style="font-size:13px;color:var(--text1,#061b31)">已保存的清洗规则</b><span style="color:var(--text2);font-size:12px;margin-left:8px">每次订阅更新后自动应用</span><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2px 20px;margin-top:4px">' + rules.map(r =>
-      \`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border,#e5edf5);font-size:13px">
+    box.innerHTML = '<b style="font-size:14px;color:var(--text1,#061b31)">已保存的清洗规则</b><span style="color:var(--text2);font-size:14px;margin-left:8px">每次订阅更新后自动应用</span><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2px 20px;margin-top:4px">' + rules.map(r =>
+      \`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border,#e5edf5);font-size:14px">
         <b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\${escHtml(r.pattern)}">\${escHtml(r.pattern)}</b>
         <input type="checkbox" style="flex-shrink:0;width:16px;height:16px;cursor:pointer" \${r.enabled ? 'checked' : ''} onchange="toggleCleanRule('\${r.id}', this.checked)" title="启用/停用">
         <button class="btn btn-sm btn-danger" style="flex-shrink:0" onclick="deleteCleanRule('\${r.id}')">🗑</button>
@@ -1297,7 +1297,7 @@ async function loadSubKey() {
     const container = document.querySelector('#outputLinks');
     if (container) {
       const el = document.createElement('div');
-      el.style.cssText = 'color:var(--red);font-size:12px;margin-top:8px;padding:8px;background:var(--bg);border-radius:10px';
+      el.style.cssText = 'color:var(--red);font-size:14px;margin-top:8px;padding:8px;background:var(--bg);border-radius:10px';
       el.textContent = '⚠️ 无法获取订阅链接，请重新登录';
       container.appendChild(el);
     }
@@ -1502,12 +1502,12 @@ async function loadCatalogStatus() {
     const statusText = meta.status === 'stale' ? '🟡 数据过期' : '🟢 正常';
     const lastUpdate = meta.fetchedAt ? new Date(meta.fetchedAt).toLocaleString('zh-CN') : '未知';
     statusEl.innerHTML = \`
-      <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:13px">
+      <div style="display:flex;flex-wrap:wrap;gap:12px;font-size:14px">
         <span>\${statusText}</span>
         <span>上次更新: \${lastUpdate}</span>
         <span>分类总数: \${meta.total ?? 0}</span>
       </div>
-      \${meta.lastError ? \`<div style="color:var(--red);font-size:12px;margin-top:4px">上次错误: \${escHtml(meta.lastError)}</div>\` : ''}
+      \${meta.lastError ? \`<div style="color:var(--red);font-size:14px;margin-top:4px">上次错误: \${escHtml(meta.lastError)}</div>\` : ''}
     \`;
   } catch {
     document.getElementById('catalogStatus').innerHTML = '❌ 加载规则库状态失败';
@@ -1609,8 +1609,8 @@ async function searchCatalog() {
       <div class="catalog-item" data-id="\${escHtml(it.id)}" data-label="\${escHtml(it.label || it.id)}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
         <div style="display:flex;align-items:center;gap:10px;min-width:0">
           <span style="font-weight:600">\${escHtml(it.id)}</span>
-          <span style="color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${escHtml(it.label || '')}</span>
-          <span style="color:var(--text2);font-size:11px;background:var(--bg);padding:2px 8px;border-radius:20px">\${it.type}</span>
+          <span style="color:var(--text2);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${escHtml(it.label || '')}</span>
+          <span style="color:var(--text2);font-size:14px;background:var(--bg);padding:2px 8px;border-radius:20px">\${it.type}</span>
         </div>
         <button class="btn btn-sm add-rule-btn">➕ 加入</button>
       </div>\`).join('') +
@@ -1635,8 +1635,8 @@ async function showAllCatalog() {
       <div class="catalog-item" data-id="\${escHtml(it.id)}" data-label="\${escHtml(it.label || it.id)}" style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-radius:8px" onmouseover="this.style.background='var(--bg)'" onmouseout="this.style.background='transparent'">
         <div style="display:flex;align-items:center;gap:10px;min-width:0">
           <span style="font-weight:600">\${escHtml(it.id)}</span>
-          <span style="color:var(--text2);font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${escHtml(it.label || '')}</span>
-          <span style="color:var(--text2);font-size:11px;background:var(--bg);padding:2px 8px;border-radius:20px">\${it.type}</span>
+          <span style="color:var(--text2);font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">\${escHtml(it.label || '')}</span>
+          <span style="color:var(--text2);font-size:14px;background:var(--bg);padding:2px 8px;border-radius:20px">\${it.type}</span>
         </div>
         <button class="btn btn-sm add-rule-btn">➕ 加入</button>
       </div>\`).join('');
@@ -1720,7 +1720,7 @@ async function loadMeta() {
     // 更新 sidebar 升级状态
     const elSidebar = document.getElementById('upgradeStatusSidebar');
     if (up.hasUpdate && up.latest && elSidebar) {
-      elSidebar.innerHTML = '<span class="upgrade-banner" style="padding:2px 8px;font-size:10px">🆕 <a href="' + escHtml(up.releaseUrl || '') + '" target="_blank" rel="noopener">v' + escHtml(up.latest) + '</a></span>';
+      elSidebar.innerHTML = '<span class="upgrade-banner" style="padding:2px 8px;font-size:14px">🆕 <a href="' + escHtml(up.releaseUrl || '') + '" target="_blank" rel="noopener">v' + escHtml(up.latest) + '</a></span>';
     }
   } catch { /* 升级检测失败忽略 */ }
 }
