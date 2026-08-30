@@ -174,6 +174,21 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('MATCH,漏网之鱼');
   });
 
+  it('should include hardcoded template header fields (v2.10.3)', async () => {
+    const yaml = await generateMihomoConfig([makeNode()]);
+    // 配置头硬编码模板（用户 2026-08-30 拍板）
+    expect(yaml).toContain('external-controller: 0.0.0.0:9090');
+    expect(yaml).toContain('secret: ""');
+    expect(yaml).toContain('unified-delay: true');
+    expect(yaml).toContain('tcp-concurrent: true');
+    expect(yaml).toContain('geodata-mode: true');
+    expect(yaml).toContain('geodata-loader: standard');
+    expect(yaml).toContain('geosite-matcher: succinct');
+    expect(yaml).toContain('geo-auto-update: true');
+    expect(yaml).toContain('geo-update-interval: 24');
+    expect(yaml).toContain('store-selected: true');
+  });
+
   it('should generate multiple proxies', async () => {
     const yaml = await generateMihomoConfig([
       makeNode({ name: 'JP-01' }),

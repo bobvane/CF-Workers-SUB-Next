@@ -39,6 +39,7 @@ export interface MihomoTemplate {
   mode?: string;
   logLevel?: string;
   externalController?: string;
+  secret?: string;
   ipv6?: boolean;
 }
 
@@ -47,6 +48,8 @@ export const DEFAULT_MIHOMO_TEMPLATE: MihomoTemplate = {
   allowLan: true, // 旁路由/网关场景：局域网设备需指定 7890 混合端口走代理。仅监听内网 NIC，配合 bind-address 可进一步限制。
   mode: 'rule',
   logLevel: 'warning', // 长期运行 info 日志量过大，warning 足够诊断
+  externalController: '0.0.0.0:9090', // 外部控制 API：面板（Zashboard/OpenClash）连接用
+  secret: '', // API 访问密钥，空 = 无验证
   ipv6: false, // 默认关闭 IPv6，避免 IPv4 走代理 / IPv6 走直连的诡异分流
 };
 
@@ -705,16 +708,22 @@ export async function generateMihomoConfig(
     mode: template.mode ?? 'rule',
     'log-level': template.logLevel ?? 'info',
     'ipv6': template.ipv6 ?? false,
+    'external-controller': template.externalController ?? '0.0.0.0:9090',
+    secret: template.secret ?? '',
+    'unified-delay': true,
+    'tcp-concurrent': true,
+    'geodata-mode': true,
+    'geodata-loader': 'standard',
+    'geosite-matcher': 'succinct',
+    'geo-auto-update': true,
+    'geo-update-interval': 24,
+    profile: { 'store-selected': true },
     proxies,
     'proxy-groups': groups,
     dns: DEFAULT_DNS_CONFIG,
     sniffer: DEFAULT_SNIFFER_CONFIG,
     rules: ['MATCH,漏网之鱼'],
   };
-
-  if (template.externalController) {
-    config['external-controller'] = template.externalController;
-  }
 
   // 分流规则：用户勾选了规则才生成 rule-providers + 有序 rules
   const nonNativeRules = selectedRules.filter(r => !r.native);
