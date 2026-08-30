@@ -79,6 +79,8 @@ describe('整链保真', () => {
 
     expect(proxy.network).toBe('xhttp');
     expect(proxy['client-fingerprint']).toBe('chrome');
+    // v2.11.3: XHTTP 缺省 alpn 默认 [h2](HTTP/2 握手必需)
+    expect(proxy.alpn).toEqual(['h2']);
 
     const echOpts = proxy['ech-opts'] as Record<string, unknown> | undefined;
     expect(echOpts).toBeDefined();

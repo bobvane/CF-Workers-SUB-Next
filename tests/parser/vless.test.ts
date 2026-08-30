@@ -61,6 +61,16 @@ describe('VLESS parser', () => {
     expect(result.node?.transport?.host).toBe('xhttp.example.com');
   });
 
+  it('should parse alpn param as array', () => {
+    const result = parseVless(
+      `vless://${uuid}@example.com:443?security=tls&alpn=h2,http%2F1.1`
+    );
+    expect(result.success).toBe(true);
+    expect(result.node?.alpn).toEqual(['h2', 'http/1.1']);
+    // alpn 不应进入 extra(已吸收为命名参数)
+    expect(result.node?.metadata?.extra?.alpn).toBeUndefined();
+  });
+
   it('should default to tcp transport', () => {
     const result = parseVless(`vless://${uuid}@example.com:443`);
     expect(result.node?.transport?.type).toBe('tcp');

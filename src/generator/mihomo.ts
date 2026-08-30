@@ -160,6 +160,9 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
       // 用 transport.host 兜底——否则 TLS 握手会用 server 的 IP 当 SNI，Cloudflare/CDN 会拒握。
       if (node.sni) base.servername = node.sni;
       else if (node.tls && node.transport?.type === 'ws' && node.transport.host) base.servername = node.transport.host;
+      // ALPN:链接带 alpn 参数时原样输出;XHTTP 缺省时默认 [h2](HTTP/2 握手必需)
+      if (node.alpn?.length) base.alpn = node.alpn;
+      else if (node.tls && node.transport?.type === 'xhttp') base.alpn = ['h2'];
       if (node.allowInsecure) base['skip-cert-verify'] = true;
       if (node.transport?.type === 'ws') {
         base.network = 'ws';

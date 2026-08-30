@@ -50,6 +50,8 @@ export function parseVless(input: string): ParserResult {
     const path = params.get('path') ?? undefined;
     const host = params.get('host') ?? params.get('sni') ?? undefined;
     const mode = params.get('mode') ?? undefined;
+    // alpn:TLS 握手 ALPN 列表(逗号分隔,如 h2,http/1.1;XHTTP 必需 h2)
+    const alpn = params.get('alpn')?.split(',').filter(Boolean) ?? undefined;
     // 保真:识别指纹与保留未知参数(ech/extra/insecure 等都不丢)
     const fp = params.get('fp') ?? undefined;
     const allowInsecure =
@@ -58,7 +60,7 @@ export function parseVless(input: string): ParserResult {
       params.get('allowInsecure') === '1';
     const extra = collectExtraParams(
       params,
-      new Set(['security', 'flow', 'pbk', 'sid', 'sni', 'type', 'path', 'host', 'mode', 'fp'])
+      new Set(['security', 'flow', 'pbk', 'sid', 'sni', 'type', 'path', 'host', 'mode', 'fp', 'alpn'])
     );
 
     const transport: Transport = {
@@ -83,6 +85,7 @@ export function parseVless(input: string): ParserResult {
       sid,
       sni,
       allowInsecure,
+      alpn,
       transport,
       metadata: {
         source: 'unknown',

@@ -2,6 +2,13 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.3] - 2026-08-30
+
+### XHTTP alpn 支持 — HTTP/2 握手必需
+- VLESS 解析器新增 `alpn` 参数读取（逗号分隔转数组，如 `alpn=h2,http/1.1`），不再落入 extra
+- Mihomo 生成器 VLESS 段输出 alpn：链接带 `alpn` 参数时原样输出；XHTTP 缺省时默认 `[h2]`
+- 依据 Mihomo 官方文档：alpn 为 TLS 握手 ALPN 列表，位于代理顶层（`tls: true` 同层）
+
 ## [2.11.2] - 2026-08-30
 
 ### XHTTP x-padding 参数解析修复（3X-UI/v2rayN 封装格式）
