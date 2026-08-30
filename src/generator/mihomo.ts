@@ -611,25 +611,15 @@ export async function generateProxyGroups(
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
-  // 10. GLOBAL（显式定义所有策略组顺序，默认 DIRECT — 用户 2026-08-30 拍板）
-  const globalOrder: string[] = [
-    '节点选择',
-    '手动切换',
-    '自动选择',
-    '广告拦截',
-    '国外媒体',
-    ...ruleClassGroupNames,
-    '漏网之鱼',
-    ...geoGroupNames,
-    'DIRECT',
-  ];
+  // 10. GLOBAL（只含核心切换组，默认 DIRECT — 用户 2026-08-30 拍板）
   groups.push({
     name: 'GLOBAL',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Final.png',
     'default-selected': 'DIRECT',
     url: 'https://cp.cloudflare.com/generate_204',
-    proxies: globalOrder,
+    // 用户 2026-08-30 拍板：GLOBAL 只保留 节点选择/手动切换/自动选择/DIRECT 四组
+    proxies: ['节点选择', '手动切换', '自动选择', 'DIRECT'],
   });
 
   // 11. 地理组：指定六国/地区自动测速(url-test)，其余 select
