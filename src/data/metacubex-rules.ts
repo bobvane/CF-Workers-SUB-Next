@@ -63,18 +63,17 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
 
 /**
  * 预定义规则分组
- * 规则优先级（自上而下匹配，见 rule-providers.buildRules，V3.1 冻结版）：
- *   1. PRIVATE / LAN（GEOIP,private → DIRECT，必须最前，防内网误代理）
- *   2. 用户自定义规则（可覆盖业务分类和 CN，但不能覆盖 LAN）
+ * 规则优先级（自上而下匹配，见 rule-providers.buildRules，V3.2 冻结版 — v2.11.0 规则排序重构）：
+ *   1. 用户规则（默认 DIRECT，面板可切换；无预设规则，等用户添加）
+ *   2. 内网防代理：GEOIP,lan,DIRECT,no-resolve + GEOSITE,private,DIRECT（lan 在前）
  *   3. 广告拦截（CATEGORY-ADS-ALL → REJECT）
- *   4. 业务分类（细分在前，宽泛在后；FCM/AI/社交/加密/用户规则/游戏/媒体 → 宽泛厂商组 Bing/OneDrive/微软/苹果最后——geosite-microsoft 包含 github.com，微软服务必须排在业务细分之后）
- *   5. 国内直连规则（RULE-SET,xxx → DIRECT，不建策略组）
- *   6. GEOSITE,cn → DIRECT
- *   7. GEOIP,CN → DIRECT
- *   8. MATCH → 漏网之鱼
+ *   4. 国内直连（china-direct 组 7 条 GEOSITE → DIRECT；GEOIP,CN 已剥离）
+ *   5. 业务分类（细分在前，宽泛在后；FCM/AI/社交/媒体/游戏/微软/苹果/加密货币 → 厂商组最后）
+ *   6. GEOIP,CN → DIRECT（从国内直连组剥离，排 crypto 之后）
+ *   7. MATCH → 漏网之鱼
  *
  * 分组顺序即策略组生成顺序（generateProxyGroups 按此数组输出）。
- * 注意：`china-direct` 内规则统一 RULE-SET,xxx,DIRECT，
+ * 注意：`china-direct` 内规则统一 GEOSITE,xxx,DIRECT，
  *       不生成「全球直连」策略组（国内直连用 DIRECT 本身）。
  *       应用净化（CATEGORY-ADS）已合并进广告拦截（ADS⊂ADS-ALL，93% 重叠）。
  */
@@ -99,7 +98,6 @@ export const RULE_GROUPS: RuleGroup[] = [
     items: [
       // 承重墙 — 固定灰色，不可取消；末尾去重，只留 MATCH
       { id: 'cn', label: '中国直连域名', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
-      { id: 'geoip,cn', label: '中国 IP 段', tag: 'geoip', target: 'DIRECT', native: true, fixed: true },
       { id: 'apple-cn', label: '苹果服务(中国区)', tag: 'geosite', target: 'DIRECT', native: true },
       { id: 'microsoft@cn', label: '微软服务(中国区)', tag: 'geosite', target: 'DIRECT', native: true },
       { id: 'steam@cn', label: 'Steam 中国区', tag: 'geosite', target: 'DIRECT', native: true },
@@ -154,21 +152,19 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'crypto', name: '加密货币', icon: '💰',
+    key: 'media', name: '国外媒体', icon: '🌍',
     items: [
-      // 原生 GEOSITE 输出；category-cryptocurrency 灰色固定，其余可选
-      { id: 'category-cryptocurrency', label: '加密货币通用合集', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'binance', label: '币安 Binance', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'okx', label: 'OKX', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'bybit', label: 'Bybit', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'gateio', label: 'Gate.io', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'kraken', label: 'Kraken', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'kucoin', label: 'KuCoin', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'huobi', label: '火币 Huobi', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'onekey', label: 'OneKey', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'trustwallet', label: 'Trust Wallet', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'deribit', label: 'Deribit', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'safepal', label: 'SafePal', tag: 'geosite', target: 'PROXY', native: true },
+      // 原生 GEOSITE 输出；category-media 灰色固定，其余可选；apple-music 已归入苹果服务组（DIRECT）
+      { id: 'category-media', label: '媒体聚合', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'youtube', label: 'YouTube', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'netflix', label: 'Netflix', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'biliintl', label: 'B站国际版', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'bahamut', label: '巴哈姆特', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'pixiv', label: 'Pixiv', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'abema', label: 'Abema', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'spotify', label: 'Spotify', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'disney', label: 'Disney+', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'ehentai', label: 'E-Hentai', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {
@@ -187,23 +183,6 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'xbox', label: 'Xbox', tag: 'geosite', target: 'PROXY', native: true },
       { id: 'playstation', label: 'PlayStation', tag: 'geosite', target: 'PROXY', native: true },
       { id: 'nintendo', label: '任天堂', tag: 'geosite', target: 'PROXY', native: true },
-    ],
-  },
-  {
-    key: 'media', name: '国外媒体', icon: '🌍',
-    items: [
-      // 原生 GEOSITE 输出；category-media 灰色固定，其余可选
-      { id: 'category-media', label: '媒体聚合', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'youtube', label: 'YouTube', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'netflix', label: 'Netflix', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'biliintl', label: 'B站国际版', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'bahamut', label: '巴哈姆特', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'pixiv', label: 'Pixiv', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'abema', label: 'Abema', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'spotify', label: 'Spotify', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'disney', label: 'Disney+', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'apple-music', label: 'Apple Music', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'ehentai', label: 'E-Hentai', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {
@@ -232,6 +211,24 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'apple-intelligence', label: 'Apple Intelligence', tag: 'geosite', target: 'DIRECT', native: true },
       { id: 'icloud', label: 'iCloud', tag: 'geosite', target: 'DIRECT', native: true },
       { id: 'itunes', label: 'iTunes', tag: 'geosite', target: 'DIRECT', native: true },
+    ],
+  },
+  {
+    key: 'crypto', name: '加密货币', icon: '💰',
+    items: [
+      // 原生 GEOSITE 输出；category-cryptocurrency 灰色固定，其余可选
+      { id: 'category-cryptocurrency', label: '加密货币通用合集', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'binance', label: '币安 Binance', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'okx', label: 'OKX', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'bybit', label: 'Bybit', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'gateio', label: 'Gate.io', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'kraken', label: 'Kraken', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'kucoin', label: 'KuCoin', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'huobi', label: '火币 Huobi', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'onekey', label: 'OneKey', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'trustwallet', label: 'Trust Wallet', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'deribit', label: 'Deribit', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'safepal', label: 'SafePal', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
 

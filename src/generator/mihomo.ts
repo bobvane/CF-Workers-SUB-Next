@@ -200,20 +200,9 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
       }
 
       // ECH(加密 Client Hello):从 extra.ech 读取,写入 ech-opts
-      // ech 值格式通常为 "域名+DoH地址"(如 "cloudflare-ech.com+https://dns.alidns.com/dns-query")
-      // 或 base64 编码的 echConfig
+      // 只保留 enable: true（去掉 query-server-name / config —— XHTTP 实测连不上，简化后重试）
       if (node.metadata?.extra?.ech) {
-        const echVal = node.metadata.extra.ech;
-        const echParts = echVal.split('+');
-        const echOpts: Record<string, unknown> = { enable: true };
-        // 若含 "+" 分隔,前面是域名(query-server-name),后面是 DoH/配置
-        if (echParts.length >= 2) {
-          echOpts['query-server-name'] = echParts[0];
-          echOpts.config = echParts.slice(1).join('+');
-        } else {
-          echOpts.config = echVal;
-        }
-        base['ech-opts'] = echOpts;
+        base['ech-opts'] = { enable: true };
       }
 
       // XHTTP 额外字段:从 extra 中读取 x-padding-* / reuse-settings 等
@@ -514,10 +503,10 @@ export interface GeoResolver {
  *   1. 节点选择（select：自动选择 + 地理组 + 手动切换 + DIRECT）
  *   2. 手动切换（select：具体节点扁平列表，逐节点选）
  *   3. 自动选择（url-test：具体节点，自动测速）
- *   4. 国外媒体（流媒体 PROXY，默认 自动选择）——固化组
+ *   4. 国外媒体（流媒体 PROXY，默认 DIRECT）——固化组
  *   5. 广告拦截（默认 REJECT）——固化组
  *   6. 业务分类组（谷歌FCM/微软服务/苹果服务/游戏平台/AI/社交/加密货币/用户规则，
- *      仅勾选该大类规则才生成；默认值遵循最小代理原则：苹果→DIRECT，其余→节点选择）
+ *      仅勾选该大类规则才生成；v2.11.0 默认全部 DIRECT，面板可切换）
  *   7. 漏网之鱼（MATCH 兜底，默认 节点选择）
  *   8. GLOBAL（显式定义，完整列出所有组，决定面板显示顺序，默认 节点选择）
  *   9. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，url-test 类型，自动测速选该地区最优节点）
@@ -573,12 +562,12 @@ export async function generateProxyGroups(
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
-  // 5. 国外媒体（流媒体 PROXY，默认自动选择）——固化策略组
+  // 5. 国外媒体（流媒体 PROXY，默认 DIRECT）——固化策略组
   groups.push({
     name: '国外媒体',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Streaming.png',
-    'default-selected': '自动选择',
+    'default-selected': 'DIRECT',
     proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
 
@@ -609,10 +598,10 @@ export async function generateProxyGroups(
     'microsoft': { name: '微软服务', default: 'DIRECT' },
     'apple': { name: '苹果服务', default: 'DIRECT' },
     'game': { name: '游戏平台', default: 'DIRECT' },
-    'ai': { name: 'AI 平台', default: '节点选择' },
-    'social': { name: '社交', default: '节点选择' },
-    'crypto': { name: '加密货币', default: '节点选择' },
-    'user': { name: '用户规则', default: '节点选择' },
+    'ai': { name: 'AI 平台', default: 'DIRECT' },
+    'social': { name: '社交', default: 'DIRECT' },
+    'crypto': { name: '加密货币', default: 'DIRECT' },
+    'user': { name: '用户规则', default: 'DIRECT' },
   };
   const independentGroupKeys = Object.keys(groupDefaults);
   const ruleClassGroupNames: string[] = [];

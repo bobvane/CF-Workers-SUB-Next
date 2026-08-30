@@ -91,25 +91,30 @@ describe('buildRuleProviders', () => {
 });
 
 describe('buildRules 原生规则输出', () => {
-  it('输出顺序：PRIVATE最前 → 广告拦截(native) → 业务分类 → china-direct(native) → MATCH', () => {
+  it('输出顺序：内网防代理最前 → 广告拦截(native) → china-direct → 业务分类 → GEOIP,CN → MATCH', () => {
     const rules = buildRules([
       rule('openai', 'PROXY', { native: true }),         // ai 组
       rule('category-ads-all', 'REJECT', { native: true }), // ads 组
       rule('cn', 'DIRECT', { native: true, fixed: true }),            // china-direct 组
     ], RULE_GROUPS);
 
-    // 验证关键顺序
-    const privateIdx = rules.indexOf('GEOIP,private,DIRECT');
+    // 验证关键顺序（v2.11.0）
+    const lanIdx = rules.indexOf('GEOIP,lan,DIRECT,no-resolve');
+    const privateIdx = rules.indexOf('GEOSITE,private,DIRECT');
     const adsIdx = rules.indexOf('GEOSITE,category-ads-all,广告拦截');
-    const openaiIdx = rules.indexOf('GEOSITE,openai,AI 平台');
     const cnIdx = rules.indexOf('GEOSITE,cn,DIRECT');
+    const openaiIdx = rules.indexOf('GEOSITE,openai,AI 平台');
+    const geoipCnIdx = rules.indexOf('GEOIP,CN,DIRECT');
     const matchIdx = rules.indexOf('MATCH,漏网之鱼');
 
-    expect(privateIdx).toBe(0); // PRIVATE 必须最前
-    expect(privateIdx).toBeLessThan(adsIdx);      // PRIVATE < 广告拦截
-    expect(adsIdx).toBeLessThan(openaiIdx);       // 广告拦截 < 业务分类
-    expect(openaiIdx).toBeLessThan(cnIdx);        // 业务分类 < 国内直连规则
-    expect(cnIdx).toBeLessThan(matchIdx);          // 国内规则 < MATCH
+    expect(lanIdx).toBe(0); // lan 必须最前
+    expect(privateIdx).toBe(1); // private 紧随
+    expect(lanIdx).toBeLessThan(privateIdx);
+    expect(privateIdx).toBeLessThan(adsIdx);      // 内网 < 广告拦截
+    expect(adsIdx).toBeLessThan(cnIdx);           // 广告拦截 < 国内直连
+    expect(cnIdx).toBeLessThan(openaiIdx);        // 国内直连 < 业务分类
+    expect(openaiIdx).toBeLessThan(geoipCnIdx);   // 业务分类 < GEOIP,CN
+    expect(geoipCnIdx).toBeLessThan(matchIdx);    // GEOIP,CN < MATCH
   });
 
   it('REJECT 必须排在 PROXY 前（广告拦截优先）', () => {
@@ -122,11 +127,11 @@ describe('buildRules 原生规则输出', () => {
     expect(rejectIdx).toBeLessThan(proxyIdx);
   });
 
-  it('最后两行是 MATCH,漏网之鱼（不再硬编码 GEOSITE,cn / GEOIP,CN）', () => {
+  it('最后一行是 MATCH,漏网之鱼；GEOIP,CN,DIRECT 在 MATCH 前（v2.11.0 剥离承重墙）', () => {
     const rules = buildRules([rule('netflix', 'PROXY', { native: true })], RULE_GROUPS);
-    // china-direct 组的 native 规则不一定有 GEOIP,CN（取决于用户是否勾选了该组）
-    // 但只要 MATCH 是最后一行即可
+    // v2.11.0: GEOIP,CN,DIRECT 无条件硬编码在 MATCH 之前
     expect(rules[rules.length - 1]).toBe('MATCH,漏网之鱼');
+    expect(rules[rules.length - 2]).toBe('GEOIP,CN,DIRECT');
   });
 
   it('google-fcm 例外组仍生成 RULE-SET provider', () => {

@@ -129,39 +129,46 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
 }
 
 /**
- * 生成完整 rules 数组（有序，V3.1 冻结版）
+ * 生成完整 rules 数组（有序，V3.2 冻结版 — v2.11.0 规则排序重构）
  * 优先级（自上而下匹配）：
- *   ① PRIVATE / LAN (GEOIP,private,DIRECT)           ← 必须最前，防内网误代理
- *   ② 用户自定义规则（按用户定义顺序，高于 CN/GEOIP）
- *   ③ 广告拦截 (CATEGORY-ADS-ALL) → REJECT
- *   ④ 业务分类（细分在前、宽泛在后）：
- *       谷歌FCM/微软服务/苹果服务/游戏平台/AI/社交/加密货币/用户规则
- *   ⑤ 国内直连规则 (RULE-SET,xxx,DIRECT) —— china-direct 组内规则（含原国内媒体）
- *   ⑥ GEOSITE,cn,DIRECT
- *   ⑦ GEOIP,CN,DIRECT
- *   ⑧ MATCH,漏网之鱼
+ *   ① 用户规则（默认 DIRECT，面板可切换）—— 无预设规则，等用户添加
+ *   ② 内网防代理：GEOIP,lan,DIRECT,no-resolve + GEOSITE,private,DIRECT
+ *   ③ 广告拦截 (CATEGORY-ADS-ALL 等) → REJECT
+ *   ④ 国内直连（china-direct 组 7 条 GEOSITE → DIRECT）
+ *   ⑤ 谷歌FCM
+ *   ⑥ AI 平台
+ *   ⑦ 社交
+ *   ⑧ 国外媒体（media 提前到 game 前）
+ *   ⑨ 游戏平台
+ *   ⑩ 微软服务
+ *   ⑪ 苹果服务
+ *   ⑫ 加密货币（置末）
+ *   ⑬ GEOIP,CN,DIRECT（从国内直连组剥离，排 crypto 之后）
+ *   ⑭ MATCH,漏网之鱼
  *
  * 依据：Mihomo 规则自上而下匹配，先命中的生效。
- *   - PRIVATE 必须最前（防用户把 192.168.x.x 误代理出去）
- *   - 细分规则（GEMINI/FCM/Apple-Music）必须在宽泛规则（GOOGLE/APPLE）之前
- *   - 国内规则统一 RULE-SET,xxx,DIRECT，不建策略组
- *   - 应用净化已移除（CATEGORY-ADS⊂CATEGORY-ADS-ALL，93% 重叠，并入广告拦截）
+ *   - 用户规则置顶（用户显式意图最优先）
+ *   - 内网防代理必须最前（防 192.168.x.x 误代理），lan 在前 private 在后
+ *   - 细分业务规则优先于宽泛国内规则
+ *   - GEOIP,CN,DIRECT 剥离出国内直连组，移到 crypto 之后 MATCH 之前
  */
 export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] = []): string[] {
   const selectedSet = new Set(selected.map(r => r.id));
   const lines: string[] = [];
 
-  // === ① PRIVATE/LAN 硬编码最前 ===
-  lines.push('GEOIP,private,DIRECT');
-
-  // === ② 用户自定义规则（最高优先级，紧跟 PRIVATE 之后第一个命中）===
+  // === ① 用户规则（默认 DIRECT，面板可切换）===
   // 自定义规则可覆盖一切内置分类（包括 CN/国内直连/广告拦截）——用户显式声明的意图最优先。
-  // 注意：PRIVATE 保持最前（内网流量不应被任何代理规则劫持），其余自定义规则全部置顶。
+  // 注意：内网防代理紧随其后（内网流量不应被任何代理规则劫持）。
   for (const r of selected) {
     if (r.custom && selectedSet.has(r.id)) {
       lines.push(ruleSetLine(r, groups));
     }
   }
+
+  // === ② 内网防代理（必须最前，防内网误代理）===
+  // lan 在前 private 在后（Q3 已确认）
+  lines.push('GEOIP,lan,DIRECT,no-resolve');
+  lines.push('GEOSITE,private,DIRECT');
 
   // === ③ 广告拦截（REJECT，最高业务优先级）===
   // 遍历 ads 组所有选中项（CATEGORY-ADS-ALL + TRACKER 等），全部输出到广告拦截组
@@ -174,23 +181,9 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     }
   }
 
-  // === ④ 业务分类：按 RULE_GROUPS 顺序输出（细分在前、宽泛在后）===
-  // 跳过 china-direct（由第⑤步单独处理）和 ads（已在第③步处理）
-  const skipKeys = new Set(['ads', 'china-direct']);
-  for (const g of groups) {
-    if (skipKeys.has(g.key)) continue;
-    for (const item of g.items) {
-      if (item.custom) continue; // 自定义规则已在 ② 置顶输出
-      // native 规则 id 可能小写（如 'netflix'），用大小写不敏感匹配
-      const match = selected.find(r => r.id.toLowerCase() === item.id.toLowerCase());
-      if (match) {
-        lines.push(ruleSetLine(match, groups));
-      }
-    }
-  }
-
-  // === ⑤ 国内直连规则（china-direct 组内规则 → 直接 DIRECT）===
+  // === ④ 国内直连（china-direct 组内规则 → 直接 DIRECT）===
   // 注意：china-direct 是承重墙，所有 item 均为 native + fixed，直接输出原生规则
+  // GEOIP,CN 已从本组剥离，移到第 ⑬ 步单独输出
   for (const g of groups) {
     if (g.key !== 'china-direct') continue;
     for (const item of g.items) {
@@ -200,7 +193,26 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     }
   }
 
-  // === ⑥ 兜底去重：防止孤儿规则重复 ===
+  // === ⑤ 业务分类：按 RULE_GROUPS 顺序输出（细分在前、宽泛在后）===
+  // 跳过 ads（已在第③步处理）和 china-direct（已在第④步处理）
+  const skipKeys = new Set(['ads', 'china-direct']);
+  for (const g of groups) {
+    if (skipKeys.has(g.key)) continue;
+    for (const item of g.items) {
+      if (item.custom) continue; // 自定义规则已在 ① 置顶输出
+      // native 规则 id 可能小写（如 'netflix'），用大小写不敏感匹配
+      const match = selected.find(r => r.id.toLowerCase() === item.id.toLowerCase());
+      if (match) {
+        lines.push(ruleSetLine(match, groups));
+      }
+    }
+  }
+
+  // === ⑬ GEOIP,CN,DIRECT（从国内直连组剥离，排 crypto 之后 MATCH 之前）===
+  // 兜底去重后仍须保留此承重墙：国内 IP 最终直连
+  lines.push('GEOIP,CN,DIRECT');
+
+  // === 兜底去重：防止孤儿规则重复 ===
   const matchedIds = new Set<string>();
   for (const l of lines) {
     const parts = l.split(',');
@@ -218,9 +230,7 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     lines.push(ruleSetLine(r, groups));
   }
 
-  // === ⑦⑧ 硬编码最终防线 ===
-  // 国内直连承重墙已写进组内固定规则（第⑤步），末尾不再硬编码 GEOSITE,cn / GEOIP,CN
-  // 注：GEOIP,private,DIRECT（第①步）由固定配置覆盖，不在 buildRules 中硬编码
+  // === ⑭ MATCH 收尾 ===
   return [
     ...lines,
     'MATCH,漏网之鱼',

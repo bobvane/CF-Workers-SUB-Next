@@ -55,7 +55,8 @@ describe('V3.1 验证', () => {
 
     const rules = buildRules(selectedRules, RULE_GROUPS);
 
-    expect(rules[0]).toBe('GEOIP,private,DIRECT');
+    expect(rules[0]).toBe('GEOIP,lan,DIRECT,no-resolve'); // v2.11.0: 内网防代理拆两条，lan 在前
+    expect(rules[1]).toBe('GEOSITE,private,DIRECT');
     expect(rules[rules.length - 1]).toBe('MATCH,漏网之鱼');
     expect(rules.some(r => r === 'GEOSITE,category-ads-all,广告拦截')).toBe(true);
     expect(rules.some(r => r === 'GEOSITE,openai,AI 平台')).toBe(true);
@@ -70,6 +71,7 @@ describe('V3.1 验证', () => {
     expect(ruleActionTarget({ id: 'tracker', label: '', tag: 'geosite' as const, target: 'REJECT' as const, native: true }, RULE_GROUPS)).toBe('广告拦截');
     // china-direct native 规则 → DIRECT
     expect(ruleActionTarget({ id: 'cn', label: '', tag: 'geosite' as const, target: 'DIRECT' as const, native: true }, RULE_GROUPS)).toBe('DIRECT');
+    // v2.11.0: geoip,cn 已从 china-direct 组移除（剥离为独立硬编码），无归属 → DIRECT
     expect(ruleActionTarget({ id: 'geoip,cn', label: '', tag: 'geoip' as const, target: 'DIRECT' as const, native: true }, RULE_GROUPS)).toBe('DIRECT');
     // 非 native 大写 id → 匹配对应组
     expect(ruleActionTarget({ id: 'googlefcm', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('谷歌FCM');
@@ -87,13 +89,14 @@ describe('V3.1 验证', () => {
 });
 
 describe('用户自定义规则置顶', () => {
-  it('自定义规则紧跟 PRIVATE 之后输出，且不重复出现', () => {
+  it('自定义规则在 ① 用户规则位输出（最前），随后是内网防代理，且不重复出现', () => {
     const customRule: MetaCubeXRule = { id: 'my-custom-site', label: '我的自定义', tag: 'geosite' as const, target: 'PROXY' as const, custom: true };
     const selectedRules = [customRule, { id: 'category-ads-all', label: '广告拦截', tag: 'geosite' as const, target: 'REJECT' as const, native: true }, { id: 'openai', label: 'OpenAI', tag: 'geosite' as const, target: 'PROXY' as const, native: true }];
     const groups: RuleGroup[] = RULE_GROUPS.map(g => ({ ...g, items: g.key === 'user' ? [...g.items, customRule] : [...g.items] }));
     const rules = buildRules(selectedRules, groups);
-    expect(rules[0]).toBe('GEOIP,private,DIRECT');
-    expect(rules[1]).toContain('geosite-my-custom-site');
+    expect(rules[0]).toContain('geosite-my-custom-site'); // ① 用户规则最前
+    expect(rules[1]).toBe('GEOIP,lan,DIRECT,no-resolve'); // ② 内网防代理
+    expect(rules[2]).toBe('GEOSITE,private,DIRECT');
     expect(rules.some(r => r.includes('category-ads-all'))).toBe(true);
     expect(rules.filter(r => r.includes('geosite-my-custom-site')).length).toBe(1);
   });

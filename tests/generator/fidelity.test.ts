@@ -83,9 +83,9 @@ describe('整链保真', () => {
     const echOpts = proxy['ech-opts'] as Record<string, unknown> | undefined;
     expect(echOpts).toBeDefined();
     expect(echOpts?.enable).toBe(true);
-    expect(echOpts?.['query-server-name']).toBe('cloudflare-ech.com');
-    // config 是 DoH 地址
-    expect(echOpts?.config).toBe('https://dns.alidns.com/dns-query');
+    // v2.11.0: ECH 简化，只保留 enable:true，去掉 query-server-name / config
+    expect(echOpts?.['query-server-name']).toBeUndefined();
+    expect(echOpts?.config).toBeUndefined();
 
     const xhttpOpts = proxy['xhttp-opts'] as Record<string, unknown> | undefined;
     expect(xhttpOpts).toBeDefined();

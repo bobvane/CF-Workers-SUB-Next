@@ -15,7 +15,8 @@ describe('ConfigService 分流规则注入', () => {
 
     // 无用户保存规则时，native 固定规则（如 category-ads-all / cn / geoip,cn）会自动注入
     expect(yaml).toContain('MATCH'); // MATCH 兜底始终存在
-    expect(yaml).toContain('GEOIP,private,DIRECT'); // PRIVATE 始终存在
+    expect(yaml).toContain('GEOIP,lan,DIRECT,no-resolve'); // v2.11.0: 内网防代理拆两条，lan 在前
+    expect(yaml).toContain('GEOSITE,private,DIRECT');
     // native 固定规则也会出现在输出中
     expect(yaml).toContain('GEOSITE,category-ads-all');
   });
