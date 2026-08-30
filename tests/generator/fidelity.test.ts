@@ -92,5 +92,11 @@ describe('整链保真', () => {
     expect((xhttpOpts as Record<string, unknown>).mode).toBe('stream-one');
     expect((xhttpOpts as Record<string, unknown>).path).toBe('/');
     expect((xhttpOpts as Record<string, unknown>).host).toBe('bot.wenbo.de5.net');
+    // v2.11.2: x-padding 从 extra=JSON(camelCase) 解析输出
+    expect((xhttpOpts as Record<string, unknown>)['x-padding-obfs-mode']).toBe(true);
+    expect((xhttpOpts as Record<string, unknown>)['x-padding-method']).toBe('tokenish');
+    expect((xhttpOpts as Record<string, unknown>)['x-padding-placement']).toBe('queryInHeader');
+    expect((xhttpOpts as Record<string, unknown>)['x-padding-header']).toBe('c1f510');
+    expect((xhttpOpts as Record<string, unknown>)['x-padding-key']).toBe('_3db7c0');
   });
 });

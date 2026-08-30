@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.2] - 2026-08-30
+
+### XHTTP x-padding 参数解析修复（3X-UI/v2rayN 封装格式）
+- **根因**：3X-UI/v2rayN 链接把 x-padding 参数封装在 `extra=JSON`(camelCase 键) 中，生成器只读顶层 kebab-case 键，导致整个 x-padding 块丢失。
+- **修复**：生成器解析 `extra` JSON，camelCase → kebab-case 映射到 xhttp-opts（x-padding-obfs-mode/method/placement/header/key/bytes）；顶层同名参数优先覆盖。
+
 ## [2.11.1] - 2026-08-30
 
 ### VLESS 输出补全（XHTTP 节点连接排查）

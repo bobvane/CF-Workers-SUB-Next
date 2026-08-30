@@ -213,9 +213,33 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
 
       // XHTTP 额外字段:从 extra 中读取 x-padding-* / reuse-settings 等
       // 官方文档的 xhttp-opts 字段全量映射
+      // 注意:3X-UI/v2rayN 链接把 x-padding 参数封装在 extra=JSON(camelCase 键) 中,需先解析
       if (node.transport?.type === 'xhttp' && node.metadata?.extra) {
         const xOpts = base['xhttp-opts'] as Record<string, unknown> || {};
         const ex = node.metadata.extra;
+
+        // 解析 extra JSON(3X-UI/v2rayN 封装格式, camelCase 键 → xhttp-opts kebab-case 字段)
+        const camelToKebab: Record<string, string> = {
+          xPaddingObfsMode: 'x-padding-obfs-mode',
+          xPaddingMethod: 'x-padding-method',
+          xPaddingPlacement: 'x-padding-placement',
+          xPaddingHeader: 'x-padding-header',
+          xPaddingKey: 'x-padding-key',
+          xPaddingBytes: 'x-padding-bytes',
+        };
+        if (ex['extra']) {
+          try {
+            const parsed = JSON.parse(ex['extra']) as Record<string, unknown>;
+            for (const [k, v] of Object.entries(parsed)) {
+              const target = camelToKebab[k];
+              if (target) xOpts[target] = v;
+            }
+          } catch {
+            // extra 不是合法 JSON 时忽略(顶层 kebab-case 参数仍会处理)
+          }
+        }
+
+        // 顶层 kebab-case 参数(链接直接携带时)优先覆盖 JSON 解析结果
         if (ex['x-padding-obfs-mode']) xOpts['x-padding-obfs-mode'] = ex['x-padding-obfs-mode'] === 'true';
         if (ex['x-padding-key']) xOpts['x-padding-key'] = ex['x-padding-key'];
         if (ex['x-padding-header']) xOpts['x-padding-header'] = ex['x-padding-header'];
