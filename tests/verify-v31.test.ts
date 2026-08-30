@@ -29,9 +29,9 @@ describe('V3.1 验证', () => {
     const selectedRules = [
       { id: 'category-ads-all', label: '广告拦截', tag: 'geosite' as const, target: 'REJECT' as const, native: true },
       { id: 'googlefcm', label: '谷歌FCM', tag: 'geosite' as const, target: 'PROXY' as const },
-      { id: 'BING', label: '微软Bing', tag: 'geosite' as const, target: 'PROXY' as const },
-      { id: 'MICROSOFT', label: '微软服务', tag: 'geosite' as const, target: 'PROXY' as const },
-      { id: 'APPLE', label: '苹果服务', tag: 'geosite' as const, target: 'DIRECT' as const },
+      { id: 'bing', label: '微软Bing', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
+      { id: 'microsoft', label: '微软服务', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
+      { id: 'apple', label: '苹果服务', tag: 'geosite' as const, target: 'DIRECT' as const, native: true },
       { id: 'OPENAI', label: 'OpenAI', tag: 'geosite' as const, target: 'PROXY' as const },
       { id: 'NETFLIX', label: 'Netflix', tag: 'geosite' as const, target: 'PROXY' as const },
     ];

@@ -79,6 +79,13 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
  *       应用净化（CATEGORY-ADS）已合并进广告拦截（ADS⊂ADS-ALL，93% 重叠）。
  */
 export const RULE_GROUPS: RuleGroup[] = [
+  // 用户规则组 — 首位，优先级最高
+  {
+    key: 'user', name: '用户规则', icon: '👑',
+    items: [
+      // 用户规则组初始为空，规则由用户从右侧规则库自行添加
+    ],
+  },
   {
     key: 'ads', name: '广告拦截', icon: '🔥',
     items: [
@@ -98,6 +105,7 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'steam@cn', label: 'Steam 中国区', tag: 'geosite', target: 'DIRECT', native: true },
       { id: 'category-games@cn', label: '游戏中国区', tag: 'geosite', target: 'DIRECT', native: true },
       { id: 'onedrive', label: '微软 OneDrive', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'icloud@cn', label: 'iCloud 中国区', tag: 'geosite', target: 'DIRECT', native: true },
     ],
   },
   {
@@ -164,58 +172,66 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'user', name: '用户规则', icon: '👑',
-    items: [
-      // 用户规则组初始为空，规则由用户从右侧规则库自行添加
-    ],
-  }, {
     key: 'game', name: '游戏平台', icon: '🎮',
     items: [
-      { id: 'STEAM', label: 'Steam', tag: 'geosite', target: 'PROXY' },
-      { id: 'EPICGAMES', label: 'Epic Games', tag: 'geosite', target: 'PROXY' },
-      { id: 'UBISOFT', label: '育碧', tag: 'geosite', target: 'PROXY' },
-      { id: 'BLIZZARD', label: '暴雪战网', tag: 'geosite', target: 'PROXY' },
-      { id: 'NINTENDO', label: '任天堂', tag: 'geosite', target: 'PROXY' },
-      { id: 'ROCKSTAR', label: 'R星', tag: 'geosite', target: 'PROXY' },
-      { id: 'ORIGIN', label: 'Origin/EA', tag: 'geosite', target: 'PROXY' },
-      { id: 'PLAYSTATION', label: 'PlayStation', tag: 'geosite', target: 'PROXY' },
-      { id: 'XBOX', label: 'Xbox', tag: 'geosite', target: 'PROXY' },
-      { id: 'CATEGORY-GAMES-CN', label: '游戏中国区', tag: 'geosite', target: 'DIRECT' },
-      { id: 'CATEGORY-GAMES-!CN', label: '游戏聚合(非中国)', tag: 'geosite', target: 'PROXY' },
+      // 原生 GEOSITE 输出；category-games-!cn 灰色固定，其余可选
+      { id: 'category-games-!cn', label: '游戏聚合(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'steam', label: 'Steam', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'epicgames', label: 'Epic Games', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'ea', label: 'EA', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'origin', label: 'Origin/EA', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'ubisoft', label: '育碧', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'gog', label: 'GOG', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'blizzard', label: '暴雪战网', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'riot', label: 'Riot', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'xbox', label: 'Xbox', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'playstation', label: 'PlayStation', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'nintendo', label: '任天堂', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {
     key: 'media', name: '国外媒体', icon: '🌍',
     items: [
-      { id: 'NETFLIX', label: 'Netflix', tag: 'geosite', target: 'PROXY' },
-      { id: 'YOUTUBE', label: 'YouTube', tag: 'geosite', target: 'PROXY' },
-      { id: 'DISNEY', label: 'Disney+', tag: 'geosite', target: 'PROXY' },
-      { id: 'HBO', label: 'HBO Max', tag: 'geosite', target: 'PROXY' },
-      { id: 'PRIMEVIDEO', label: 'Amazon Prime', tag: 'geosite', target: 'PROXY' },
-      { id: 'TIKTOK', label: 'TikTok', tag: 'geosite', target: 'PROXY' },
-      { id: 'SPOTIFY', label: 'Spotify', tag: 'geosite', target: 'PROXY' },
-      { id: 'TWITCH', label: 'Twitch', tag: 'geosite', target: 'PROXY' },
-      { id: 'CATEGORY-MEDIA', label: '媒体聚合', tag: 'geosite', target: 'PROXY' },
+      // 原生 GEOSITE 输出；category-media 灰色固定，其余可选
+      { id: 'category-media', label: '媒体聚合', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'youtube', label: 'YouTube', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'netflix', label: 'Netflix', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'biliintl', label: 'B站国际版', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'bahamut', label: '巴哈姆特', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'pixiv', label: 'Pixiv', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'abema', label: 'Abema', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'spotify', label: 'Spotify', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'disney', label: 'Disney+', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'apple-music', label: 'Apple Music', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'ehentai', label: 'E-Hentai', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {
     key: 'microsoft', name: '微软服务', icon: '🪟',
     items: [
-      // 微软服务整体（cn.* 子域会被国内直连先命中走 DIRECT，更稳）
-      { id: 'MICROSOFT', label: '微软服务', tag: 'geosite', target: 'PROXY' },
-      { id: 'BING', label: '微软必应(含国际版)', tag: 'geosite', target: 'PROXY' },
-      { id: 'ONEDRIVE', label: '微软 OneDrive', tag: 'geosite', target: 'PROXY' },
+      // 原生 GEOSITE 输出；microsoft 灰色固定，其余可选；skype 被 microsoft 聚合兜底；onedrive 已在国内直连走 DIRECT，不在本组重复
+      { id: 'microsoft', label: '微软服务', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'microsoft-dev', label: '微软开发者', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'microsoft-pki', label: '微软 PKI', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'azure', label: 'Azure 云服务', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'bing', label: '微软必应(含国际版)', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'msn', label: 'MSN', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {
     key: 'apple', name: '苹果服务', icon: '🍎',
     items: [
-      // 苹果服务默认 DIRECT（中国区直连更稳）。APPLE-MUSIC 只放本组。
-      { id: 'APPLE', label: '苹果服务', tag: 'geosite', target: 'DIRECT' },
-      { id: 'APPLE-MUSIC', label: 'Apple Music', tag: 'geosite', target: 'DIRECT' },
-      { id: 'APPLE-UPDATE', label: 'Apple 系统更新', tag: 'geosite', target: 'DIRECT' },
-      { id: 'APPLE-PODCASTS', label: 'Apple 播客', tag: 'geosite', target: 'DIRECT' },
-      { id: 'APPLE-TVPLUS', label: 'Apple TV+', tag: 'geosite', target: 'DIRECT' },
+      // 原生 GEOSITE 输出；apple 灰色固定，其余可选；appstore 被 apple/itunes 聚合兜底，不在本组重复
+      { id: 'apple', label: '苹果服务', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
+      { id: 'apple-music', label: 'Apple Music', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'apple-dev', label: 'Apple 开发者', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'apple-update', label: 'Apple 系统更新', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'apple-pki', label: 'Apple PKI', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'apple-podcasts', label: 'Apple 播客', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'apple-tvplus', label: 'Apple TV+', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'apple-intelligence', label: 'Apple Intelligence', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'icloud', label: 'iCloud', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'itunes', label: 'iTunes', tag: 'geosite', target: 'DIRECT', native: true },
     ],
   },
 
