@@ -144,7 +144,8 @@ export function generateSingboxConfig(
       type: 'urltest',
       tag: 'auto',
       outbounds: nodeTags.length > 0 ? nodeTags : ['direct'],
-      url: 'https://www.gstatic.com/generate_204',
+      // v2.11.8: 测速地址统一改为 https://cp.cloudflare.com/generate_204（用户 2026-08-30 拍板，国内可达）
+      url: 'https://cp.cloudflare.com/generate_204',
       interval: '10m',
       tolerance: 50,
     },

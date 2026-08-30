@@ -2,6 +2,13 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.8] - 2026-08-30
+
+### 测速地址统一 + sniffer 清理 + 自动选择超时（用户 2026-08-30 拍板）
+- **测速地址统一改为 `https://cp.cloudflare.com/generate_204`**（国内可达，覆盖 `gstatic` 全部 4 处）：Mihomo 自动选择（url-test）、六国 url-test 地理组、Sing-Box auto 兜底；GLOBAL 组 url 已是 cp.cloudflare.com 同步保留
+- **sniffer skip-domain 移除 `Mijia Cloud`**（含空格非合法域名，不生效无意义）
+- **自动选择（url-test）新增 `timeout: 3000`**（用户 2026-08-30 拍板）
+
 ## [2.11.7] - 2026-08-30
 
 ### GLOBAL 组精简为四组（用户 2026-08-30 拍板）

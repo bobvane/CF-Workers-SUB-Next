@@ -140,7 +140,7 @@ describe('AI 审查意见修复', () => {
     // 六国 → url-test + 指定测速参数
     for (const name of ['🇯🇵 日本', '🇸🇬 新加坡', '🇺🇸 美国', '🇲🇾 马来西亚', '🇹🇼 台湾', '🇰🇷 韩国']) {
       expect(byName.get(name)?.type).toBe('url-test');
-      expect(byName.get(name)?.url).toBe('https://www.gstatic.com/generate_204');
+      expect(byName.get(name)?.url).toBe('https://cp.cloudflare.com/generate_204');
       expect(byName.get(name)?.interval).toBe(300);
       expect(byName.get(name)?.tolerance).toBe(50);
       expect(byName.get(name)?.lazy).toBe(true);
