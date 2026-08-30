@@ -2,6 +2,13 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.1] - 2026-08-30
+
+### VLESS 输出补全（XHTTP 节点连接排查）
+- **强制输出 `udp: true` + `encryption: none`**：所有 VLESS 节点固定输出，不再依赖链接参数。
+- **client-fingerprint 默认 chrome**：非 Reality 的 TLS VLESS 节点即使链接不带 `fp` 也默认输出 `chrome`（链接带 `fp` 时以链接为准）。
+- **ECH query-server-name 恢复**：从链接 `ech=域名+DoH` 参数拆分读取（取 `+` 前域名），`config` DoH 不输出。
+
 ## [2.11.0] - 2026-08-30
 
 ### 规则排序重构（V3.2 冻结版）

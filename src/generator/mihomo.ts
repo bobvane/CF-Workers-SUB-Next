@@ -152,6 +152,8 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
 
     case 'vless':
       base.uuid = node.uuid;
+      base.udp = true;
+      base.encryption = 'none';
       if (node.tls) base.tls = true;
       if (node.flow) base.flow = node.flow;
       // SNI 优先用显式 sni 参数；若缺省但开启了 TLS 且是 ws 传输（Host 头一般是真实 SNI 域名），
@@ -194,15 +196,19 @@ export function nodeToMihomoProxy(node: Node): Record<string, unknown> {
         base['client-fingerprint'] = node.metadata?.fingerprint ?? 'chrome';
       }
 
-      // 非 Reality 的 TLS VLESS 也要写 client-fingerprint(订阅原文带 fp 时)
-      if (!node.pbk && node.metadata?.fingerprint) {
-        base['client-fingerprint'] = node.metadata.fingerprint;
+      // 非 Reality 的 TLS VLESS:client-fingerprint 默认 chrome(订阅原文带 fp 时覆盖)
+      if (!node.pbk && node.tls) {
+        base['client-fingerprint'] = node.metadata?.fingerprint ?? 'chrome';
       }
 
-      // ECH(加密 Client Hello):从 extra.ech 读取,写入 ech-opts
-      // 只保留 enable: true（去掉 query-server-name / config —— XHTTP 实测连不上，简化后重试）
-      if (node.metadata?.extra?.ech) {
-        base['ech-opts'] = { enable: true };
+      // ECH(加密 Client Hello):从 extra.ech 读取
+      // query-server-name = ech 参数 '+' 前的域名(config DoH 不输出,用户 2026-08-30 确认)
+      const echRaw = node.metadata?.extra?.ech;
+      if (echRaw) {
+        const echOpts: Record<string, unknown> = { enable: true };
+        const queryServerName = String(echRaw).split('+')[0];
+        if (queryServerName) echOpts['query-server-name'] = queryServerName;
+        base['ech-opts'] = echOpts;
       }
 
       // XHTTP 额外字段:从 extra 中读取 x-padding-* / reuse-settings 等
