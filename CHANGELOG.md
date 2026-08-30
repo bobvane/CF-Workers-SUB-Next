@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.5] - 2026-08-30
+
+### 地理组自动测速 — 美国/马来西亚/日本/新加坡/台湾/韩国 六组 url-test
+- 用户指定六国/地区地理组启用 url-test 自动测速（2026-08-30）
+- 测速参数：`url: https://www.gstatic.com/generate_204`、`interval: 300`、`tolerance: 50`、`lazy: true`、`timeout: 5000`
+- 其余地理组（含"全部/其他"）保持 select 手动选择
+- verify-v31.test.ts 六国断言补全（马来西亚/台湾/韩国），DNS 测试过时 `interval: 300` 断言移除
+- 测试基线：375 ✅
+
 ## [2.11.4] - 2026-08-30
 
 ### XHTTP 支持暂停 — 降级为普通 VLESS 输出

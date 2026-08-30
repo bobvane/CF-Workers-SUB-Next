@@ -117,12 +117,31 @@ describe('AI 审查意见修复', () => {
     expect(yaml).toContain('default-nameserver');
     expect(yaml).toContain('proxy-server-nameserver');
     expect(yaml).toContain('interval: 1800');
-    expect(yaml).not.toContain('interval: 300');
   });
 
-  it('地理组全部为 select', async () => {
-    const groups = await generateProxyGroups([makeNode({ name: '🇭🇰 香港 01' }), makeNode({ name: '🇹🇷 土耳其 01' })]);
-    expect(groups.find(g => g.name === '🇭🇰 香港')?.type).toBe('select');
-    expect(groups.find(g => g.name === '🇹🇷 土耳其')?.type).toBe('select');
+  it('地理组：美国/马来西亚/日本/新加坡/台湾/韩国 六组 url-test，其余 select', async () => {
+    const groups = await generateProxyGroups([
+      makeNode({ name: '🇭🇰 香港 01' }),
+      makeNode({ id: 'n2', name: '🇹🇷 土耳其 01' }),
+      makeNode({ id: 'n3', name: '🇯🇵 日本 01' }),
+      makeNode({ id: 'n4', name: '🇸🇬 新加坡 01' }),
+      makeNode({ id: 'n5', name: '🇺🇸 美国 01' }),
+      makeNode({ id: 'n6', name: '🇲🇾 马来西亚 01' }),
+      makeNode({ id: 'n7', name: '🇹🇼 台湾 01' }),
+      makeNode({ id: 'n8', name: '🇰🇷 韩国 01' }),
+    ]);
+    const byName = new Map(groups.map(g => [g.name, g]));
+    // 六国 → url-test + 指定测速参数
+    for (const name of ['🇯🇵 日本', '🇸🇬 新加坡', '🇺🇸 美国', '🇲🇾 马来西亚', '🇹🇼 台湾', '🇰🇷 韩国']) {
+      expect(byName.get(name)?.type).toBe('url-test');
+      expect(byName.get(name)?.url).toBe('https://www.gstatic.com/generate_204');
+      expect(byName.get(name)?.interval).toBe(300);
+      expect(byName.get(name)?.tolerance).toBe(50);
+      expect(byName.get(name)?.lazy).toBe(true);
+      expect(byName.get(name)?.timeout).toBe(5000);
+    }
+    // 其余地理组 → select
+    expect(byName.get('🇭🇰 香港')?.type).toBe('select');
+    expect(byName.get('🇹🇷 土耳其')?.type).toBe('select');
   });
 });

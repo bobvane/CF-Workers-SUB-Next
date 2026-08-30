@@ -479,7 +479,7 @@ export interface GeoResolver {
  *      仅勾选该大类规则才生成；v2.11.0 默认全部 DIRECT，面板可切换）
  *   7. 漏网之鱼（MATCH 兜底，默认 节点选择）
  *   8. GLOBAL（显式定义，完整列出所有组，决定面板显示顺序，默认 节点选择）
- *   9. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，url-test 类型，自动测速选该地区最优节点）
+ *   9. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，除指定 6 国外，全部 select；美国/马来西亚/日本/新加坡/台湾/韩国 6 组 url-test 自动测速）
  *
  * 不生成「全球直连」「国内媒体」策略组：国内直连规则在 rule-providers 中直接写 RULE-SET,xxx,DIRECT。
  * 应用净化已移除（CATEGORY-ADS⊂CATEGORY-ADS-ALL，93% 重叠，并入广告拦截）。
@@ -631,14 +631,24 @@ export async function generateProxyGroups(
     proxies: globalOrder,
   });
 
-  // 11. 地理组：全部 select（不自动测速）。OpenClash 面板自带手动测速，
-  // 自动测速对免费白嫖节点池是持续自检轰炸（曾致节点日请求超10万被封），故全部取消
+  // 11. 地理组：指定六国/地区自动测速(url-test)，其余 select
+  // 美国/马来西亚/日本/新加坡/台湾/韩国 六组 url-test（用户 2026-08-30 指定），其余 select
+  const URL_TEST_REGIONS = ['美国', '马来西亚', '日本', '新加坡', '台湾', '韩国'];
   for (const geo of geoGroups) {
-    groups.push({
+    const isUrlTest = URL_TEST_REGIONS.some(r => geo.name.includes(r));
+    const group: Record<string, unknown> = {
       name: geo.name,
-      type: 'select',
+      type: isUrlTest ? 'url-test' : 'select',
       proxies: geo.nodes,
-    });
+    };
+    if (isUrlTest) {
+      group.url = 'https://www.gstatic.com/generate_204';
+      group.interval = 300;
+      group.tolerance = 50;
+      group.lazy = true;
+      group.timeout = 5000;
+    }
+    groups.push(group);
   }
 
   return groups;
