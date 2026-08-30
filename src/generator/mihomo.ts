@@ -541,13 +541,13 @@ export async function generateProxyGroups(
     proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
 
-  // 6. 广告拦截（默认 REJECT）——固化策略组
+  // 6. 广告拦截（默认 REJECT）——固化策略组，只保留 REJECT 和 DIRECT（用户 2026-08-30 拍板）
   groups.push({
     name: '广告拦截',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Adblock.png',
     'default-selected': 'REJECT',
-    proxies: ['REJECT', 'DIRECT', '节点选择', '手动切换', '自动选择', ...geoGroupNames],
+    proxies: ['REJECT', 'DIRECT'],
   });
 
   // 8. 业务分类策略组（仅当勾选该大类规则时才生成，条件组）
@@ -602,16 +602,16 @@ export async function generateProxyGroups(
     });
   }
 
-  // 9. 漏网之鱼（MATCH 兜底，默认节点选择）
+  // 9. 漏网之鱼（MATCH 兜底，默认自动选择）——用户 2026-08-30 拍板：默认自动选择
   groups.push({
     name: '漏网之鱼',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Global.png',
-    'default-selected': '节点选择',
+    'default-selected': '自动选择',
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
-  // 10. GLOBAL（显式定义所有策略组顺序，默认节点选择）
+  // 10. GLOBAL（显式定义所有策略组顺序，默认 DIRECT — 用户 2026-08-30 拍板）
   const globalOrder: string[] = [
     '节点选择',
     '手动切换',
@@ -627,7 +627,8 @@ export async function generateProxyGroups(
     name: 'GLOBAL',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Final.png',
-    'default-selected': '节点选择',
+    'default-selected': 'DIRECT',
+    url: 'https://cp.cloudflare.com/generate_204',
     proxies: globalOrder,
   });
 
@@ -636,12 +637,14 @@ export async function generateProxyGroups(
   const URL_TEST_REGIONS = ['美国', '马来西亚', '日本', '新加坡', '台湾', '韩国'];
   for (const geo of geoGroups) {
     const isUrlTest = URL_TEST_REGIONS.some(r => geo.name.includes(r));
+    // 单节点自动降级为 select（用户 2026-08-30 拍板：url-test 组仅 1 个节点时测速无意义）
+    const useUrlTest = isUrlTest && geo.nodes.length > 1;
     const group: Record<string, unknown> = {
       name: geo.name,
-      type: isUrlTest ? 'url-test' : 'select',
+      type: useUrlTest ? 'url-test' : 'select',
       proxies: geo.nodes,
     };
-    if (isUrlTest) {
+    if (useUrlTest) {
       group.url = 'https://www.gstatic.com/generate_204';
       group.interval = 300;
       group.tolerance = 50;

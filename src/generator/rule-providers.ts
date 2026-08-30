@@ -93,7 +93,7 @@ export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []):
 /**
  * 单条规则的原生/Provider 输出行：
  *   - native=true → GEOSITE/<GEOIP>,<分类名>,<出口>（原生规则集，客户端内置 geodata 匹配）
- *   - native=false（或无）→ RULE-SET,geosite-<id>,<出口>（HTTP 规则集下载，用于例外组如 google-fcm）
+ *   - native=false（或无）→ RULE-SET,geosite-<id>,<出口>（HTTP 规则集下载，极少数 .mrs 规则集）
  */
 export function ruleSetLine(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
   if (rule.native) {

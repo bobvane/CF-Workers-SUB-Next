@@ -109,8 +109,7 @@ export const RULE_GROUPS: RuleGroup[] = [
   {
     key: 'google-fcm', name: '谷歌FCM', icon: '📲',
     items: [
-      // 保持 RULE-SET provider（例外组）
-      { id: 'googlefcm', label: '谷歌推送(Google FCM)', tag: 'geosite', target: 'PROXY' },
+      { id: 'googlefcm', label: '谷歌推送(Google FCM)', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {

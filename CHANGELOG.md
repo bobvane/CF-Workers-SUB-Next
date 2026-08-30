@@ -2,6 +2,17 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.6] - 2026-08-30
+
+### 四项策略组/规则修正（用户 2026-08-30 拍板）
+- 六国 url-test 地理组单节点自动降级为 select（`geo.nodes.length > 1` 才启用 url-test 测速，单节点测速无意义）
+- 广告拦截组 proxies 精简为 `['REJECT', 'DIRECT']`（去掉子组引用）
+- 漏网之鱼默认改为「自动选择」；GLOBAL 组默认改为「DIRECT」
+- GLOBAL 组新增国内可达测速 URL `https://cp.cloudflare.com/generate_204`——修复 OpenClash 面板 DIRECT 测速无反馈（原默认 gstatic generate_204 国内直连不通）
+- google-fcm 规则改原生 GEOSITE：`metacubex-rules.ts` googlefcm 条目加 `native: true`，输出 `GEOSITE,googlefcm,谷歌FCM`，不再生成 rule-provider 硬编码段（用户前提：Mihomo 客户端已有全面 GeoIP/GeoSite 数据库）
+- 测试同步：verify-v31 / mihomo / config-rules 断言更新
+- 测试基线：375 ✅
+
 ## [2.11.5] - 2026-08-30
 
 ### 地理组自动测速 — 美国/马来西亚/日本/新加坡/台湾/韩国 六组 url-test

@@ -21,19 +21,19 @@ describe('ConfigService 分流规则注入', () => {
     expect(yaml).toContain('GEOSITE,category-ads-all');
   });
 
-  it('保存非native规则后，mihomo 配置包含 RULE-SET 规则', async () => {
+  it('保存 googlefcm 规则后，mihomo 配置输出原生 GEOSITE 规则', async () => {
     const kv = new MemoryKvAdapter();
     const repos = createRepositories(kv);
     const svc = createConfigService(repos);
 
-    // 保存非 native 规则（googlefcm 走 provider 路径）
+    // 保存 googlefcm 规则（v2.11.6 起为 native 原生规则，走 GEOSITE 路径）
     await repos.settings.set('selected_rules', JSON.stringify(['googlefcm']));
 
     const yaml = await svc.generate('mihomo');
 
-    // googlefcm 是非 native 规则，走 RULE-SET provider 路径
-    expect(yaml).toContain('RULE-SET,geosite-googlefcm');
-    expect(yaml).toContain('谷歌FCM');
+    // googlefcm 是 native 规则，输出 GEOSITE,googlefcm,谷歌FCM，不再走 RULE-SET provider
+    expect(yaml).toContain('GEOSITE,googlefcm,谷歌FCM');
+    expect(yaml).not.toContain('RULE-SET,geosite-googlefcm');
   });
 
   it('不生成 rule-providers 块（全组原生化）', async () => {

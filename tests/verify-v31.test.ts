@@ -24,11 +24,11 @@ function makeNode(overrides: Partial<Node> = {}): Node {
 }
 
 describe('V3.1 验证', () => {
-  it('策略组数量约 22 个，无应用净化/国内媒体，GLOBAL默认节点选择', async () => {
+  it('策略组数量约 22 个，无应用净化/国内媒体，GLOBAL默认 DIRECT', async () => {
     const nodes = [makeNode({ name: 'JP-01' }), makeNode({ id: 'n2', name: 'US-01', server: 'us.example.com' })];
     const selectedRules = [
       { id: 'category-ads-all', label: '广告拦截', tag: 'geosite' as const, target: 'REJECT' as const, native: true },
-      { id: 'googlefcm', label: '谷歌FCM', tag: 'geosite' as const, target: 'PROXY' as const },
+      { id: 'googlefcm', label: '谷歌FCM', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
       { id: 'bing', label: '微软Bing', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
       { id: 'microsoft', label: '微软服务', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
       { id: 'apple', label: '苹果服务', tag: 'geosite' as const, target: 'DIRECT' as const, native: true },
@@ -41,7 +41,7 @@ describe('V3.1 验证', () => {
 
     expect(groupNames).not.toContain('应用净化');
     expect(groupNames).not.toContain('国内媒体');
-    expect(groups.find(g => g.name === 'GLOBAL')?.['default-selected']).toBe('节点选择');
+    expect(groups.find(g => g.name === 'GLOBAL')?.['default-selected']).toBe('DIRECT');
     expect(groupNames.length).toBeGreaterThanOrEqual(11);
   });
 
@@ -124,11 +124,17 @@ describe('AI 审查意见修复', () => {
       makeNode({ name: '🇭🇰 香港 01' }),
       makeNode({ id: 'n2', name: '🇹🇷 土耳其 01' }),
       makeNode({ id: 'n3', name: '🇯🇵 日本 01' }),
+      makeNode({ id: 'n3b', name: '🇯🇵 日本 02' }),
       makeNode({ id: 'n4', name: '🇸🇬 新加坡 01' }),
+      makeNode({ id: 'n4b', name: '🇸🇬 新加坡 02' }),
       makeNode({ id: 'n5', name: '🇺🇸 美国 01' }),
+      makeNode({ id: 'n5b', name: '🇺🇸 美国 02' }),
       makeNode({ id: 'n6', name: '🇲🇾 马来西亚 01' }),
+      makeNode({ id: 'n6b', name: '🇲🇾 马来西亚 02' }),
       makeNode({ id: 'n7', name: '🇹🇼 台湾 01' }),
+      makeNode({ id: 'n7b', name: '🇹🇼 台湾 02' }),
       makeNode({ id: 'n8', name: '🇰🇷 韩国 01' }),
+      makeNode({ id: 'n8b', name: '🇰🇷 韩国 02' }),
     ]);
     const byName = new Map(groups.map(g => [g.name, g]));
     // 六国 → url-test + 指定测速参数
