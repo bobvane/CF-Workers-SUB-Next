@@ -2,6 +2,16 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.4] - 2026-08-30
+
+### XHTTP 支持暂停 — 降级为普通 VLESS 输出
+- 用户决定暂停 XHTTP 支持（2026-08-30），Mihomo 生成器不再输出 XHTTP 特有配置
+- `network: xhttp` + `xhttp-opts` 整块移除：XHTTP 节点降级为普通 VLESS TLS 输出
+- XHTTP 缺省 alpn `[h2]` 默认逻辑移除（链接带 alpn 参数仍保留输出）
+- ECH(encrypted-client-hello)，x-padding-* 等 XHTTP 配套字段一并移除
+- 解析器/协议显示/node-to-url/前端标签保留 XHTTP 识别与展示（节点列表仍可见）
+- 测试基线：375 ✅
+
 ## [2.11.3] - 2026-08-30
 
 ### XHTTP alpn 支持 — HTTP/2 握手必需

@@ -73,32 +73,26 @@ describe('整链保真', () => {
     expect(nodeToUrl(node)).toContain('vless://');
   });
 
-  it('Mihomo 生成器输出 client-fingerprint + ech-opts + x-padding', () => {
+  it('Mihomo 生成器: XHTTP 已降级为普通 VLESS(2026-08-30 用户决定暂停 XHTTP)', () => {
     const result = parseVless(REAL_XHTTP_LINK);
     const proxy = nodeToMihomoProxy(result.node!);
 
-    expect(proxy.network).toBe('xhttp');
+    // 降级:不再输出 XHTTP 特有字段
+    expect(proxy.network).toBeUndefined();
+    expect(proxy['xhttp-opts']).toBeUndefined();
+    expect(proxy['ech-opts']).toBeUndefined();
+    expect(proxy.alpn).toBeUndefined();
+
+    // 保留普通 VLESS 输出
+    expect(proxy.type).toBe('vless');
+    expect(proxy.uuid).toBe('bc1f510f-8ac5-4071-88e5-b3db7c0a5ecd');
+    expect(proxy.server).toBe('172.237.7.122');
+    expect(proxy.port).toBe(443);
+    expect(proxy.udp).toBe(true);
+    expect(proxy.encryption).toBe('none');
+    expect(proxy.tls).toBe(true);
+    expect(proxy.servername).toBe('bot.wenbo.de5.net');
+    // 非 Reality TLS VLESS:client-fingerprint 默认 chrome
     expect(proxy['client-fingerprint']).toBe('chrome');
-    // v2.11.3: XHTTP 缺省 alpn 默认 [h2](HTTP/2 握手必需)
-    expect(proxy.alpn).toEqual(['h2']);
-
-    const echOpts = proxy['ech-opts'] as Record<string, unknown> | undefined;
-    expect(echOpts).toBeDefined();
-    expect(echOpts?.enable).toBe(true);
-    // v2.11.1: query-server-name = ech 参数 '+' 前的域名(链接读取),config DoH 不输出
-    expect(echOpts?.['query-server-name']).toBe('cloudflare-ech.com');
-    expect(echOpts?.config).toBeUndefined();
-
-    const xhttpOpts = proxy['xhttp-opts'] as Record<string, unknown> | undefined;
-    expect(xhttpOpts).toBeDefined();
-    expect((xhttpOpts as Record<string, unknown>).mode).toBe('stream-one');
-    expect((xhttpOpts as Record<string, unknown>).path).toBe('/');
-    expect((xhttpOpts as Record<string, unknown>).host).toBe('bot.wenbo.de5.net');
-    // v2.11.2: x-padding 从 extra=JSON(camelCase) 解析输出
-    expect((xhttpOpts as Record<string, unknown>)['x-padding-obfs-mode']).toBe(true);
-    expect((xhttpOpts as Record<string, unknown>)['x-padding-method']).toBe('tokenish');
-    expect((xhttpOpts as Record<string, unknown>)['x-padding-placement']).toBe('queryInHeader');
-    expect((xhttpOpts as Record<string, unknown>)['x-padding-header']).toBe('c1f510');
-    expect((xhttpOpts as Record<string, unknown>)['x-padding-key']).toBe('_3db7c0');
   });
 });
