@@ -350,126 +350,73 @@ const IATA_TO_CC: Record<string, string> = {
   SYD: 'AU', MEL: 'AU', // 澳大利亚
 };
 
+/**
+ * emoji 旗标 → "emoji 中文名"（最可靠信号，节点名常带）
+ * 动态生成自 COUNTRIES：emoji → 显示名
+ */
+const FLAG_TO_GEO: Record<string, string> = (() => {
+  const m: Record<string, string> = {};
+  for (const info of Object.values(COUNTRIES)) {
+    m[info.emoji] = `${info.emoji} ${info.name}`;
+  }
+  return m;
+})();
+
 /** 国家旗标 emoji 正则（两个地区指示符号） */
 const FLAG_RE = /[\u{1F1E6}-\u{1F1FF}][\u{1F1E6}-\u{1F1FF}]/u;
 
 /**
- * 国家判断的信号权重（v2.11.9 拍板，2026-08-31）
- *   ① Emoji 国旗 100  ② 中文名 90  ③ IATA 70  ④ 二字码 50
- * IP 定位不走权重：IP 是物理事实，有 IP 时一票否决（100% 信 IP）。
- * 名字解析五信号加权求和用于 IP 查询失败/无 server 的兜底。
- */
-const SIGNAL_WEIGHTS = {
-  emoji: 100,
-  zhName: 90,
-  iata: 70,
-  alpha2: 50,
-} as const;
-
-/**
- * 识别节点地区：v2.11.9 改为"IP 一票否决 + 名字加权评分"组合。
+ * 识别节点地区：三层递进。
+ * 1. emoji 旗标（节点名内任意位置）
+ * 2. 名字关键词：三字码(IATA) → 二字码 → 中文名
+ * 3. 外部 resolver 做 IP 定位兜底（只对前两层认不出的节点）
  *
- * 解析流程：
- *   1. 名字解析：五信号（emoji 100 / 中文 90 / IATA 70 / 二字码 50）按地区求和
- *      - 一个信号可命中多个地区（如 HKG 命中香港 IATA，但 TW 也可能含"台湾"中文名），
- *        此时各地区各自累计得分
- *      - emoji/中文名/IATA 只给一个地区加分；二字码可能误中（HK 也匹配于 HKK/HKD），
- *        严格按边界匹配降低误中
- *   2. 若有 ipGeoResolver+server，先查 IP：返回地区码则**一票否决**直接采纳
- *   3. IP 查询失败（null）→ 用步骤 1 的加权结果；无 server 也走兜底
- *
- * 例：节点名 = "台湾 TW | HKG | 136.0.54.169"
- *   - 中文"台湾" → TW +90
- *   - 二字码"TW" → TW +50
- *   - IATA "HKG" → HK +70
- *   - 二字码"HK" 边界匹配可能 → HK +50（视 HKG 是否被边界规则挡住）
- *   名字评分：TW=140，HK=70~120
- *   若 IP=HK → 一票否决进 HK；IP=失败 → 进 TW（140 > HK）
+ * IP 兜底是逐个 await，Workers 上未分组节点极少，正常无性能压力（用户已确认强制等待）。
  */
-/**
- * 识别节点地区（v2.11.9 导出供节点列表只读展示国家用）
- * 纯函数（无副作用；仅当传入 ipGeoResolver 时才可能发起 IP 查询）。
- */
-export async function detectGeo(
+async function detectGeo(
   nodeName: string,
   ipGeoResolver?: (server: string) => Promise<string | null>,
   server?: string
 ): Promise<{ code: string; geoName: string } | null> {
-  // 第1步：IP 一票否决（最准的物理事实）
-  if (ipGeoResolver && server) {
-    const ipResult = await ipGeoResolver(server);
-    if (ipResult) {
-      // ipGeoResolver 直接返回显示名（如 "🇭🇰 香港"）——见 ip-geo.service.ts
-      // 若返回的是 ISO 二字码（兼容），查表转显示名
-      if (ipResult in GEO_NAMES) {
-        return { code: `IP:${ipResult}`, geoName: GEO_NAMES[ipResult]! };
-      }
-      // 已是显示名（如 "🇭🇰 香港"）→ 直接用
-      if (GEO_NAMES[Object.keys(GEO_NAMES).find(c => GEO_NAMES[c] === ipResult) ?? ''] === ipResult) {
-        const code = Object.keys(GEO_NAMES).find(c => GEO_NAMES[c] === ipResult);
-        if (code) return { code: `IP:${code}`, geoName: ipResult };
-      }
-      // 兜底：当作显示名直接返回（外部 service 的契约）
-      return { code: 'IP', geoName: ipResult };
-    }
-    // IP 查询失败（null）→ 落到名字加权评分
-  }
-
-  // 第2步：名字加权评分
-  const score = new Map<string, number>(); // code → 加权分
-  const codeFromName = new Map<string, string>(); // code → 中文名（用于 GEO_NAMES）
-
-  // ① Emoji 国旗（100）
+  // 第1层：emoji 旗标
   const flagMatch = nodeName.match(FLAG_RE);
   if (flagMatch) {
-    const info = Object.values(COUNTRIES).find(c => c.emoji === flagMatch[0]);
-    if (info) {
-      score.set(info.code, (score.get(info.code) ?? 0) + SIGNAL_WEIGHTS.emoji);
-      codeFromName.set(info.code, GEO_NAMES[info.code]!);
-    }
+    const geo = FLAG_TO_GEO[flagMatch[0]];
+    if (geo) return { code: 'FLAG', geoName: geo };
   }
 
-  // ② 中文国家/地区名（90）
-  for (const [cn, code] of Object.entries(CHINESE_ALIAS_TO_CODE)) {
-    if (nodeName.includes(cn)) {
-      score.set(code, (score.get(code) ?? 0) + SIGNAL_WEIGHTS.zhName);
-      codeFromName.set(code, GEO_NAMES[code] ?? `${COUNTRIES[code]?.emoji ?? ''} ${COUNTRIES[code]?.name ?? code}`);
-    }
-  }
-
-  // ③ IATA 机场码（70）。三字码需边界（前后非字母），避免 HKG 误配 HK、SIN 误配 SI。
-  for (const [iata, code] of Object.entries(IATA_TO_CC)) {
+  // 第2层：三字码（IATA）→ 二字码 → 中文名
+  for (const iata of Object.keys(IATA_TO_CC)) {
+    // 三字码需边界分隔（前后非字母），避免 HKG 里误配 HK、SIN 里误配 SI
     const re = new RegExp(`(^|[^A-Za-z])${iata}($|[^A-Za-z])`, 'i');
     if (re.test(nodeName)) {
-      score.set(code, (score.get(code) ?? 0) + SIGNAL_WEIGHTS.iata);
-      codeFromName.set(code, GEO_NAMES[code]!);
+      const cc = IATA_TO_CC[iata]!;
+      return { code: cc, geoName: GEO_NAMES[cc]! };
     }
   }
-
-  // ④ 二字国家/地区代码（50）。边界必须非字母或数字；优先避免被三字码的子串误中。
-  // 修复：先用 IATA 屏蔽二字码子串（如 HKG 中已识别 HK，就不再给 HK 单独加二字码分；
-  // 实际上 IATA 已正确映射到 HK，二字码对 HKG 再加分等于重复累加，保留即可——因为
-  // HKG 命中的是 IATA（→HK），不是二字码（HK 会被边界规则挡掉 HKG 中段）
+  // 二字码（边界必须非字母，且不能是三字码的一部分，如 HKG 里的 HK）。
+  // 覆盖 CF 数据中心全部 135 国/地区代码。
   for (const code of Object.keys(COUNTRIES)) {
     const re = new RegExp(`(^|[^A-Za-z])${code}($|[^A-Za-z]|\\d)`, 'i');
     if (re.test(nodeName)) {
-      score.set(code, (score.get(code) ?? 0) + SIGNAL_WEIGHTS.alpha2);
-      codeFromName.set(code, GEO_NAMES[code]!);
+      return { code, geoName: GEO_NAMES[code]! };
+    }
+  }
+  // 中文名（如"香港 01"）
+  for (const cn of Object.keys(CHINESE_ALIAS_TO_CODE)) {
+    if (nodeName.includes(cn)) {
+      const code = CHINESE_ALIAS_TO_CODE[cn]!;
+      return { code: cn, geoName: GEO_NAMES[code]! };
     }
   }
 
-  // 取分最高
-  if (score.size === 0) return null;
-  let bestCode = '';
-  let bestScore = -1;
-  for (const [code, s] of score) {
-    if (s > bestScore) {
-      bestScore = s;
-      bestCode = code;
-    }
+  // 第3层：IP 定位兜底
+  if (ipGeoResolver && server) {
+    const geo = await ipGeoResolver(server);
+    if (geo) return { code: 'IP', geoName: geo };
   }
-  if (!bestCode) return null;
-  return { code: bestCode, geoName: codeFromName.get(bestCode) ?? GEO_NAMES[bestCode]! };
+
+  return null;
 }
 
 /**

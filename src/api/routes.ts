@@ -21,8 +21,6 @@ import { deduplicateNodes } from '@/parser';
 import { APP_META, isNewerVersion } from '@/meta';
 import { createCatalogSyncService, CatalogSyncService } from '@/services/catalog-sync.service';
 import { RuleCatalogMeta } from '@/models/rule-catalog';
-import { detectGeo } from '@/generator/mihomo';
-import { relocateIpGeo, isIpv4, IP_GEO_CACHE_MS } from '@/services/ip-geo.service';
 
 export interface AppDeps {
   repos: Repositories;
@@ -248,58 +246,21 @@ export function createApp(deps: AppDeps): Hono {
   app.get('/api/nodes', async (c) => {
     const subscriptionId = c.req.query('subscriptionId');
     const disabled = new Set(await config.getDisabledNodes());
-
-    // 只读 KV 展示国家（v2.11.9 产品经理方案）：列表页不发起任何新 IP 查询，仅读缓存；未命中走名字加权
-    const readCachedCountry = async (server: string): Promise<string | null> => {
-      try {
-        const raw = await repos.settings.get('ip_geo:' + server);
-        if (!raw) return null;
-        const [ts, name] = raw.split('|');
-        if (!ts || !name) return raw === '__NULL__' ? null : raw; // 旧格式兼容
-        if (Date.now() - Number(ts) >= IP_GEO_CACHE_MS) return null; // 已过期
-        return name === '__NULL__' ? null : name;
-      } catch {
-        return null;
-      }
-    };
-    const mapper = async (n: { name: string; protocol: string; server: string; port: number; tls?: boolean }) => {
-      const node = n as import('@/models/node').Node;
-      let country: string | null = null;
-      let countrySource: 'ip' | 'name' | null = null;
-      const relocatable = isIpv4(n.server);
-      if (relocatable) {
-        const ipDisplay = await readCachedCountry(n.server);
-        if (ipDisplay) {
-          country = ipDisplay;
-          countrySource = 'ip';
-        }
-      }
-      if (!country) {
-        const geo = await detectGeo(n.name); // 无 resolver/server = 纯名字加权，不触发 IP 查询
-        if (geo) {
-          country = geo.geoName;
-          countrySource = 'name';
-        }
-      }
-      return {
-        name: n.name,
-        protocol: n.protocol,
-        server: n.server,
-        port: n.port,
-        tls: n.tls ?? false,
-        link: nodeToLink(node),
-        fingerprint: nodeFingerprint(node),
-        enabled: !disabled.has(nodeFingerprint(node)),
-        country,
-        countrySource,
-        relocatable,
-      };
-    };
+    const mapper = (n: { name: string; protocol: string; server: string; port: number; tls?: boolean }) => ({
+      name: n.name,
+      protocol: n.protocol,
+      server: n.server,
+      port: n.port,
+      tls: n.tls ?? false,
+      link: nodeToLink(n as import('@/models/node').Node),
+      fingerprint: nodeFingerprint(n as import('@/models/node').Node),
+      enabled: !disabled.has(nodeFingerprint(n as import('@/models/node').Node)),
+    });
     if (subscriptionId) {
       const nodes = await repos.nodes.getBySubscription(subscriptionId);
       return c.json({
         success: true,
-        data: await Promise.all(nodes.map(mapper)),
+        data: nodes.map(mapper),
       });
     }
     const all = await repos.nodes.getAll();
@@ -307,26 +268,9 @@ export function createApp(deps: AppDeps): Hono {
     const unique = deduplicateNodes(all);
     return c.json({
       success: true,
-      data: await Promise.all(unique.map(mapper)),
+      data: unique.map(mapper),
       stats: { original, duplicates: original - unique.length, unique: unique.length },
     });
-  });
-
-  // 重新定位单个节点（v2.11.9 低调「重新定位」次级动作；仅纯 IPv4，清缓存强制新查）
-  app.post('/api/nodes/relocate', requireAuth(auth), async (c) => {
-    const body = await readBody<{ server?: string }>(c);
-    const server = (body.server || '').trim();
-    if (!server) {
-      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'server 必填' } }, 400);
-    }
-    if (!isIpv4(server)) {
-      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: '仅支持纯 IPv4 节点重新定位' } }, 400);
-    }
-    const country = await relocateIpGeo(
-      { get: (k) => repos.settings.get(k), set: (k, v) => repos.settings.set(k, v) },
-      server
-    );
-    return c.json({ success: true, data: { server, country } });
   });
 
   // 设置节点启用状态（保存禁用列表）
