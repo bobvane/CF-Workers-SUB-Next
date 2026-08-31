@@ -2,6 +2,13 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.9] - 2026-08-31
+
+### 安全测试空壳修复（⑥）
+- `tests/security/security.test.ts` 不再测 escHtml 的复制副本，改为直接从真源 `public/index.html` 提取前端实际运行的 escHtml 实例化测试
+- 新增产物接线校验：断言 `src/html.js`（已生成的前端代码）在 `renderRulesTree` 中确实把 `escHtml` 接进 `it.id`/`it.label`，且不得出现未转义直接内插的 `${it.id}`/`${it.label}`（防回归）
+- 测试基线 378 ✅（+2）
+
 ## [2.11.8] - 2026-08-31
 
 ### 稳定/安全补丁（对抗式审查产出）

@@ -3,27 +3,44 @@
  * TASK 7.2 - XSS 防护 / TASK 7.4 - Rate Limit / 密码安全
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
 import { createPasswordHash, verifyPassword } from '@/services/auth.service';
 import { rateLimit, createKvRateLimit } from '@/api/rate-limit';
 import { MemoryKvAdapter } from '@/storage/kv';
 import { Context } from 'hono';
 
-// ============ XSS 防护（前端 escHtml 逻辑验证） ============
+// ============ XSS 防护（验证前端实际使用的 escHtml，而非测试副本） ============
 describe('XSS escaping', () => {
-  // 前端 escHtml 的等价实现（从 public/index.html 提取逻辑）
-  function escHtml(s: string): string {
-    return String(s).replace(/[&<>"']/g, (m: string): string => {
-      const map: Record<string, string> = {
-        '&': '&amp;',
-        '<': '&lt;',
-        '>': '&gt;',
-        '"': '&quot;',
-        "'": '&#39;',
-      };
-      return map[m];
-    });
-  }
+  // 真实实现位于 public/index.html（前端浏览器实际运行的版本）
+  // 直接从真源文件提取函数体并实例化，确保测的是"真函数"而非抄写的副本
+  const root = join(dirname(fileURLToPath(import.meta.url)), '..', '..');
+  let escHtml: (s: string) => string;
+
+  beforeAll(() => {
+    const html = readFileSync(join(root, 'public', 'index.html'), 'utf-8');
+    // escHtml 是单行函数，按行定位后再取函数体（避免正则被内层 } 截断）
+    const line = html.split('\n').find(l => l.includes('function escHtml'));
+    if (!line) throw new Error('escHtml 未在 public/index.html 中找到');
+    const body = line.slice(line.indexOf('{'));
+    escHtml = new Function(`return function(s) ${body}`)() as (s: string) => string;
+  });
+
+  it('真实实现存在且可调用', () => {
+    expect(escHtml).toBeTypeOf('function');
+  });
+
+  it('产出的前端代码确实把 escHtml 接进 renderRulesTree（XSS 路径被守卫）', () => {
+    const htmlJs = readFileSync(join(root, 'src', 'html.js'), 'utf-8');
+    // renderRulesTree 渲染规则项时必须经 escHtml 转义 id/label，不得裸插
+    expect(htmlJs).toContain('${escHtml(it.id)}');
+    expect(htmlJs).toContain('${escHtml(it.label)}');
+    // 页面上不得出现未转义直接内插的 it.id / it.label（防回归）
+    expect(htmlJs).not.toContain('${it.id}');
+    expect(htmlJs).not.toContain('${it.label}');
+  });
 
   it('should escape script tags', () => {
     const output = escHtml('<script>alert(1)</script>');
@@ -33,7 +50,6 @@ describe('XSS escaping', () => {
 
   it('should escape event handlers (neutralize payload)', () => {
     const output = escHtml('"><img src=x onerror=alert(1)>');
-    // 尖括号和引号被转义，整个 payload 变成纯文本，无法形成可执行标签
     expect(output).not.toContain('<img');
     expect(output).not.toContain('>');
     expect(output).toContain('&quot;');

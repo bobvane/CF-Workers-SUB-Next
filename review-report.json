@@ -1,0 +1,128 @@
+{
+  "findings": [
+    {
+      "severity": "P1",
+      "location": "public/index.html:632-641 + 292/517",
+      "issue": "api() 无 AbortController/超时（v2.12.0 修复被回退，commit 7cd97fb）。#app 与 #loginPage 初始均 inline display:none，仅靠 checkSession() 的异步回调切换显示。若 api('/auth/session') 挂起，await 永不返回，两容器都不显示 → 白屏。属已知白屏事故①的同类问题：display 控制链依赖一个无超时的异步调用。",
+      "impact": "网络不稳定或 Worker 请求挂起时，页面永久白屏。",
+      "suggestion": "给 api() 加 AbortController 超时（15s），或在 checkSession 失败/超时后降级显示登录页而非保持空白。"
+    },
+    {
+      "severity": "P1",
+      "location": "public/index.html:741-743 + src/api/routes.ts:491",
+      "issue": "renderRulesTree 把 rule.id / rule.label 直接拼进 innerHTML 未转义（同文件 catalog 渲染 1606/1632 却用了 escHtml）。routes.ts:491 对自定义规则 id 仅 trim().toUpperCase()，无字符集/长度过滤，可含 '、\"、<、>、逗号、#。data-id 属性可被双引号突破、deleteCustomRule('..') 可被单引号突破 JS 字符串边界 → 存储型 XSS；id 还流入 Mihomo YAML 的 RULE-SET,geosite-<id>，含逗号/空格时破坏规则语法。",
+      "impact": "XSS 需认证（自伤为主），但畸形 id 会让所有生成配置的规则失效。",
+      "suggestion": "自定义规则 id 限制字符集 [A-Z0-9_-] 且 ≤64 字符；renderRulesTree 统一使用 escHtml。"
+    },
+    {
+      "severity": "P1",
+      "location": "src/generator/mihomo.ts:434-443 + src/services/ip-geo.service.ts:64",
+      "issue": "groupNodesByGeo 对每个需要 IP 兜底的节点串行 await detectGeo，每次调 ip-api.com 且 fetch 无超时（ip-geo.service.ts:64）、无并发、无速率限制（ip-api 免费版 45 次/分钟）。50+ 节点且命名不可识别的订阅 → 50 次串行 ~300-800ms 查询 → 15-40s 墙钟 → Workers 30s 限制 → 524。v2.11.9 的批处理+信号量修复被回退。单测注入 stub resolver 永远测不出。",
+      "impact": "大型/非标准命名订阅首次生成 Mihomo 配置大概率超时失败。属「测试测不到、线上才炸」第三类问题。",
+      "suggestion": "恢复并发批处理（≤15 并发 + 间隔），或改用非阻塞批量 IP 归属 API；ip-api fetch 加 5s 超时。"
+    },
+    {
+      "severity": "P1",
+      "location": "mihomo.ts:529 vs :620 vs :638 + singbox.ts:147",
+      "issue": "自动选择组用 http://www.gstatic.com/generate_204（纯 HTTP），六国地理组用 https://www.gstatic.com/generate_204，GLOBAL 却用 https://cp.cloudflare.com/generate_204（国内可达）。gstatic 在中国被墙 → url-test 健康检查失败 → 自动选择/地理组节点全部标为不可用 → 自动选路失效。v2.11.8「测速地址统一 cp.cloudflare」被回退。",
+      "impact": "中国用户出箱即坏：自动选择与地理组不可用，需手动切换。",
+      "suggestion": "全部统一为 cp.cloudflare.com/generate_204。"
+    },
+    {
+      "severity": "P1",
+      "location": "tests/security/security.test.ts:13-59",
+      "issue": "XSS 安全测试测试的是从 index.html 里提取的 escHtml 函数副本（测试内复制实现），而非真实渲染代码。真正未转义的 renderRulesTree 注入点（741-743）零覆盖。测试通过了函数本身，真实漏洞路径没测到 → 虚假的绿灯。",
+      "impact": "安全测试给出错误的安全信心。",
+      "suggestion": "引用真实 escHtml 实现而非复制；给 renderRulesTree 加含 '、\"、<、> payload 的转义测试。"
+    },
+    {
+      "severity": "P1",
+      "location": "surge.ts:17/85-86 + quantumultx.ts:17/112",
+      "issue": "Surge:17 用 escapeSectionValue 转义节点名，但 :85-86 的 PROXY = select 组行用原始名拼接；QX:17 用 qxEscape 转义，:112 policy 行用原始名。节点名含逗号（URL 中合法，如 #x, 01）时 proxy 行生成带引号名称、组行却生成三个独立名称 → 引用不存在的代理 → 组损坏。",
+      "impact": "节点名含逗号时 Surge/QX 配置静默损坏。",
+      "suggestion": "组行名称列表复用同一个转义函数，或从已转义名称构建。"
+    },
+    {
+      "severity": "P1",
+      "location": "surge.ts:23,32,45-46",
+      "issue": "Surge proxy 行的 password、ws-path、ws-headers、plugin 值未转义。Trojan 密码可合法含逗号，SS plugin 含分号/等号，WS 路径可含查询串逗号 → 逗号分隔的 Section 行被破坏。",
+      "impact": "含逗号密码/路径的节点在 Surge 配置中解析失败，静默跳过。",
+      "suggestion": "对 password/ws-path/ws-headers/plugin 统一使用 escapeSectionValue。"
+    },
+    {
+      "severity": "P2",
+      "location": "mihomo.ts:26-34 (makeUniqueNames)",
+      "issue": "重命名只对第二个同名节点加 -1 后缀，不检查后缀是否与既有名冲突。['A','A','A-1'] → ['A','A-1','A-1'] → Mihomo 配置出现重复代理名。",
+      "impact": "特定命名组合下 Mihomo 配置含重复代理名，客户端报错。",
+      "suggestion": "重命名后循环校验唯一，或改用 _1/_2 后缀避免与常见 -1 命名冲突。"
+    },
+    {
+      "severity": "P2",
+      "location": "auth.service.ts:100 + routes.ts:558-569",
+      "issue": "auth.service.ts:100 注释声称「吊销全部 session」，但 changePassword 只注销当前 token，其他设备 session 仍有效。注释与实现不一致且存在安全缺口。",
+      "impact": "改密码后其他已登录设备仍可用旧 session。",
+      "suggestion": "实现全量 session 吊销（遍历删除该用户所有 session 键），并修正注释。"
+    },
+    {
+      "severity": "P2",
+      "location": "index.ts:111-113 (appPromise)",
+      "issue": "首次 buildApp(env) 失败（如 KV 初始化异常）会缓存一个永久的 rejected promise，此后所有请求永久 500，直到隔离重启。",
+      "impact": "部署时 KV 偶发故障导致 Worker 永久不可用。",
+      "suggestion": "catch 中重置 appPromise=undefined 再抛错，允许下次重试。"
+    },
+    {
+      "severity": "P2",
+      "location": "routes.ts:70 + index.ts:29-42 + ip-geo.service.ts:64",
+      "issue": "全库仅 fetcher.ts:102-105 有 AbortController 超时；GitHub 发行版查询、目录同步 fetcher、ip-api 均无超时。外部依赖挂起即阻塞对应请求直到 30s 平台杀。",
+      "impact": "系统性的无界网络依赖：GitHub 慢时升级检测/目录同步阻塞。",
+      "suggestion": "统一 fetchWithTimeout(url, ms) 工具并用于所有外部 fetch。"
+    },
+    {
+      "severity": "P2",
+      "location": "parser/index.ts:142-161 (applyRules)",
+      "issue": "Rule 类型含 'replace'，但 applyRules 只处理 include/exclude，replace 被静默忽略，无报错无日志。",
+      "impact": "用户创建 replace 规则后无任何反馈，误以为生效。",
+      "suggestion": "实现 replace 分支，或从类型联合移除并在前端禁用该选项。"
+    },
+    {
+      "severity": "P2",
+      "location": "middleware.ts:42 (getToken 支持 query 参数)",
+      "issue": "getToken 除 Cookie 外还接受 ?token= query 参数，session token 经 URL 传递，会经 Referer、浏览器历史、服务端日志泄露。",
+      "impact": "session token 泄露风险。",
+      "suggestion": "移除 query 参数 token 通道，仅用 HttpOnly Cookie。"
+    },
+    {
+      "severity": "P2",
+      "location": "subscription.service.ts:61-108 (update)",
+      "issue": "update() 无锁：cron 定时更新与手动更新并发时写入交错，nodeCount 与实际 nodes 数量可能不一致。",
+      "impact": "节点数显示不一致（纯 UI），生成配置不受影响。",
+      "suggestion": "应用层加锁或使用 KV 原子计数器。"
+    },
+    {
+      "severity": "P2",
+      "location": "rate-limit.ts:16-33 (memoryCounters)",
+      "issue": "module 级 Map 按 ip:path:windowStart 记录计数，从不清理过期条目，Worker 隔离存活期内 Map 无限增长。",
+      "impact": "内存缓慢增长（key 空间有限，影响有限）。",
+      "suggestion": "每次请求扫描清理超窗条目，或改用带 TTL 的 Map。"
+    },
+    {
+      "severity": "P2",
+      "location": "README.md:7 (版本徽章)",
+      "issue": "README 版本徽章显示 v2.9.2，实际代码为 2.11.7，严重过时。",
+      "impact": "误导用户。",
+      "suggestion": "更新徽章或接入 GitHub Actions 自动同步。"
+    },
+    {
+      "severity": "P2",
+      "location": "覆盖率: loon.ts 2.75% / shadowrocket.ts 8.1% / clean-rule.ts 10% / index.ts 0% / routes.ts 48%",
+      "issue": "关键模块覆盖率极低：Loon/Shadowrocket 两个输出格式 <10%，clean-rule（README 主打功能）10%，Worker 入口 index.ts（cron/appPromise）0%，routes.ts 48%，前端 html.js 零覆盖。",
+      "impact": "这些低覆盖模块是潜在的「测试测不到、线上炸」区域。",
+      "suggestion": "为 loon/shadowrocket 补生成+转义测试；clean-rule 补空列表/正则异常/特殊字符名边界；html.js 补 DOM 渲染测试。"
+    }
+  ],
+  "conclusions": [
+    "第三类盲区——串行 IP 归属查询无超时：每次 Mihomo 配置生成都对每个 IP 兜底节点串行请求 ip-api.com，无超时、无并发、无速率限制。单测用 stub 替换所以不触发；生产环境 50+ 节点订阅 → 50 次串行查询 → 超 30s 墙钟 → 524 超时。与已知两次事故同属「测试测不到、线上才炸」模式。",
+    "display 控制链单点故障——api() 超时回退后白屏回归：白屏修复（ca52bf8）把 loginPage 移出 #app，但显示切换现在依赖一个无超时的 checkSession()。v2.12.0 超时修复（7cd97fb）被回退后，checkSession 挂起 → 两容器都不显示 → 白屏。与事故①同类，只是触发条件从 HTML 结构错误变成网络超时。",
+    "转义漏洞在多个生成器间系统性扩散——Surge/QX 组行与密码未转义：Surge 与 QX 转义了节点名却没转义组选择行与密码/路径。节点名或密码含逗号（URL 中合法）即破坏客户端配置。这种「部分转义」在 4 个生成器里以不同方式出现，其中 3 个测试覆盖率 <10%，无人能发现。"
+  ]
+}
