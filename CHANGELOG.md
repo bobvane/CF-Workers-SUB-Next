@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.9] - 2026-09-01
+
+### Mihomo 所有 url-test 测速组加入 lazy: false
+- 「自动选择」url-test 组加入 `lazy: false`
+- 地理 url-test 组（美国/马来西亚/日本/新加坡/台湾/韩国）加入 `lazy: false`
+- 所有 url-test 组显式声明 `lazy: false`（不惰性启动测速）
+- 测试基线 378 ✅
+
 ## [2.12.8] - 2026-09-01
 
 ### Mihomo 所有测速组 interval 统一为 600

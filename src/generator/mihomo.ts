@@ -355,6 +355,7 @@ export async function generateProxyGroups(
     url: 'https://cp.cloudflare.com/generate_204',
     interval: 600,
     tolerance: 50,
+    lazy: false,
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
@@ -464,6 +465,7 @@ export async function generateProxyGroups(
       group.url = 'https://cp.cloudflare.com/generate_204';
       group.interval = 600;
       group.tolerance = 50;
+      group.lazy = false;
     }
     groups.push(group);
   }
