@@ -158,9 +158,13 @@ describe('generateMihomoConfig', () => {
 
   it('should generate single node config', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    expect(yaml).toContain('mixed-port: 7890');
-    expect(yaml).toContain('allow-lan: true');
-    expect(yaml).toContain('mode: rule');
+    // v2.12.2: 配置直接从 profile: 开始，头字段（mixed-port/allow-lan/mode 等）已移除
+    expect(yaml).not.toContain('mixed-port');
+    expect(yaml).not.toContain('allow-lan');
+    expect(yaml).not.toContain('mode: rule');
+    expect(yaml).not.toContain('profile:'); // v2.12.2: profile 段已移除
+    expect(yaml).not.toContain('dns:'); // v2.12.2: dns 段已移除
+    expect(yaml).not.toContain('sniffer:'); // v2.12.2: sniffer 段已移除
     expect(yaml).toContain('proxies:');
     expect(yaml).toContain('proxy-groups:');
     // 新分组层级 V3.1
@@ -177,19 +181,20 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('MATCH,漏网之鱼');
   });
 
-  it('should include hardcoded template header fields (v2.10.3)', async () => {
+  it('should NOT include removed hardcoded template header fields (v2.12.2)', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    // 配置头硬编码模板（用户 2026-08-30 拍板）
-    expect(yaml).toContain('external-controller: 0.0.0.0:9090');
-    expect(yaml).toContain('secret: ""');
-    expect(yaml).toContain('unified-delay: true');
-    expect(yaml).toContain('tcp-concurrent: true');
-    expect(yaml).toContain('geodata-mode: true');
-    expect(yaml).toContain('geodata-loader: standard');
-    expect(yaml).toContain('geosite-matcher: succinct');
-    expect(yaml).toContain('geo-auto-update: true');
-    expect(yaml).toContain('geo-update-interval: 24');
-    expect(yaml).toContain('store-selected: true');
+    // v2.12.2: 按用户指令去除 profile: 之上的硬编码头字段，配置从 profile: 开始
+    expect(yaml).not.toContain('external-controller');
+    expect(yaml).not.toContain('secret:');
+    expect(yaml).not.toContain('unified-delay');
+    expect(yaml).not.toContain('tcp-concurrent');
+    expect(yaml).not.toContain('geodata-mode');
+    expect(yaml).not.toContain('geodata-loader');
+    expect(yaml).not.toContain('geosite-matcher');
+    expect(yaml).not.toContain('geo-auto-update');
+    expect(yaml).not.toContain('geo-update-interval');
+    expect(yaml).not.toContain('store-selected'); // v2.12.2: profile 段已移除
+    expect(yaml).not.toContain('profile:');
   });
 
   it('should generate multiple proxies', async () => {
@@ -214,20 +219,18 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('GLOBAL');
   });
 
-  it('should enable allow-lan by default (旁路由/局域网设备走 7890)', async () => {
+  it('should NOT emit allow-lan header (removed in v2.12.2)', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    expect(yaml).toContain('allow-lan: true');
+    expect(yaml).not.toContain('allow-lan');
   });
 
-  it('should support custom template', async () => {
-    const yaml = await generateMihomoConfig([makeNode()], {
-      mixedPort: 1080,
-      allowLan: true,
-      logLevel: 'debug',
-    });
-    expect(yaml).toContain('mixed-port: 1080');
-    expect(yaml).toContain('allow-lan: true');
-    expect(yaml).toContain('log-level: debug');
+  it('should ignore custom template (header fields removed in v2.12.2)', async () => {
+    // 模板参数已随头字段移除，传入任何配置不再影响输出
+    const yaml = await generateMihomoConfig([makeNode()]);
+    expect(yaml).not.toContain('mixed-port');
+    expect(yaml).not.toContain('allow-lan');
+    expect(yaml).not.toContain('log-level');
+    expect(yaml).toContain('proxies:');
   });
 
   it('should handle empty node list', async () => {
@@ -240,7 +243,6 @@ describe('generateMihomoConfig', () => {
     // 使用 native=true 规则触发原生 GEOSITE 输出路径
     const yaml = await generateMihomoConfig(
       [makeNode()],
-      undefined,
       [
         { id: 'cn', label: '中国直连域名', tag: 'geosite' as const, target: 'DIRECT' as const, native: true, fixed: true },
         { id: 'category-ads-all', label: '广告拦截', tag: 'geosite' as const, target: 'REJECT' as const, native: true },
@@ -337,7 +339,6 @@ describe('generateMihomoConfig', () => {
         makeNode({ name: '移动-01', server: 'hk-hongkong.example.com' }),
         makeNode({ id: 'n2', name: '不可识别-02', server: 'unknown.example.com' }),
       ],
-      undefined,
       [],
       [],
       ipResolver

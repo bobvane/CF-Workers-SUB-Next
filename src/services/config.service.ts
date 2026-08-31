@@ -242,7 +242,6 @@ export function createConfigService(repos: Repositories): ConfigService {
         case 'mihomo':
           return generateMihomoConfig(
             nodes,
-            undefined,
             await this.getSelectedRules(),
             await this.getMergedGroups(),
             createIpGeoResolver({

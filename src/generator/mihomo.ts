@@ -32,75 +32,6 @@ export function makeUniqueNames(nodes: Node[]): Node[] {
   });
 }
 
-export interface MihomoTemplate {
-  mixedPort?: number;
-  allowLan?: boolean;
-  mode?: string;
-  logLevel?: string;
-  externalController?: string;
-  secret?: string;
-  ipv6?: boolean;
-}
-
-export const DEFAULT_MIHOMO_TEMPLATE: MihomoTemplate = {
-  mixedPort: 7890,
-  allowLan: true, // 旁路由/网关场景：局域网设备需指定 7890 混合端口走代理。仅监听内网 NIC，配合 bind-address 可进一步限制。
-  mode: 'rule',
-  logLevel: 'warning', // 长期运行 info 日志量过大，warning 足够诊断
-  externalController: '0.0.0.0:9090', // 外部控制 API：面板（Zashboard/OpenClash）连接用
-  secret: '', // API 访问密钥，空 = 无验证
-  ipv6: false, // 默认关闭 IPv6，避免 IPv4 走代理 / IPv6 走直连的诡异分流
-};
-
-/**
- * 默认 DNS 配置（fake-ip 模式）
- * nameserver-policy 按域名分流：国内域名(cn,private)走国内 DoH，
- * 国外域名(geolocation-!cn)直接走国外 DoH——一次查询到位，
- * 避免 fallback+geoip 模式的"先查国内→判断→再查国外"双轮 RTT 延迟
- * （MetaCubeX 官方推荐做法，需 Meta 内核 v1.14+）。
- */
-export const DEFAULT_DNS_CONFIG: Record<string, unknown> = {
-  enable: true,
-  ipv6: false,
-  'enhanced-mode': 'fake-ip',
-  'fake-ip-range': '198.18.0.1/16',
-  nameserver: ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
-  // default-nameserver：解析 DoH 服务器自身域名用的普通 DNS（鸡生蛋问题）
-  'default-nameserver': ['223.5.5.5', '119.29.29.29'],
-  // proxy-server-nameserver：专门解析节点服务器域名，防污染导致节点连不上（纯 IP 引导）
-  'proxy-server-nameserver': ['223.5.5.5', '119.29.29.29'],
-  // 域名分流 DNS：国内域名走国内 DoH，国外域名走国外 DoH 且查询经代理隧道发出
-  // （#节点选择：DoH 请求本身走代理，避免直连 1.1.1.1/8.8.8.8 被干扰超时——
-  //   否则所有默认 DIRECT 的分组解析国外域名时都会 dns resolve failed）
-  'nameserver-policy': {
-    'geosite:cn,private': ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
-    'geosite:geolocation-!cn': [
-      'https://1.1.1.1/dns-query#节点选择',
-      'https://8.8.8.8/dns-query#节点选择',
-    ],
-  },
-};
-
-/**
- * 默认 Sniffer 配置（fake-ip 最佳搭档）
- * 嗅探 TLS/HTTP/QUIC 握手中的真实域名，解决 fake-ip 下无法精准分流的问题。
- * force-dns-mapping: 将嗅探到的域名映射回 fake-ip，确保后续连接走正确规则。
- */
-export const DEFAULT_SNIFFER_CONFIG: Record<string, unknown> = {
-  enable: true,
-  'force-dns-mapping': true,
-  'parse-pure-ip': true,
-  'override-destination': true,
-  sniff: {
-    TLS: { ports: [443, 8443] },
-    HTTP: { ports: [80, '8080-8880'], 'override-destination': true },
-    QUIC: { ports: [443, 8443] },
-  },
-  'skip-domain': [
-    '+.push.apple.com',
-  ],
-};
-
 /**
  * 将 Node 转换为 Mihomo proxy 配置对象
  */
@@ -551,35 +482,19 @@ export async function generateProxyGroups(
  */
 export async function generateMihomoConfig(
   nodes: Node[],
-  template: MihomoTemplate = DEFAULT_MIHOMO_TEMPLATE,
   selectedRules: MetaCubeXRule[] = [],
   ruleGroups: RuleGroup[] = [],
   ipGeoResolver?: GeoResolver
 ): Promise<string> {
+  // 注：v2.12.2 按用户指令去除全部硬编码头字段（mixed-port/allow-lan/mode/log-level/ipv6/
+  // external-controller/secret）及 profile/dns/sniffer 段，配置仅输出 proxies/proxy-groups/rules。
   const uniqueNodes = makeUniqueNames(nodes);
   const proxies = uniqueNodes.map(nodeToMihomoProxy);
   const groups = await generateProxyGroups(uniqueNodes, selectedRules, ruleGroups, ipGeoResolver);
 
   const config: Record<string, unknown> = {
-    'mixed-port': template.mixedPort ?? 7890,
-    'allow-lan': template.allowLan ?? false,
-    mode: template.mode ?? 'rule',
-    'log-level': template.logLevel ?? 'info',
-    'ipv6': template.ipv6 ?? false,
-    'external-controller': template.externalController ?? '0.0.0.0:9090',
-    secret: template.secret ?? '',
-    'unified-delay': true,
-    'tcp-concurrent': true,
-    'geodata-mode': true,
-    'geodata-loader': 'standard',
-    'geosite-matcher': 'succinct',
-    'geo-auto-update': true,
-    'geo-update-interval': 24,
-    profile: { 'store-selected': true },
     proxies,
     'proxy-groups': groups,
-    dns: DEFAULT_DNS_CONFIG,
-    sniffer: DEFAULT_SNIFFER_CONFIG,
     rules: ['MATCH,漏网之鱼'],
   };
 

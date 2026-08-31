@@ -102,20 +102,20 @@ describe('用户自定义规则置顶', () => {
 });
 
 describe('AI 审查意见修复', () => {
-  it('输出配置包含完整 DNS 配置 + fake-ip + DoH', async () => {
+  it('输出配置已移除 DNS 段 + fake-ip + sniffer（v2.12.2）', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    expect(yaml).toContain('dns:');
-    expect(yaml).toContain('enhanced-mode: fake-ip');
-    expect(yaml).toContain('fake-ip-range');
-    expect(yaml).toContain('https://223.5.5.5/dns-query');
-    expect(yaml).toContain('nameserver-policy');
+    // v2.12.2: profile/dns/sniffer 三段落全部移除，配置仅 proxies/proxy-groups/rules
+    expect(yaml).not.toContain('dns:');
+    expect(yaml).not.toContain('enhanced-mode');
+    expect(yaml).not.toContain('fake-ip');
+    expect(yaml).not.toContain('nameserver-policy');
     expect(yaml).not.toContain('fallback-filter');
-    expect(yaml).toContain('log-level: warning');
-    expect(yaml).toContain('default-nameserver');
-    expect(yaml).toContain('proxy-server-nameserver');
-    // proxy-server-nameserver 用纯 IP 引导解析节点服务器域名
-    expect(yaml).toContain('proxy-server-nameserver:\n    - 223.5.5.5\n    - 119.29.29.29');
-    expect(yaml).toContain('interval: 1800');
+    expect(yaml).not.toContain('log-level');
+    expect(yaml).not.toContain('sniffer:');
+    expect(yaml).not.toContain('sniff:');
+    expect(yaml).toContain('proxies:');
+    expect(yaml).toContain('proxy-groups:');
+    expect(yaml).toContain('rules:');
   });
 
   it('地理组：美国/马来西亚/日本/新加坡/台湾/韩国 六组 url-test，其余 select', async () => {

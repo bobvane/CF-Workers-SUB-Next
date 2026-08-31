@@ -2,6 +2,21 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.3] - 2026-09-01
+
+### Mihomo 配置输出硬编码精简（去除 profile/dns/sniffer 及全部头字段）
+- 按用户指令去除 mihomo 配置输出的全部硬编码内容，配置仅输出 `proxies` / `proxy-groups` / `rules` 三段
+- 去除 `profile:` 段（store-selected）
+- 去除 `dns:` 段（fake-ip / DoH / nameserver-policy / 国内DNS分流等，含 `DEFAULT_DNS_CONFIG`）
+- 去除 `sniffer:` 段（含 `DEFAULT_SNIFFER_CONFIG`）
+- 去除 `profile:` 之上的头字段：mixed-port / allow-lan / mode / log-level / ipv6 / external-controller / secret / unified-delay / tcp-concurrent / geodata-mode / geodata-loader / geosite-matcher / geo-auto-update / geo-update-interval
+- 删除死代码：`MihomoTemplate` 接口、`DEFAULT_MIHOMO_TEMPLATE`、`DEFAULT_DNS_CONFIG`、`DEFAULT_SNIFFER_CONFIG`
+- `generateMihomoConfig` 签名由 5 参数精简为 4 参数（移除 `template`），`config.service.ts` 调用点同步更新
+- 测试同步：`mihomo.test.ts` / `verify-v31.test.ts` 相关断言改为断言已移除字段不出现
+- 测试基线 378 ✅
+
+---
+
 ## [2.12.2] - 2026-09-01
 
 ### 分流规则精简（删除指定 geosite 规则，保留分组结构）
