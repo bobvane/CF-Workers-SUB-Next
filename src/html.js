@@ -840,7 +840,7 @@ function applyPreset(key) {
   });
   renderRulesTree();
   saveRuleSelection();
-  toast(\`已应用预设「\${p.label.replace(/^\S+\s/, '')}」\`);
+  toast(\`已应用预设「\${p.label.replace(/^\\S+\\s/, '')}」\`);
 }
 
 // 当前勾选状态与某预设完全一致时高亮；用户手动改动后自然失配
