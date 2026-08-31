@@ -49,8 +49,7 @@ describe('V3.1 验证', () => {
     const selectedRules = [
       { id: 'category-ads-all', label: '广告拦截', tag: 'geosite' as const, target: 'REJECT' as const, native: true },
       { id: 'googlefcm', label: '谷歌FCM', tag: 'geosite' as const, target: 'PROXY' as const },
-      { id: 'openai', label: 'OpenAI', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
-      { id: 'netflix', label: 'Netflix', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
+      { id: 'category-ai-!cn', label: 'AI 平台(非中国)', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
     ];
 
     const rules = buildRules(selectedRules, RULE_GROUPS);
@@ -59,8 +58,7 @@ describe('V3.1 验证', () => {
     expect(rules[1]).toBe('GEOSITE,private,DIRECT');
     expect(rules[rules.length - 1]).toBe('MATCH,漏网之鱼');
     expect(rules.some(r => r === 'GEOSITE,category-ads-all,广告拦截')).toBe(true);
-    expect(rules.some(r => r === 'GEOSITE,openai,AI 平台')).toBe(true);
-    expect(rules.some(r => r === 'GEOSITE,netflix,国外媒体')).toBe(true);
+    expect(rules.some(r => r === 'GEOSITE,category-ai-!cn,AI 平台')).toBe(true);
     // googlefcm 是非 native，走 RULE-SET provider
     expect(rules.some(r => r.startsWith('RULE-SET,geosite-googlefcm,谷歌FCM'))).toBe(true);
   });
@@ -75,16 +73,17 @@ describe('V3.1 验证', () => {
     expect(ruleActionTarget({ id: 'geoip,cn', label: '', tag: 'geoip' as const, target: 'DIRECT' as const, native: true }, RULE_GROUPS)).toBe('DIRECT');
     // 非 native 大写 id → 匹配对应组
     expect(ruleActionTarget({ id: 'googlefcm', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('谷歌FCM');
-    // BING 在 microsoft 组（大写），find 先匹配到 microsoft 组 → 微软服务
-    expect(ruleActionTarget({ id: 'BING', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软服务');
+    // BING 已从 microsoft 组移除 → 漏网之鱼
+    expect(ruleActionTarget({ id: 'BING', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('漏网之鱼');
     expect(ruleActionTarget({ id: 'MICROSOFT', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('微软服务');
     expect(ruleActionTarget({ id: 'APPLE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('苹果服务');
     // 不存在 → 兜底
     expect(ruleActionTarget({ id: 'NETEASE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
     expect(ruleActionTarget({ id: 'GITHUB', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('漏网之鱼');
-    // native 小写 id
-    expect(ruleActionTarget({ id: 'openai', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('AI 平台');
-    expect(ruleActionTarget({ id: 'netflix', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('国外媒体');
+    // native 小写 id；openai/netflix 已移除 → 漏网之鱼；category-ai-!cn 仍在 AI 组
+    expect(ruleActionTarget({ id: 'openai', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('漏网之鱼');
+    expect(ruleActionTarget({ id: 'netflix', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('漏网之鱼');
+    expect(ruleActionTarget({ id: 'category-ai-!cn', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('AI 平台');
   });
 });
 

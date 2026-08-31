@@ -242,20 +242,17 @@ describe('generateMihomoConfig', () => {
       [makeNode()],
       undefined,
       [
-        { id: 'openai', label: 'OpenAI', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
-        { id: 'netflix', label: 'Netflix', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
+        { id: 'cn', label: '中国直连域名', tag: 'geosite' as const, target: 'DIRECT' as const, native: true, fixed: true },
+        { id: 'category-ads-all', label: '广告拦截', tag: 'geosite' as const, target: 'REJECT' as const, native: true },
       ],
       RULE_GROUPS
     );
-    // AI 平台组（openai 属于 AI 平台组）
-    expect(yaml).toContain('AI 平台');
-    // 国外媒体组（netflix 属于国外媒体组）
-    expect(yaml).toContain('国外媒体');
+    // 国内直连组（cn 属于国内直连组）
+    expect(yaml).toContain('GEOSITE,cn,DIRECT');
+    // 广告拦截组（category-ads-all 属于广告拦截组）
+    expect(yaml).toContain('GEOSITE,category-ads-all,广告拦截');
     // 原生规则不生成 rule-providers
     expect(yaml).not.toContain('rule-providers');
-    // 原生规则以 GEOSITE 形式输出
-    expect(yaml).toContain('GEOSITE,openai,AI 平台');
-    expect(yaml).toContain('GEOSITE,netflix,国外媒体');
   });
 
   it('should generate geo groups for recognized node names', async () => {

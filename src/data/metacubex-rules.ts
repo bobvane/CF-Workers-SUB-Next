@@ -98,12 +98,6 @@ export const RULE_GROUPS: RuleGroup[] = [
     items: [
       // 承重墙 — 固定灰色，不可取消；末尾去重，只留 MATCH
       { id: 'cn', label: '中国直连域名', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
-      { id: 'apple-cn', label: '苹果服务(中国区)', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'microsoft@cn', label: '微软服务(中国区)', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'steam@cn', label: 'Steam 中国区', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'category-games@cn', label: '游戏中国区', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'onedrive', label: '微软 OneDrive', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'icloud@cn', label: 'iCloud 中国区', tag: 'geosite', target: 'DIRECT', native: true },
     ],
   },
   {
@@ -115,119 +109,58 @@ export const RULE_GROUPS: RuleGroup[] = [
   {
     key: 'ai', name: 'AI 平台', icon: '🤖',
     items: [
-      // 原生 GEOSITE 输出，全部灰色固定
+      // 原生 GEOSITE 输出，聚合分类灰色固定；点名的 8 条已移除
       { id: 'category-ai-!cn', label: 'AI 平台(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
       { id: 'category-ai-chat-!cn', label: 'AI 对话(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'openai', label: 'OpenAI / ChatGPT', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'anthropic', label: 'Claude (Anthropic)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'google-gemini', label: 'Gemini', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'github-copilot', label: 'GitHub Copilot', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'perplexity', label: 'Perplexity', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'poe', label: 'POE', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'bytedance-ai-!cn', label: '字节跳动 AI(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'jetbrains-ai', label: 'JetBrains AI', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
     key: 'social', name: '社交', icon: '📱',
     items: [
-      // 原生 GEOSITE 输出，普通可勾选
+      // 原生 GEOSITE 输出，聚合分类灰色固定；点名的 14 条已移除
       { id: 'category-communication', label: '社交通讯聚合', tag: 'geosite', target: 'PROXY', native: true },
       { id: 'category-social-media-!cn', label: '海外社交(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'telegram', label: 'Telegram', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'discord', label: 'Discord', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'twitter', label: 'X / Twitter', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'x', label: 'X (原Twitter)', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'meta', label: 'Meta 系列(Facebook/Instagram)', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'facebook', label: 'Facebook', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'instagram', label: 'Instagram', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'tiktok', label: 'TikTok', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'reddit', label: 'Reddit', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'line', label: 'Line', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'whatsapp', label: 'WhatsApp', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'signal', label: 'Signal', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'linkedin', label: 'LinkedIn', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'pinterest', label: 'Pinterest', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {
     key: 'media', name: '国外媒体', icon: '🌍',
     items: [
-      // 原生 GEOSITE 输出；category-media 灰色固定，其余可选；apple-music 已归入苹果服务组（DIRECT）
+      // 原生 GEOSITE 输出；category-media 灰色固定；点名的 9 条已移除；apple-music 已归入苹果服务组（DIRECT）
       { id: 'category-media', label: '媒体聚合', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'youtube', label: 'YouTube', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'netflix', label: 'Netflix', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'biliintl', label: 'B站国际版', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'bahamut', label: '巴哈姆特', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'pixiv', label: 'Pixiv', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'abema', label: 'Abema', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'spotify', label: 'Spotify', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'disney', label: 'Disney+', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'ehentai', label: 'E-Hentai', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {
     key: 'game', name: '游戏平台', icon: '🎮',
     items: [
-      // 原生 GEOSITE 输出；category-games-!cn 灰色固定，其余可选
+      // 原生 GEOSITE 输出；category-games-!cn 灰色固定；点名的 11 条已移除
       { id: 'category-games-!cn', label: '游戏聚合(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'steam', label: 'Steam', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'epicgames', label: 'Epic Games', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'ea', label: 'EA', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'origin', label: 'Origin/EA', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'ubisoft', label: '育碧', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'gog', label: 'GOG', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'blizzard', label: '暴雪战网', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'riot', label: 'Riot', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'xbox', label: 'Xbox', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'playstation', label: 'PlayStation', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'nintendo', label: '任天堂', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {
     key: 'microsoft', name: '微软服务', icon: '🪟',
     items: [
-      // 原生 GEOSITE 输出；microsoft 灰色固定，其余可选；skype 被 microsoft 聚合兜底；onedrive 已在国内直连走 DIRECT，不在本组重复
+      // 原生 GEOSITE 输出；microsoft 灰色固定；skype 被 microsoft 聚合兜底；onedrive 已在国内直连走 DIRECT，不在本组重复；azure/bing/msn 已移除
       { id: 'microsoft', label: '微软服务', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
       { id: 'microsoft-dev', label: '微软开发者', tag: 'geosite', target: 'PROXY', native: true },
       { id: 'microsoft-pki', label: '微软 PKI', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'azure', label: 'Azure 云服务', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'bing', label: '微软必应(含国际版)', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'msn', label: 'MSN', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
   {
     key: 'apple', name: '苹果服务', icon: '🍎',
     items: [
-      // 原生 GEOSITE 输出；apple 灰色固定，其余可选；appstore 被 apple/itunes 聚合兜底，不在本组重复
+      // 原生 GEOSITE 输出；apple 灰色固定；appstore 被 apple/itunes 聚合兜底，不在本组重复；podcasts/tvplus/intelligence/icloud/itunes 已移除
       { id: 'apple', label: '苹果服务', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
       { id: 'apple-music', label: 'Apple Music', tag: 'geosite', target: 'DIRECT', native: true },
       { id: 'apple-dev', label: 'Apple 开发者', tag: 'geosite', target: 'DIRECT', native: true },
       { id: 'apple-update', label: 'Apple 系统更新', tag: 'geosite', target: 'DIRECT', native: true },
       { id: 'apple-pki', label: 'Apple PKI', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'apple-podcasts', label: 'Apple 播客', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'apple-tvplus', label: 'Apple TV+', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'apple-intelligence', label: 'Apple Intelligence', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'icloud', label: 'iCloud', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'itunes', label: 'iTunes', tag: 'geosite', target: 'DIRECT', native: true },
     ],
   },
   {
     key: 'crypto', name: '加密货币', icon: '💰',
     items: [
-      // 原生 GEOSITE 输出；category-cryptocurrency 灰色固定，其余可选
+      // 原生 GEOSITE 输出；category-cryptocurrency 灰色固定；点名的 11 条已移除
       { id: 'category-cryptocurrency', label: '加密货币通用合集', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'binance', label: '币安 Binance', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'okx', label: 'OKX', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'bybit', label: 'Bybit', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'gateio', label: 'Gate.io', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'kraken', label: 'Kraken', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'kucoin', label: 'KuCoin', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'huobi', label: '火币 Huobi', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'onekey', label: 'OneKey', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'trustwallet', label: 'Trust Wallet', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'deribit', label: 'Deribit', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'safepal', label: 'SafePal', tag: 'geosite', target: 'PROXY', native: true },
     ],
   },
 

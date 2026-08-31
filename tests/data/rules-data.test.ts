@@ -129,7 +129,7 @@ describe('MetaCubeX 规则数据完整性', () => {
   });
 
   it('findRuleInGroups 能正确找到 native 规则', () => {
-    const rule = findRuleInGroups(RULE_GROUPS, 'openai');
+    const rule = findRuleInGroups(RULE_GROUPS, 'category-ai-!cn');
     expect(rule).toBeDefined();
     expect(rule?.native).toBe(true);
   });

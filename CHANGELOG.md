@@ -2,6 +2,24 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.2] - 2026-09-01
+
+### 分流规则精简（删除指定 geosite 规则，保留分组结构）
+- 按用户指令从 8 个分组中删除点名的 67 条 geosite 规则，**不删除组本身**
+- 国内直连：删 apple-cn / microsoft@cn / steam@cn / category-games@cn / onedrive / icloud@cn，保留 `cn`
+- AI 平台：删 openai / anthropic / google-gemini / github-copilot / perplexity / poe / bytedance-ai-!cn / jetbrains-ai，保留 `category-ai-!cn` / `category-ai-chat-!cn`
+- 社交：删 telegram / discord / twitter / x / meta / facebook / instagram / tiktok / reddit / line / whatsapp / signal / linkedin / pinterest，保留 `category-communication` / `category-social-media-!cn`
+- 国外媒体：删 youtube / netflix / biliintl / bahamut / pixiv / abema / spotify / disney / ehentai，保留 `category-media`
+- 游戏平台：删 steam / epicgames / ea / origin / ubisoft / gog / blizzard / riot / xbox / playstation / nintendo，保留 `category-games-!cn`
+- 微软服务：删 azure / bing / msn，保留 `microsoft` / `microsoft-dev` / `microsoft-pki`
+- 苹果服务：删 apple-podcasts / apple-tvplus / apple-intelligence / icloud / itunes，保留 `apple` / `apple-music` / `apple-dev` / `apple-update` / `apple-pki`
+- 加密货币：删 binance / okx / bybit / gateio / kraken / kucoin / huobi / onekey / trustwallet / deribit / safepal，保留 `category-cryptocurrency`
+- 谷歌 FCM 组未点名，完整保留
+- 测试同步：`rule-providers.test.ts` / `rules-data.test.ts` / `rule-order.test.ts` / `mihomo.test.ts` / `verify-v31.test.ts` 中引用已删规则的断言改为仍存在的规则（category-ai-!cn 等）
+- 测试基线 378 ✅
+
+---
+
 ## [2.12.1] - 2026-08-31
 
 ### 纯IP地理定位重构
