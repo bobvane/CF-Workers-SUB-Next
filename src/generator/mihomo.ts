@@ -114,7 +114,7 @@ export const DEFAULT_SNIFFER_CONFIG: Record<string, unknown> = {
     QUIC: { ports: [443, 8443] },
   },
   'skip-domain': [
-    // v2.11.8: 移除 'Mijia Cloud'（含空格非合法域名，不生效无意义，用户 2026-08-30 拍板）
+    'Mijia Cloud',
     '+.push.apple.com',
   ],
 };
@@ -526,11 +526,9 @@ export async function generateProxyGroups(
     name: '自动选择',
     type: 'url-test',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Auto.png',
-    // v2.11.8: 测速地址统一改为 https://cp.cloudflare.com/generate_204（国内可达），并加 timeout: 3000（用户 2026-08-30 拍板）
-    url: 'https://cp.cloudflare.com/generate_204',
+    url: 'http://www.gstatic.com/generate_204',
     interval: 1800,
     tolerance: 50,
-    timeout: 3000,
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
@@ -637,8 +635,7 @@ export async function generateProxyGroups(
       proxies: geo.nodes,
     };
     if (useUrlTest) {
-      // v2.11.8: 测速地址统一改为 https://cp.cloudflare.com/generate_204（用户 2026-08-30 拍板，国内可达，gstatic 墙内不通）
-      group.url = 'https://cp.cloudflare.com/generate_204';
+      group.url = 'https://www.gstatic.com/generate_204';
       group.interval = 300;
       group.tolerance = 50;
       group.lazy = true;
