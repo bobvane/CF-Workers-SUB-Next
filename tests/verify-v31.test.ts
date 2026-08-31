@@ -112,10 +112,10 @@ describe('AI 审查意见修复', () => {
     expect(yaml).toContain('nameserver-policy');
     expect(yaml).not.toContain('fallback-filter');
     expect(yaml).toContain('log-level: warning');
-    expect(yaml).toContain('+.push.apple.com');
-    expect(yaml).toContain('+.icloud.com');
     expect(yaml).toContain('default-nameserver');
     expect(yaml).toContain('proxy-server-nameserver');
+    // proxy-server-nameserver 用纯 IP 引导解析节点服务器域名
+    expect(yaml).toContain('proxy-server-nameserver:\n    - 223.5.5.5\n    - 119.29.29.29');
     expect(yaml).toContain('interval: 1800');
   });
 

@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.0] - 2026-08-31
+
+### Mihomo DNS 配置精调（fake-ip 模式）
+- `proxy-server-nameserver` 由 DoH 改为纯 IP 引导（`223.5.5.5` / `119.29.29.29`），解析节点服务器域名更快更稳、防污染
+- 移除 `fake-ip-filter` 块（STUN/Apple 推送等条目），按用户指定精简 DNS 硬编码
+- 其余保持：`nameserver` 国内 DoH（223.5.5.5/doh.pub）、`nameserver-policy` 国内 cn/private 走国内 DoH、国外 geolocation-!cn 走 `1.1.1.1`/`8.8.8.8#节点选择`
+- 同步更新 `tests/verify-v31.test.ts` DNS 断言（去掉 fake-ip-filter 断言，新增 proxy-server-nameserver 纯 IP 断言）
+- 测试基线 378 ✅
+
 ## [2.11.9] - 2026-08-31
 
 ### 安全测试空壳修复（⑥）

@@ -65,27 +65,11 @@ export const DEFAULT_DNS_CONFIG: Record<string, unknown> = {
   ipv6: false,
   'enhanced-mode': 'fake-ip',
   'fake-ip-range': '198.18.0.1/16',
-  'fake-ip-filter': [
-    '*.lan',
-    '*.local',
-    '*.localdomain',
-    '+.stun.*.*',
-    '+.stun.*.*.*',
-    '+.stun.*.*.*.*',
-    '+.stun.*.*.*.*.*',
-    'time.windows.com',
-    'time.*.apple.com',
-    'ntp.*.com',
-    // 苹果推送/服务走特殊长连接，被 fake-ip 劫持会偶发推送延迟（社区已知坑）
-    '+.push.apple.com',
-    '+.apple.com',
-    '+.icloud.com',
-  ],
   nameserver: ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
   // default-nameserver：解析 DoH 服务器自身域名用的普通 DNS（鸡生蛋问题）
   'default-nameserver': ['223.5.5.5', '119.29.29.29'],
-  // proxy-server-nameserver：专门解析节点服务器域名，防污染导致节点连不上
-  'proxy-server-nameserver': ['https://223.5.5.5/dns-query', 'https://doh.pub/dns-query'],
+  // proxy-server-nameserver：专门解析节点服务器域名，防污染导致节点连不上（纯 IP 引导）
+  'proxy-server-nameserver': ['223.5.5.5', '119.29.29.29'],
   // 域名分流 DNS：国内域名走国内 DoH，国外域名走国外 DoH 且查询经代理隧道发出
   // （#节点选择：DoH 请求本身走代理，避免直连 1.1.1.1/8.8.8.8 被干扰超时——
   //   否则所有默认 DIRECT 的分组解析国外域名时都会 dns resolve failed）
