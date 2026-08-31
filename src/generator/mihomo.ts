@@ -353,7 +353,7 @@ export async function generateProxyGroups(
     type: 'url-test',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Auto.png',
     url: 'https://cp.cloudflare.com/generate_204',
-    interval: 600,
+    interval: 300,
     tolerance: 50,
     lazy: false,
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
@@ -463,7 +463,7 @@ export async function generateProxyGroups(
     };
     if (useUrlTest) {
       group.url = 'https://cp.cloudflare.com/generate_204';
-      group.interval = 600;
+      group.interval = 300;
       group.tolerance = 50;
       group.lazy = false;
     }

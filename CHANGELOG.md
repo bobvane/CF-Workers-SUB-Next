@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.11] - 2026-09-01
+
+### Mihomo 所有 url-test 测速组 interval 调整为 300
+- 「自动选择」url-test 组 `interval: 600` → `interval: 300`
+- 地理 url-test 组（美国/马来西亚/日本/新加坡/台湾/韩国）`interval: 600` → `interval: 300`
+
 ## [2.12.10] - 2026-09-01
 
 ### IP 地理定位主动预填充（批量合并查询）
