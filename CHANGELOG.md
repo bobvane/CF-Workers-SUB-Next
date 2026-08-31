@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.9] - 2026-08-31
+
+### 国家检测评审落地 + 节点列表只读国家显示 + 重新定位（用户 2026-08-31 五方评审拍板）
+- **后端 Batch 化 IP 定位**（ip-geo.service.ts）：批量 POST 至 ip-api.com/batch，单次请求处理 ≤100 节点；L1 内存缓存 + L2 KV 兜底；single-flight 去重 + 信号灯 ≤15 次/分；TTL 30→7 天；fail-open 降级回名字加权；纯 IP 才查、域名跳过（五方共识 1~5 落地）
+- **IP 名字加权评分改进**（mihomo.ts detectGeo）：导出供前端复用；alpha-2 边界正则修复数字误中；中文别名最长优先匹配；emoji 旗标 matchAll 多旗加分；一票否决降级为高置信采纳（差距 ≥30 才采纳，冲突日志）；`detectGeo` / `groupNodesByGeo` 保持纯函数签名零破坏
+- **节点列表只读国家显示**（产品经理方案）：`/api/nodes` 返回 country/countrySource/relocatable；只读 KV 免触发新查询；未缓存节点回退名字加权
+- **低调「重新定位」次级动作**（兼顾 SRE 按钮诉求）：`POST /api/nodes/relocate` 清缓存强制新查，仅纯 IPv4 生效；前端列表页每行低调小按钮，不打断主流程
+- 测试基线：384 ✅
+
 ## [2.11.8] - 2026-08-30
 
 ### 测速地址统一 + sniffer 清理 + 自动选择超时（用户 2026-08-30 拍板）

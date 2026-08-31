@@ -368,7 +368,7 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <span style="color:var(--text2);font-size:14px">保存/删除规则时也会自动应用一次</span>
     </div>
     <table id="nodesTable">
-      <thead><tr><th style="width:40px"><input type="checkbox" id="nodeSelectAll" onchange="toggleSelectAll(this)" checked></th><th>名称</th><th>协议</th><th>地址</th><th>端口</th><th>TLS</th><th>操作</th></tr></thead>
+      <thead><tr><th style="width:40px"><input type="checkbox" id="nodeSelectAll" onchange="toggleSelectAll(this)" checked></th><th>名称</th><th>协议</th><th>地址</th><th>端口</th><th>TLS</th><th>国家</th><th>操作</th></tr></thead>
       <tbody id="nodesTableBody"></tbody>
     </table>
     <p class="text-center" id="nodesEmpty" style="color:var(--text2);padding:24px">暂无节点数据</p>
@@ -1082,6 +1082,12 @@ function renderNodes() {
   empty.style.display = 'none';
   tbody.innerHTML = filtered.map(n => {
     const tagClass = protocolTagClass(n.protocol);
+    const countryCell = n.country
+      ? `<span style="white-space:nowrap">${escHtml(n.country)}</span>${n.countrySource === 'ip' ? ' <span class="tag tag-other" style="font-size:11px;padding:1px 5px">IP</span>' : ''}`
+      : '<span style="color:var(--text2)">—</span>';
+    const relocateBtn = n.relocatable
+      ? `<button class="btn btn-sm" style="margin-left:6px;padding:1px 6px;font-size:11px;opacity:.6" title="强制重新定位该节点 IP" onclick="relocateNode('${escHtml(n.server)}', this)">重新定位</button>`
+      : '';
     return `<tr>
       <td><input type="checkbox" data-fp="${escHtml(n.fingerprint)}" ${n.enabled ? 'checked' : ''} onchange="updateNodeEnabled(this)"></td>
       <td>${escHtml(n.name)}</td>
@@ -1089,9 +1095,27 @@ function renderNodes() {
       <td style="font-size:14px">${escHtml(n.server)}</td>
       <td>${n.port}</td>
       <td>${n.tls ? '✅' : '❌'}</td>
+      <td>${countryCell}${relocateBtn}</td>
       <td><button class="btn btn-sm" onclick="copyNodeLink('${escHtml(n.fingerprint)}')">📋 复制</button></td>
     </tr>`;
   }).join('');
+}
+
+async function relocateNode(server, btn) {
+  const orig = btn && btn.innerHTML;
+  try {
+    if (btn) { btn.disabled = true; btn.innerHTML = '定位中…'; }
+    const res = await api('/nodes/relocate', {
+      method: 'POST',
+      body: JSON.stringify({ server }),
+    });
+    const country = res.data && res.data.country;
+    toast(country ? `重新定位完成：${country}` : '定位完成（无归属地信息）');
+    loadNodes();
+  } catch (e) {
+    toast('重新定位失败: ' + e.message, 'error');
+    if (btn) { btn.disabled = false; btn.innerHTML = orig || '重新定位'; }
+  }
 }
 
 function filterNodes() { renderNodes(); }
