@@ -2,6 +2,16 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.5] - 2026-09-01
+
+### Mihomo 测速部分彻底去掉 timeout 参数
+- 地理测速组（美国/马来西亚/日本/新加坡/台湾/韩国）去掉 `timeout: 5000`
+- 至此所有 url-test 测速组的 `timeout` 参数全部移除（自动选择组的 `timeout: 3000` 已在 v2.12.4 去掉）
+- 测速组保留：url / interval:600 / tolerance / lazy
+- 测试基线 378 ✅
+
+---
+
 ## [2.12.4] - 2026-09-01
 
 ### Mihomo 测速参数调整

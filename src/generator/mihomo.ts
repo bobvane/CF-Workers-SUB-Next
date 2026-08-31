@@ -465,7 +465,6 @@ export async function generateProxyGroups(
       group.interval = 600;
       group.tolerance = 50;
       group.lazy = true;
-      group.timeout = 5000;
     }
     groups.push(group);
   }
