@@ -22,15 +22,16 @@
   "devDependencies": {
     "@cloudflare/workers-types": "^5",
     "@types/node": "^22",
-    "@vitest/coverage-v8": "^2",
-    "typescript": "^5",
-    "vitest": "^2",
-    "yaml": "^2",
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
+    "@vitest/coverage-v8": "^2",
     "eslint": "^9",
+    "happy-dom": "^20.12.0",
     "prettier": "^3",
-    "wrangler": "^4"
+    "typescript": "^5",
+    "vitest": "^2",
+    "wrangler": "^4",
+    "yaml": "^2"
   },
   "engines": {
     "node": ">=20"
