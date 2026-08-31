@@ -202,6 +202,76 @@ export async function singleQuery(
   }
 }
 
+export interface PrewarmResult {
+  total: number;
+  cached: number;
+  queried: number;
+  resolved: number;
+  failed: number;
+}
+
+/**
+ * 主动预填充（Pre-warm）：批量合并查询一批 server 的 IP 归属地并写入 KV 缓存。
+ *
+ * 作用：把 IP 地理查询与「配置生成」解耦。配置生成时 resolver 直接命中 KV 缓存，
+ * 不再触发任何 HTTP；真正的外网查询只在此处发生。
+ *
+ * 流程：
+ *   1. 逐个 server 先查 KV 缓存（30 天 TTL），命中且未过期则跳过
+ *   2. 未命中项交给 batchQuery 合并成单次批量查询（≤100/IP/次自动分批 + 15 次/分钟限流）
+ *   3. batchQuery 逐 IP 写回 KV 缓存（失败/无归属写 __NULL__，同样防重复查询）
+ *
+ * @returns 统计信息（供日志/返回体展示本次查询情况）
+ */
+export async function prewarmIpGeo(
+  servers: string[],
+  cache: IpGeoCache,
+  fetchFn: typeof fetch = fetch
+): Promise<PrewarmResult> {
+  const unique = [...new Set(servers.filter(Boolean))];
+  const result: PrewarmResult = {
+    total: unique.length,
+    cached: 0,
+    queried: 0,
+    resolved: 0,
+    failed: 0,
+  };
+  if (unique.length === 0) return result;
+
+  // 1. 剔除缓存命中项（命中且未过期）
+  const uncached: string[] = [];
+  for (const ip of unique) {
+    const cacheKey = IP_GEO_KEY_PREFIX + ip;
+    try {
+      const cached = await cache.get(cacheKey);
+      if (cached) {
+        const [ts, name] = cached.split('|');
+        const fresh = ts && name
+          ? Date.now() - Number(ts) < IP_GEO_CACHE_MS
+          : true; // 旧格式无时间戳视为有效
+        if (fresh) {
+          result.cached++;
+          continue;
+        }
+      }
+    } catch {
+      // 缓存不可用不阻塞
+    }
+    uncached.push(ip);
+  }
+
+  if (uncached.length === 0) return result;
+
+  // 2. 批量合并查询（batchQuery 内部自动分批 ≤100/IP + 限流 + 写回缓存）
+  result.queried = uncached.length;
+  const map = await batchQuery(uncached, cache, fetchFn);
+  for (const country of map.values()) {
+    if (country) result.resolved++;
+    else result.failed++;
+  }
+  return result;
+}
+
 /** 创建纯 IP 地理定位 resolver */
 export function createIpGeoResolver(
   cache: IpGeoCache,

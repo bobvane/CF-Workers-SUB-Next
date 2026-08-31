@@ -15,7 +15,7 @@ import { generateShadowrocketConfig } from '@/generator/shadowrocket';
 import { generateLoonConfig } from '@/generator/loon';
 import { nodeToUrl } from '@/generator/node-to-url';
 import { MetaCubeXRule, RULE_GROUPS, CustomRule, mergeCustomRules, findRuleInGroups } from '@/data/metacubex-rules';
-import { createIpGeoResolver } from './ip-geo.service';
+import { createIpGeoResolver, prewarmIpGeo, PrewarmResult } from './ip-geo.service';
 import { deduplicateNodes } from '@/parser';
 import { createCleanRule, applyCleanRules } from '@/models/clean-rule';
 
@@ -67,6 +67,8 @@ export interface ConfigService {
   toggleCleanRule(id: string, enabled: boolean): Promise<void>;
   /** 对当前全部节点立即执行清洗规则集（手动触发），返回受影响数量 */
   applyCleanRulesNow(): Promise<number>;
+  /** 主动预填充：批量合并查询一批 server 的 IP 归属地并写入缓存（查询与配置生成解耦） */
+  prewarmGeo(servers: string[]): Promise<PrewarmResult>;
 }
 
 const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string }> = {
@@ -230,6 +232,13 @@ export function createConfigService(repos: Repositories): ConfigService {
         if (subChanged) await repos.nodes.setBySubscription(sub.id, transformed);
       }
       return changed;
+    },
+
+    async prewarmGeo(servers: string[]): Promise<PrewarmResult> {
+      return prewarmIpGeo(
+        servers,
+        { get: (k) => repos.settings.get(k), set: (k, v) => repos.settings.set(k, v) },
+      );
     },
 
     async generate(format: OutputFormat): Promise<string> {

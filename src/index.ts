@@ -13,6 +13,7 @@ import { createAuthService, createPasswordHash, ADMIN_USERNAME_KEY, DEFAULT_USER
 import { createSubscriptionService } from '@/services/subscription.service';
 import { createConfigService } from '@/services/config.service';
 import { createCatalogSyncService } from '@/services/catalog-sync.service';
+import { deduplicateNodes } from '@/parser';
 import { fetchSubscription } from '@/engine/fetcher';
 import { CleanRule } from '@/models/clean-rule';
 import HTML from '@/html';
@@ -159,6 +160,18 @@ export default {
       } catch (e) {
         results.push(`${s.name}:失败(${(e as Error).message})`);
       }
+    }
+    // 主动预填充 IP 地理缓存：全部订阅更新后，批量查一遍 server 归属地
+    try {
+      const allNodes = deduplicateNodes(await repos.nodes.getAll());
+      const servers = [...new Set(allNodes.map((n) => n.server).filter((v): v is string => typeof v === 'string'))];
+      if (servers.length > 0) {
+        const ipGeoCache = { get: (k: string) => kv.get(k), set: (k: string, v: string) => kv.put(k, v) };
+        const geoResult = await import('@/services/ip-geo.service').then(m => m.prewarmIpGeo(servers, ipGeoCache));
+        console.warn(`[SubAutoUpdate] IP地理预填充完成: 总数 ${geoResult.total}，已缓存 ${geoResult.cached}，新查 ${geoResult.queried}，解析成功 ${geoResult.resolved}，失败 ${geoResult.failed}`);
+      }
+    } catch (e) {
+      console.warn(`[SubAutoUpdate] IP地理预填充失败(不阻塞): ${(e as Error).message}`);
     }
     console.warn(`[SubAutoUpdate] 每日订阅更新完成: ${results.join(', ')}`);
   },

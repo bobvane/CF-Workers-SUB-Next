@@ -2,6 +2,17 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.10] - 2026-09-01
+
+### IP 地理定位主动预填充（批量合并查询）
+- 新增 `prewarmIpGeo(servers, cache)`：全量 server 先查 KV 缓存，未命中合并为单次 batch 查询，写回 KV（TTL 30 天固定）
+- 3 处触发点：① `src/index.ts` scheduled() 每日订阅自动更新后 ② `src/api/routes.ts` POST /api/subscriptions/:id/update ③ `src/api/routes.ts` POST /api/subscriptions
+- 查询与配置生成解耦：配置生成时不再惰性查 IP，改为订阅更新时批量预填充，根治 ip-api 15 次/分钟限流导致「其他」组异常
+
+### Mihomo 所有 url-test 测速组显式加入 lazy: false
+- 「自动选择」url-test 组加入 `lazy: false`
+- 地理 url-test 组（美国/马来西亚/日本/新加坡/台湾/韩国）加入 `lazy: false`
+
 ## [2.12.9] - 2026-09-01
 
 ### Mihomo 所有 url-test 测速组加入 lazy: false

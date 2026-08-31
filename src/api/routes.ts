@@ -159,7 +159,7 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   // 创建订阅
-  app.post('/api/subscriptions', async (c) => {
+  app.post('/api/subscriptions', requireAuth(auth), async (c) => {
     const body = await readBody<{ name?: string; url?: string }>(c);
     if (!body.name || typeof body.name !== 'string' || body.name.trim().length === 0) {
       throw ERRORS.INVALID_PARAMETER('name is required');
@@ -190,9 +190,21 @@ export function createApp(deps: AppDeps): Hono {
 
   // 更新订阅（重新抓取解析）
   app.post('/api/subscriptions/:id/update', async (c) => {
-    const id = c.req.param('id');
+    const id = c.req.param('id') as string;
     try {
       const { nodeCount } = await subscriptions.update(id, deps.fetchRaw);
+      // 订阅更新后预填充：拉取本次新增节点的服务 IP 进行地理缓存
+      try {
+        const nodes = deduplicateNodes(await repos.nodes.getAll());
+        const servers = [...new Set(nodes.map((n) => n.server).filter((v): v is string => typeof v === 'string'))];
+        if (servers.length > 0) {
+          const ipGeoCache = { get: (k: string) => deps.repos.settings.get(k), set: (k: string, v: string) => deps.repos.settings.set(k, v) };
+          const geoResult = await import('@/services/ip-geo.service').then(m => m.prewarmIpGeo(servers, ipGeoCache));
+          console.warn(`[SubscriptionUpdate:${id}] IP地理预填充完成: 总数 ${geoResult.total}，已缓存 ${geoResult.cached}，新查 ${geoResult.queried}，解析成功 ${geoResult.resolved}，失败 ${geoResult.failed}`);
+        }
+      } catch (e) {
+        console.warn(`[SubscriptionUpdate:${id}] IP地理预填充失败(不阻塞): ${(e as Error).message}`);
+      }
       return c.json({ success: true, data: { nodeCount } });
     } catch (err) {
       if (err instanceof AppError) throw err;
