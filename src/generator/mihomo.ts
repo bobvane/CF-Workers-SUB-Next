@@ -464,7 +464,6 @@ export async function generateProxyGroups(
       group.url = 'https://cp.cloudflare.com/generate_204';
       group.interval = 600;
       group.tolerance = 50;
-      group.lazy = true;
     }
     groups.push(group);
   }

@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.6] - 2026-09-01
+
+### Mihomo 测速部分去掉 lazy 参数
+- 地理测速组（美国/马来西亚/日本/新加坡/台湾/韩国）去掉 `lazy: true`
+- 至此测速组仅保留：url / interval:600 / tolerance
+- 测试基线 378 ✅
+
+---
+
 ## [2.12.5] - 2026-09-01
 
 ### Mihomo 测速部分彻底去掉 timeout 参数
