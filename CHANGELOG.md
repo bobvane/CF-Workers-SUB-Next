@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.8] - 2026-09-01
+
+### Mihomo 所有测速组 interval 统一为 600
+- 「自动选择」url-test 组 `interval: 1800` 改为 `interval: 600`
+- 至此所有 url-test 测速组（自动选择 + 地理组）interval 均为 600
+- 测试基线 378 ✅
+
+---
+
 ## [2.12.7] - 2026-09-01
 
 ### 退出重登后默认进入仪表盘页

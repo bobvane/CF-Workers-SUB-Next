@@ -353,7 +353,7 @@ export async function generateProxyGroups(
     type: 'url-test',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Auto.png',
     url: 'https://cp.cloudflare.com/generate_204',
-    interval: 1800,
+    interval: 600,
     tolerance: 50,
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
