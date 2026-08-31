@@ -632,15 +632,23 @@ document.addEventListener('click', function(e) {
 });
 
 // ============ API ============
+const API_TIMEOUT = 8000;
+
 async function api(path, options = {}) {
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
   const sep = path.includes('?') ? '&' : '?';
   const url = '/api' + path + (token ? \`\${sep}token=\${token}\` : '');
-  const res = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...options });
-  const data = await res.json();
-  if (!res.ok) throw new Error(data.error?.message || 'Request failed');
-  return data;
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), API_TIMEOUT);
+  try {
+    const res = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'include', signal: controller.signal, ...options });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error?.message || 'Request failed');
+    return data;
+  } finally {
+    clearTimeout(timer);
+  }
 }
 
 // ============ Auth ============
@@ -660,7 +668,9 @@ async function checkSession() {
       loadDashboard();
       return true;
     }
-  } catch {}
+  } catch (e) {
+    if (e?.name === 'AbortError') toast('连接服务器超时，已显示登录页（请检查网络）', 'error');
+  }
   state.authenticated = false;
   document.getElementById('loginPage').style.display = 'flex';
   document.getElementById('app').style.display = 'none';
