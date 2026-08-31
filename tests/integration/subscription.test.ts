@@ -4,7 +4,7 @@
  * 验证：创建订阅 → 更新(抓取→解析→缓存) → 生成配置 → 查询节点
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import {
   MemoryKvAdapter,
   createRepositories,
@@ -60,11 +60,16 @@ describe('subscription pipeline integration', () => {
   it('should generate mihomo config from cached nodes', async () => {
     const sub = await service.create('T', 'https://example.com/sub');
     await service.update(sub.id, async () => TEST_SUBSCRIPTION);
+    // 模拟 IP resolver 避免真实网络请求
+    vi.stubGlobal('fetch', async () => ({
+      ok: true,
+      json: async () => [],
+    }));
     const yaml = await configService.generate('mihomo');
     expect(yaml).toContain('JP-1');
     expect(yaml).toContain('US-1');
     expect(validateMihomo(yaml)).toBe(true);
-  });
+  }, 10000);
 
   it('should generate singbox config from cached nodes', async () => {
     const sub = await service.create('T', 'https://example.com/sub');

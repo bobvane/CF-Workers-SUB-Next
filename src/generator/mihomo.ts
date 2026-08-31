@@ -10,7 +10,6 @@ import { MetaCubeXRule, RuleGroup } from '@/data/metacubex-rules';
 import { buildRuleProviders, buildRules } from './rule-providers';
 import {
   COUNTRIES,
-  CHINESE_ALIAS_TO_CODE,
   GEO_ORDER,
   countryDisplayName,
 } from '@/data/country-codes';
@@ -310,128 +309,41 @@ export const GEO_NAMES: Record<string, string> = (() => {
   return m;
 })();
 
-/** 常用 IATA 三字码 → 二字码（补充识别机场类节点名，如 HKG -> HK）。常见即可。 */
-const IATA_TO_CC: Record<string, string> = {
-  HKG: 'HK', // 香港
-  NRT: 'JP', TYO: 'JP', OSA: 'JP', KIX: 'JP', // 日本
-  LAX: 'US', SFO: 'US', SEA: 'US', NYC: 'US', JFK: 'US', ORD: 'US', // 美国
-  SIN: 'SG', // 新加坡
-  TPE: 'TW', // 台湾
-  ICN: 'KR', SEL: 'KR', // 韩国
-  LHR: 'GB', LON: 'GB', MAN: 'GB', // 英国
-  FRA: 'DE', // 德国
-  AMS: 'NL', // 荷兰
-  HEL: 'FI', // 芬兰
-  KUL: 'MY', // 马来西亚
-  BKK: 'TH', SGN: 'VN', HAN: 'VN', // 泰国/越南
-  CDG: 'FR', PAR: 'FR', // 法国
-  MAD: 'ES', // 西班牙
-  FCO: 'IT', MXP: 'IT', // 意大利
-  ZRH: 'CH', // 瑞士
-  DXB: 'AE', // 阿联酋
-  IST: 'TR', // 土耳其
-  SYD: 'AU', MEL: 'AU', // 澳大利亚
-};
-
 /**
- * emoji 旗标 → "emoji 中文名"（最可靠信号，节点名常带）
- * 动态生成自 COUNTRIES：emoji → 显示名
- */
-const FLAG_TO_GEO: Record<string, string> = (() => {
-  const m: Record<string, string> = {};
-  for (const info of Object.values(COUNTRIES)) {
-    m[info.emoji] = `${info.emoji} ${info.name}`;
-  }
-  return m;
-})();
-
-/** 国家旗标 emoji 正则（两个地区指示符号） */
-const FLAG_RE = /[\u{1F1E6}-\u{1F1FF}][\u{1F1E6}-\u{1F1FF}]/u;
-
-/**
- * 识别节点地区：三层递进。
- * 1. emoji 旗标（节点名内任意位置）
- * 2. 名字关键词：三字码(IATA) → 二字码 → 中文名
- * 3. 外部 resolver 做 IP 定位兜底（只对前两层认不出的节点）
- *
- * IP 兜底是逐个 await，Workers 上未分组节点极少，正常无性能压力（用户已确认强制等待）。
- */
-async function detectGeo(
-  nodeName: string,
-  ipGeoResolver?: (server: string) => Promise<string | null>,
-  server?: string
-): Promise<{ code: string; geoName: string } | null> {
-  // 第1层：emoji 旗标
-  const flagMatch = nodeName.match(FLAG_RE);
-  if (flagMatch) {
-    const geo = FLAG_TO_GEO[flagMatch[0]];
-    if (geo) return { code: 'FLAG', geoName: geo };
-  }
-
-  // 第2层：三字码（IATA）→ 二字码 → 中文名
-  for (const iata of Object.keys(IATA_TO_CC)) {
-    // 三字码需边界分隔（前后非字母），避免 HKG 里误配 HK、SIN 里误配 SI
-    const re = new RegExp(`(^|[^A-Za-z])${iata}($|[^A-Za-z])`, 'i');
-    if (re.test(nodeName)) {
-      const cc = IATA_TO_CC[iata]!;
-      return { code: cc, geoName: GEO_NAMES[cc]! };
-    }
-  }
-  // 二字码（边界必须非字母，且不能是三字码的一部分，如 HKG 里的 HK）。
-  // 覆盖 CF 数据中心全部 135 国/地区代码。
-  for (const code of Object.keys(COUNTRIES)) {
-    const re = new RegExp(`(^|[^A-Za-z])${code}($|[^A-Za-z]|\\d)`, 'i');
-    if (re.test(nodeName)) {
-      return { code, geoName: GEO_NAMES[code]! };
-    }
-  }
-  // 中文名（如"香港 01"）
-  for (const cn of Object.keys(CHINESE_ALIAS_TO_CODE)) {
-    if (nodeName.includes(cn)) {
-      const code = CHINESE_ALIAS_TO_CODE[cn]!;
-      return { code: cn, geoName: GEO_NAMES[code]! };
-    }
-  }
-
-  // 第3层：IP 定位兜底
-  if (ipGeoResolver && server) {
-    const geo = await ipGeoResolver(server);
-    if (geo) return { code: 'IP', geoName: geo };
-  }
-
-  return null;
-}
-
-/**
- * 按地区对节点分组（异步，含 IP 兜底）
- * @param nodes 节点完整对象（拿 server 做 IP 兜底）
- * @param ipGeoResolver 可选 IP 定位函数
+ * 按地区对节点分组（纯 IP 定位）
+ * @param nodes 节点完整对象
+ * @param ipGeoResolver IP 地理定位函数（返回 emoji 中文名或 null）
  */
 async function groupNodesByGeo(
   nodes: Node[],
   ipGeoResolver?: (server: string) => Promise<string | null>
 ): Promise<{ name: string; nodes: string[] }[]> {
+  // 直接使用纯 IP 定位进行地理分组，不进行任何名称关键词匹配
   const groups = new Map<string, string[]>();
   const ungrouped: string[] = [];
 
   for (const node of nodes) {
-    const geo = await detectGeo(node.name, ipGeoResolver, node.server);
-    if (geo) {
-      const list = groups.get(geo.geoName) || [];
+    // 直接使用外部 resolver 查询单个 IP
+    const geoName = ipGeoResolver ? await ipGeoResolver(node.server) : null;
+    if (geoName) {
+      // geoName 已经是 emoji 中文名
+      const list = groups.get(geoName) || [];
       list.push(node.name);
-      groups.set(geo.geoName, list);
+      groups.set(geoName, list);
     } else {
       ungrouped.push(node.name);
     }
   }
 
   const result: { name: string; nodes: string[] }[] = [];
+  // 使用预定义的地理组顺序
   for (const key of GEO_ORDER) {
     if (groups.has(key)) {
       result.push({ name: key, nodes: groups.get(key)! });
       groups.delete(key);
     }
   }
+
   // 剩余的按字母序
   for (const [name, nodes] of [...groups.entries()].sort()) {
     result.push({ name, nodes });

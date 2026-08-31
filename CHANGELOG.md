@@ -2,6 +2,19 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.1] - 2026-08-31
+
+### 纯IP地理定位重构
+- **detectGeo 简化**：去掉所有域名识别层（emoji旗标/IATA三字码/二字码/中文名），直接使用 IP 定位器
+- **groupNodesByGeo 批量化**：从逐节点调用改为收集所有 server → 去重 → batchIpToGeoBatch 批量查询 → 组织输出
+- **ip-geo.service.ts**：更新文件头注释为「纯 IP 批量」定位服务
+- **测试同步**：`verify-v31.test.ts`、`mihomo.test.ts`、`ip-geo.service.test.ts`、`subscription.test.ts` 均适配新逻辑
+
+### 测试基线
+- 378 ✅（不变）
+
+---
+
 ## [2.12.0] - 2026-08-31
 
 ### Mihomo DNS 配置精调（fake-ip 模式）

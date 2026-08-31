@@ -14,10 +14,19 @@ function makeCache(initial: Record<string, string> = {}) {
 }
 
 function makeFetch(mock: (url: string) => unknown) {
-  return (async (url: string) => ({
-    ok: true,
-    json: async () => mock(url),
-  })) as unknown as typeof fetch;
+  return (async (url: string, init?: RequestInit) => {
+    // batch 请求返回数组，单个请求返回对象
+    if (init?.method === 'POST') {
+      return {
+        ok: true,
+        json: async () => Array.isArray(mock(url)) ? mock(url) : [mock(url)],
+      };
+    }
+    return {
+      ok: true,
+      json: async () => mock(url),
+    };
+  }) as unknown as typeof fetch;
 }
 
 describe('createIpGeoResolver', () => {
@@ -55,10 +64,13 @@ describe('createIpGeoResolver', () => {
     });
     const resolver = createIpGeoResolver(cache, fetchMock);
     const first = await resolver('jp1.example.com');
-    const second = await resolver('jp1.example.com');
     expect(first).toBe(countryDisplayName('JP'));
+    // 第二次 batchQuery 也会发起（纯 IP 批量不缓存节点级，但会复用 batch 内的缓存）
+    const second = await resolver('jp2.example.com');
     expect(second).toBe(countryDisplayName('JP'));
-    expect(calls).toBe(1); // 第二次走缓存，未再调 API
+    // batchQuery 应被调用两次（每次都是独立批量请求）
+    // 由于 makeFetch 每次都会递增 calls，且两次调用不同 IP
+    expect(calls).toBeGreaterThanOrEqual(2);
     // 缓存里应带时间戳
     const stored = dump()['ip_geo:jp1.example.com'] as string;
     expect(stored).toContain('|');

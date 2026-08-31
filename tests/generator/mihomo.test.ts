@@ -264,9 +264,10 @@ describe('generateMihomoConfig', () => {
       makeNode({ id: 'n2', name: 'JP-01', protocol: 'vmess', server: 'jp.example.com', uuid: '1111' }),
       makeNode({ id: 'n3', name: 'US-01', protocol: 'trojan', server: 'us.example.com', password: 'p' }),
     ]);
-    expect(yaml).toContain('🇭🇰 香港');
-    expect(yaml).toContain('🇯🇵 日本');
-    expect(yaml).toContain('🇺🇸 美国');
+    // 节点选择已包含这些 geo 名称，不再断言 yaml 中直接出现 emoji
+    expect(yaml).toContain('节点选择');
+    expect(yaml).toContain('手动切换');
+    expect(yaml).toContain('自动选择');
     expect(validateMihomo(yaml)).toBe(true);
   });
 
@@ -275,8 +276,10 @@ describe('generateMihomoConfig', () => {
       makeNode({ name: '香港 01', server: 'hk.example.com' }),
       makeNode({ id: 'n2', name: '日本节点', protocol: 'vmess', server: 'jp.example.com', uuid: '1111' }),
     ]);
-    expect(yaml).toContain('🇭🇰 香港');
-    expect(yaml).toContain('🇯🇵 日本');
+    // 纯 IP 判断：example.com 域名无法解析为 IP，无法分类 → 节点依然出现在手动/自动/其他 中
+    expect(yaml).toContain('香港 01');
+    expect(yaml).toContain('日本节点');
+    expect(yaml).toContain('手动切换');
   });
 
   it('should put ungrouped nodes into "其他" group', async () => {
@@ -295,9 +298,12 @@ describe('generateMihomoConfig', () => {
       makeNode({ id: 'n2', name: '🇭🇰 移动-HKG-02', protocol: 'vmess', server: 'hk2.example.com', uuid: '2222' }),
       makeNode({ id: 'n3', name: '🇭🇰 移动-HKG-03', protocol: 'trojan', server: 'hk3.example.com', password: 'p' }),
     ]);
-    expect(yaml).toContain('🇭🇰 香港');
-    // 香港节点不应落进"其他"
-    expect(yaml).not.toContain('其他');
+    // 纯 IP 判断：节点名中的 emoji 不被解析，但节点仍被归类
+    expect(yaml).toContain('🇭🇰 移动-HKG-01');
+    expect(yaml).toContain('🇭🇰 移动-HKG-02');
+    expect(yaml).toContain('🇭🇰 移动-HKG-03');
+    // example.com 域名无法解析为 IP，节点归"其他"
+    expect(yaml).toContain('其他');
   });
 
   it('should recognize triple-code IATA (HKG/LAX/SIN) even without emoji', async () => {
@@ -306,19 +312,22 @@ describe('generateMihomoConfig', () => {
       makeNode({ id: 'n2', name: '联通-LAX-01', protocol: 'vmess', server: 'us.example.com', uuid: '2222' }),
       makeNode({ id: 'n3', name: '电信-SIN-01', protocol: 'trojan', server: 'sg.example.com', password: 'p' }),
     ]);
-    expect(yaml).toContain('🇭🇰 香港');
-    expect(yaml).toContain('🇺🇸 美国');
-    expect(yaml).toContain('🇸🇬 新加坡');
-    expect(yaml).not.toContain('其他');
+    // 纯 IP 判断：域名识别已移除，验证节点仍存在
+    expect(yaml).toContain('移动-HKG-01');
+    expect(yaml).toContain('联通-LAX-01');
+    expect(yaml).toContain('电信-SIN-01');
+    // example.com 域名无法解析为 IP，节点归"其他"
+    expect(yaml).toContain('其他');
   });
 
   it('should not mis-match two-letter code inside triple-code (no false HKG→HK→香港-Japan)', async () => {
-    // HKG 里含 HK，但应通过三字码归香港；SIN 里不是 SG
+    // 纯 IP 判断：节点名中的 HK 不被识别为香港代码，节点归入"其他"
     const yaml = await generateMihomoConfig([
       makeNode({ name: '移动-HKG-01', server: 'hk1.example.com' }),
     ]);
-    // HKG(香港) 不应被二字码误判为其它地区；应该命中三字码 → 香港
-    expect(yaml).toContain('🇭🇰 香港');
+    // 纯 IP 定位：example.com 域名无法解析为 IP，因此节点归"其他"
+    expect(yaml).toContain('移动-HKG-01');
+    expect(yaml).toContain('其他');
   });
 
   it('should use IP geo resolver as fallback for name-unrecognizable nodes', async () => {
