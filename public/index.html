@@ -629,12 +629,20 @@ document.addEventListener('click', function(e) {
 });
 
 // ============ API ============
+// 带超时的 fetch 封装：避免网络挂起（黑洞）导致请求永不返回 → 白屏
+function fetchWithTimeout(url, options = {}, ms = 15000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), ms);
+  return fetch(url, Object.assign({}, options, { signal: controller.signal }))
+    .finally(() => clearTimeout(timer));
+}
+
 async function api(path, options = {}) {
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
   const sep = path.includes('?') ? '&' : '?';
   const url = '/api' + path + (token ? `${sep}token=${token}` : '');
-  const res = await fetch(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...options });
+  const res = await fetchWithTimeout(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...options });
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || 'Request failed');
   return data;
@@ -738,9 +746,9 @@ function renderRulesTree() {
       itemsHTML = g.items.map(it => {
         const isCustom = window._customRules && window._customRules.includes(it.id);
         return `<label class="rules-item">
-          <input type="checkbox" data-rule-check data-g="${gi}" data-id="${it.id}" ${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
-          <span class="rule-label"><span class="rule-name">${it.label}</span><span class="rule-id">${it.tag}:${it.id}</span></span>
-          ${isCustom ? `<span style="cursor:pointer;color:var(--red);font-size:14px;margin-left:4px" onclick="event.stopPropagation();deleteCustomRule('${it.id}')" title="删除此规则">✕</span>` : ''}
+          <input type="checkbox" data-rule-check data-g="${gi}" data-id="${escHtml(it.id)}" ${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
+          <span class="rule-label"><span class="rule-name">${escHtml(it.label)}</span><span class="rule-id">${escHtml(it.tag)}:${escHtml(it.id)}</span></span>
+          ${isCustom ? `<span style="cursor:pointer;color:var(--red);font-size:14px;margin-left:4px" onclick="event.stopPropagation();deleteCustomRule('${escHtml(it.id)}')" title="删除此规则">✕</span>` : ''}
         </label>`;
       }).join('');
     }
@@ -1730,7 +1738,12 @@ window.addEventListener('DOMContentLoaded', async () => {
     state.currentPage = savedPage;
   }
   loadMeta();
-  await checkSession();
+  // 5 秒硬性兜底：即使 checkSession 因网络问题既不 resolve 也不 reject（fetchWithTimeout 15s 兜底），
+  // 也保证 switchPage 在 5s 内执行 → 永不白屏
+  await Promise.race([
+    checkSession(),
+    new Promise(r => setTimeout(r, 5000)),
+  ]);
   switchPage(state.currentPage);
 });
 

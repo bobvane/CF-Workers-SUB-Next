@@ -144,7 +144,7 @@ export function generateSingboxConfig(
       type: 'urltest',
       tag: 'auto',
       outbounds: nodeTags.length > 0 ? nodeTags : ['direct'],
-      url: 'https://www.gstatic.com/generate_204',
+      url: 'https://cp.cloudflare.com/generate_204',
       interval: '10m',
       tolerance: 50,
     },

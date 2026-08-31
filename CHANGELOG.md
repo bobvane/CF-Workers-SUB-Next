@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.11.8] - 2026-08-31
+
+### 稳定/安全补丁（对抗式审查产出）
+- **白屏根因修复（事故①同类问题）**：`api()` 新增 `fetchWithTimeout`（15s AbortController 超时），杜绝网络黑洞导致 `checkSession()` 永不返回；Init 处新增 5 秒 `Promise.race` 硬性兜底，保证 `switchPage` 5s 内必执行 → 永不白屏
+- **自定义规则 ID 防注入（XSS + 配置损坏）**：后端 `POST /api/rules/custom` 校验 id 字符集（`[A-Z0-9][A-Z0-9_-]{0,63}`）；前端 `renderRulesTree` 对 `id/label/tag` 统一 `escHtml` 转义（对照 catalog 渲染）
+- **测速地址统一为国内可达**：`cp.cloudflare.com/generate_204`（自动选择/六国地理组/singbox auto），并给自动选择组加 `timeout: 3000`；清理 `DEFAULT_SNIFFER_CONFIG['skip-domain']` 中无意义的 `'Mijia Cloud'` 行
+- 测试同步：verify-v31 六国 URL 断言、新增非法 id 400 用例；测试基线 376 ✅
+
 ## [2.11.7] - 2026-08-30
 
 ### GLOBAL 组精简为四组（用户 2026-08-30 拍板）

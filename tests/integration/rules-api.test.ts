@@ -175,4 +175,13 @@ describe('Rules API', () => {
     });
     expect(res.status).toBe(400);
   });
+
+  it('POST /api/rules/custom 含非法字符id返回400', async () => {
+    const res = await app.request('/api/rules/custom', {
+      method: 'POST',
+      headers: { ...baseHeaders, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: 'BAD<ID>,x"', label: '非法', groupKey: 'other', target: 'PROXY' }),
+    });
+    expect(res.status).toBe(400);
+  });
 });

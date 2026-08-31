@@ -492,6 +492,10 @@ export function createApp(deps: AppDeps): Hono {
     if (!id) {
       return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'id 不能为空' } }, 400);
     }
+    // 规则 id 会流入属性/JS 字符串/RULE-SET 语法，限制字符集防止 XSS 与配置损坏
+    if (!/^[A-Z0-9][A-Z0-9_-]{0,63}$/.test(id)) {
+      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'id 仅允许字母、数字、-_，且不超过 64 字符' } }, 400);
+    }
     const groupKey = (body.groupKey || 'user').trim();
     const target = (['PROXY', 'DIRECT', 'REJECT'].includes(body.target || '') ? body.target : 'PROXY') as 'PROXY' | 'DIRECT' | 'REJECT';
     const label = (body.label || id).trim();
