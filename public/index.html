@@ -686,7 +686,8 @@ async function login() {
     state.authenticated = true;
     document.getElementById('loginPage').style.display = 'none';
     document.getElementById('app').style.display = 'block';
-    loadDashboard();
+    // 退出后重登，始终默认进入仪表盘页（switchPage 内部会加载 dashboard 数据）
+    switchPage('dashboard');
   } catch (e) {
     toast('密码错误: ' + e.message, 'error');
   }
