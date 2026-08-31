@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.4] - 2026-09-01
+
+### Mihomo 测速参数调整
+- 去除「自动选择」url-test 组的 `timeout: 3000` 参数
+- 地理测速组（美国/马来西亚/日本/新加坡/台湾/韩国）`interval: 300` 改为 `interval: 600`
+- 测试基线 378 ✅
+
+---
+
 ## [2.12.3] - 2026-09-01
 
 ### Mihomo 配置输出硬编码精简（去除 profile/dns/sniffer 及全部头字段）
