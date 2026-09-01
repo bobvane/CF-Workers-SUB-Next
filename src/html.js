@@ -240,9 +240,17 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
   height: 48px;
 }
 .rules-item .rule-label {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.rules-item .rule-main {
   display: grid;
   gap: 2px;
   min-width: 0;
+  flex: 1;
 }
 .rules-item .rule-name {
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -756,8 +764,13 @@ function renderRulesTree() {
         const isCustom = window._customRules && window._customRules.includes(it.id);
         return \`<label class="rules-item">
           <input type="checkbox" data-rule-check data-g="\${gi}" data-id="\${escHtml(it.id)}" \${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
-          <span class="rule-label"><span class="rule-name">\${escHtml(it.label)}</span><span class="rule-id">\${escHtml(it.tag)}:\${escHtml(it.id)}</span></span>
-          \${isCustom ? \`<span title="删除此规则" style="cursor:pointer;color:var(--red);font-size:16px;margin-left:8px;opacity:.8" class="rule-del" onclick="event.stopPropagation();deleteCustomRule('\${escHtml(it.id)}')">🗑</span>\` : ''}
+          <span class="rule-label">
+            <span class="rule-main">
+              <span class="rule-name">\${escHtml(it.label)}</span>
+              <span class="rule-id">\${escHtml(it.tag)}:\${escHtml(it.id)}</span>
+            </span>
+            \${isCustom ? \`<span title="删除此规则" style="cursor:pointer;color:var(--red);font-size:16px;margin-left:8px;opacity:.8;flex:none" class="rule-del" onclick="event.stopPropagation();deleteCustomRule('\${escHtml(it.id)}')">🗑</span>\` : ''}
+          </span>
         </label>\`;
       }).join('');
     }
