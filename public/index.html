@@ -334,13 +334,13 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       <div class="card"><div class="card-title">协议分布</div><div class="card-value" style="font-size:14px" id="statProto">-</div></div>
       <div class="card"><div class="card-title">最近更新</div><div class="card-value" style="font-size:14px" id="statUpdate">-</div></div>
     </div>
-  </div>
 
-  <!-- Dashboard CF 请求统计（v2.18.0） -->
-  <div style="margin-top:16px;display:none" id="cfUsageSection">
-    <h3 style="margin-bottom:12px">📊 Cloudflare 请求数统计（今日）</h3>
-    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px" id="cfUsageGrid"></div>
-    <div style="margin-top:8px;color:var(--text2);font-size:13px">未配置 CF 账户？<a href="#settings" style="color:var(--accent)">前往设置添加</a></div>
+    <!-- Dashboard CF 请求统计（v2.18.0，仅仪表盘显示，横向长条） -->
+    <div style="display:none" id="cfUsageSection">
+      <h3 style="margin:0 0 12px">📊 Cloudflare 请求数统计（今日）</h3>
+      <div style="display:flex;flex-direction:column;gap:12px" id="cfUsageGrid"></div>
+      <div style="margin-top:10px;color:var(--text2);font-size:13px">未配置 CF 账户？<a href="#settings" style="color:var(--accent)">前往设置添加</a></div>
+    </div>
   </div>
 
   <!-- Subscriptions -->
@@ -1090,20 +1090,25 @@ function renderCFUsageCard(a) {
   const pctStr = pct.toFixed(2);
   const warn = pct >= 90 ? '#c00000' : (pct >= 80 ? '#e00' : 'var(--text2)');
   const barColor = pct >= 90 ? '#c00000' : (pct >= 80 ? '#e00' : 'var(--accent)');
-  return `<div class="card" style="padding:14px 16px">
-    <div style="font-weight:600;margin-bottom:4px">📊 ${escHtml(a.name || a.accountId)}</div>
+  // 横向长条：左侧账户名+今日请求量+百分比，右侧进度条+Pages/Workers 拆分
+  return `<div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
+    <div style="min-width:200px;flex-shrink:0">
+      <div style="font-weight:600;margin-bottom:4px">📊 ${escHtml(a.name || a.accountId)}</div>
+      ${a.success ? `
+        <div style="font-size:13px;color:var(--text2)">今日请求量</div>
+        <div style="font-size:24px;font-weight:700;line-height:1.2">${a.total.toLocaleString()} <span style="font-size:13px;color:var(--text2);font-weight:400">/ ${a.max.toLocaleString()} <span style="color:${warn}">(${pctStr}%)</span></span></div>` :
+        `<div style="font-size:13px;color:var(--red)">⚠️ ${escHtml(a.error || '查询失败')}</div>`}
+    </div>
     ${a.success ? `
-      <div style="font-size:13px;color:var(--text2);margin-bottom:8px">今日请求量</div>
-      <div style="font-size:22px;font-weight:700">${a.total.toLocaleString()} <span style="font-size:13px;color:var(--text2)">/ ${a.max.toLocaleString()}</span></div>
-      <div style="font-size:13px;color:${warn};margin:4px 0 8px">${pctStr}%</div>
-      <div style="height:6px;background:rgba(0,0,0,0.08);border-radius:999px;overflow:hidden">
-        <div style="height:100%;width:${Math.min(pct,100)}%;background:${barColor};border-radius:999px"></div>
-      </div>
-      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:8px">
-        <span>Pages: ${a.pages.toLocaleString()}</span>
-        <span>Workers: ${a.workers.toLocaleString()}</span>
-      </div>` : `
-      <div style="font-size:13px;color:var(--red)">⚠️ ${escHtml(a.error || '查询失败')}</div>`}
+      <div style="flex:1;min-width:220px">
+        <div style="height:8px;background:rgba(0,0,0,0.08);border-radius:999px;overflow:hidden">
+          <div style="height:100%;width:${Math.min(pct,100)}%;background:${barColor};border-radius:999px"></div>
+        </div>
+        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:6px">
+          <span>Pages: ${a.pages.toLocaleString()}</span>
+          <span>Workers: ${a.workers.toLocaleString()}</span>
+        </div>
+      </div>` : ''}
   </div>`;
 }
 
