@@ -16,6 +16,7 @@ const IP_API_URL = 'http://ip-api.com/batch';
 const IP_API_JSON_URL = 'http://ip-api.com/json/';
 // Batch 限额：一次最多 100 个 IP，15 次/分钟滑动窗口
 const BATCH_LIMIT = 100;
+const MAX_BATCHES = 5; // 单次触发最多 5 批（500 个 IP）
 const RATE_LIMIT_REQUESTS = 15;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 分钟
 const IP_GEO_CACHE_MS = 30 * 24 * 60 * 60 * 1000; // 30 天缓存
@@ -120,7 +121,7 @@ export async function batchQuery(
 
   if (!uncached.length) return result;
 
-  // 2. 批量查询
+  // 2. 批量查询：按 ≤100 IP/批 循环分包，单次最多 5 批（500 个 IP），不降级单查
   // 滑动窗口速率限制（简单实现，不持久化）
   const windowStart = Date.now() - RATE_LIMIT_WINDOW_MS;
   const history: number[] = [];
@@ -132,100 +133,52 @@ export async function batchQuery(
     }
   } catch {}
 
-  if (history.length >= RATE_LIMIT_REQUESTS) {
-    // 超过速率限制 -> 退回单个查询，失败不写缓存
-    for (const ip of uncached) {
-      try {
-        const singleRes = await singleQuery(ip, fetchFn);
-        result.set(ip, singleRes);
-      } catch {
-        result.set(ip, null);
-      }
-    }
-    return result;
-  }
+  for (let offset = 0; offset < uncached.length && offset < MAX_BATCHES * BATCH_LIMIT; offset += BATCH_LIMIT) {
+    // 超限流：停止后续批次（剩余保持未识别，等下次触发重检）
+    if (history.length >= RATE_LIMIT_REQUESTS) break;
 
-  // 批量请求（最多 100 个 IP）
-  const batch = uncached.slice(0, BATCH_LIMIT);
-  const payload = batch.map((ip) => ({ query: ip }));
-  const body = JSON.stringify(payload);
+    const batch = uncached.slice(offset, offset + BATCH_LIMIT);
+    const payload = batch.map((ip) => ({ query: ip }));
+    const body = JSON.stringify(payload);
 
-  let responses: IpApiBatchResponse[];
-  try {
-    const res = await fetchFn(IP_API_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body,
-      signal: AbortSignal.timeout(10000), // 10 秒超时
-    });
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    responses = (await res.json()) as IpApiBatchResponse[];
-    if (!Array.isArray(responses)) throw new Error('Batch response format error');
-
-    // 记录本次批量请求时间戳
-    history.push(Date.now());
+    let responses: IpApiBatchResponse[];
     try {
-      await cache.set('__ip_geo_batch_history', JSON.stringify(history));
-    } catch {}
-  } catch {
-    // 批量请求失败 -> 退回单个查询，失败不写缓存
-    for (const ip of batch) {
-      try {
-        const singleRes = await singleQuery(ip, fetchFn);
-        result.set(ip, singleRes);
-      } catch {
-        result.set(ip, null);
-      }
-    }
-    // 处理剩余 uncached 项
-    for (const ip of uncached.slice(batch.length)) {
-      try {
-        const singleRes = await singleQuery(ip, fetchFn);
-        result.set(ip, singleRes);
-      } catch {
-        result.set(ip, null);
-      }
-    }
-    return result;
-  }
+      const res = await fetchFn(IP_API_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+        signal: AbortSignal.timeout(10000), // 10 秒超时
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      responses = (await res.json()) as IpApiBatchResponse[];
+      if (!Array.isArray(responses)) throw new Error('Batch response format error');
 
-  // 批量成功 -> 映射结果（仅成功写入缓存，失败不写）
-  const ipToCountry: Map<string, string | null> = new Map();
-  for (let i = 0; i < batch.length && i < responses.length; i++) {
-    const ip = batch[i];
-    const resp = responses[i];
-    let country: string | null = null;
-    if (resp?.status === 'success' && resp.countryCode) {
-      const display = countryDisplayName(resp.countryCode);
-      country = display || null;
-    }
-    ipToCountry.set(ip, country);
-    // 仅成功结果写缓存；null 不写（允许后续重试）
-    if (country) {
+      // 记录本次批量请求时间戳
+      history.push(Date.now());
       try {
-        await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${country}`);
+        await cache.set('__ip_geo_batch_history', JSON.stringify(history));
       } catch {}
+    } catch {
+      // 本批请求失败：跳过该批（失败不写缓存，允许后续重试）
+      continue;
     }
-  }
 
-  // 合并到主结果
-  for (const [ip, country] of ipToCountry) {
-    result.set(ip, country);
-  }
-
-  // 剩余 uncached 项 -> 单个查询，失败不写缓存
-  for (const ip of uncached.slice(batch.length)) {
-    try {
-      const singleRes = await singleQuery(ip, fetchFn);
-      result.set(ip, singleRes);
-      // 仅成功写缓存
-      if (singleRes) {
+    // 映射结果（仅成功写入缓存，失败不写）
+    for (let i = 0; i < batch.length && i < responses.length; i++) {
+      const ip = batch[i];
+      const resp = responses[i];
+      let country: string | null = null;
+      if (resp?.status === 'success' && resp.countryCode) {
+        const display = countryDisplayName(resp.countryCode);
+        country = display || null;
+      }
+      result.set(ip, country);
+      // 仅成功结果写缓存；null 不写（允许后续重试）
+      if (country) {
         try {
-          await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${singleRes}`);
+          await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${country}`);
         } catch {}
       }
-    } catch {
-      result.set(ip, null);
     }
   }
 

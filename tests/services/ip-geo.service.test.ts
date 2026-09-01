@@ -133,6 +133,58 @@ describe('createIpGeoResolver', () => {
     expect(dump()['ip_geo:good.com']).toBeDefined();
     expect(dump()['ip_geo:bad.com']).toBeUndefined();
   });
+
+  it('batchQuery 分包：101 个 IP 发 2 个批量 POST，各批 ≤100', async () => {
+    const { cache } = makeCache();
+    const ips = Array.from({ length: 101 }, (_, i) => `1.1.${i + 1}.1`);
+    const postSizes: number[] = [];
+    const fetchMock = (async (_url: string, init?: RequestInit) => {
+      const payload = JSON.parse(String(init?.body)) as { query: string }[];
+      postSizes.push(payload.length);
+      return {
+        ok: true,
+        json: async () => payload.map(() => ({ status: 'success', countryCode: 'HK' })),
+      };
+    }) as unknown as typeof fetch;
+
+    const map = await batchQuery(ips, cache, fetchMock);
+    expect(postSizes.length).toBe(2);
+    expect(postSizes[0]).toBe(100);
+    expect(postSizes[1]).toBe(1);
+    expect(map.size).toBe(101);
+    expect(map.get('1.1.1.1')).toBe(countryDisplayName('HK'));
+  });
+
+  it('batchQuery 上限：550 个 IP 只发 5 批（500 个），多余保持未识别', async () => {
+    const { cache } = makeCache();
+    const ips = Array.from({ length: 550 }, (_, i) => `1.1.${i + 1}.1`);
+    let posts = 0;
+    const fetchMock = (async (_url: string, init?: RequestInit) => {
+      posts++;
+      const payload = JSON.parse(String(init?.body)) as { query: string }[];
+      return {
+        ok: true,
+        json: async () => payload.map(() => ({ status: 'success', countryCode: 'JP' })),
+      };
+    }) as unknown as typeof fetch;
+
+    await batchQuery(ips, cache, fetchMock);
+    expect(posts).toBe(5);
+  });
+
+  it('batchQuery 限流：本分钟已满 15 次时不再发请求', async () => {
+    const { cache } = makeCache({
+      '__ip_geo_batch_history': JSON.stringify(Array.from({ length: 15 }, () => Date.now())),
+    });
+    let posts = 0;
+    const fetchMock = (async (_url: string) => {
+      posts++;
+      return { ok: true, json: async () => [] };
+    }) as unknown as typeof fetch;
+
+    await batchQuery(['1.1.1.1'], cache, fetchMock);
+    expect(posts).toBe(0);
+  });
 });
 
 describe('filterUnlocatedServers / countUnlocatedGeo（未识别统计，纯读缓存不查询）', () => {
