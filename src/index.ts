@@ -99,7 +99,7 @@ async function buildApp(env: Env): Promise<Hono> {
 let appPromise: Promise<Hono> | null = null;
 
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, executionCtx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // 前端页面：非 API 和非 /sub 请求返回 HTML
@@ -113,7 +113,8 @@ export default {
       appPromise = buildApp(env);
     }
     const app = await appPromise;
-    return app.fetch(request, env);
+    // Hono v4：第三参 executionCtx 传入，c.executionCtx 才可用（IP 地理预填充后台 waitUntil）
+    return app.fetch(request, env, executionCtx);
   },
 
   /** 定时任务：每月 1 号 03:00 UTC 规则目录同步；每天按用户设定时间(默认北京时间07:00)自动更新全部订阅 */

@@ -2,6 +2,23 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.17.0] - 2026-09-02
+
+### 修复：订阅更新返回 502 "This context has no ExecutionContext"
+
+- **根因**：v2.16.0 把 IP 地理预填充移到 `c.executionCtx.waitUntil()`，但 `index.ts` 的 `app.fetch(request, env)` 只传了两个参数——Hono v4 需要第三参 `executionCtx` 才会填充 `c.executionCtx`。未传时 `waitUntil` 抛 "This context has no ExecutionContext"，导致整个 update 接口 502，前端弹「更新失败」。
+- **修复**：`index.ts` fetch 签名加第三参 `executionCtx: ExecutionContext` 并透传给 `app.fetch(request, env, executionCtx)`。
+- 说明：用户反馈「国家检测成功但订阅更新还是提示」——geo-redetect 接口未用 executionCtx 所以正常；update 用了所以报错。本修复解决 update。
+
+### 新增：大刷新/拉取操作居中进度条（订阅更新 / 重新检测国家码）
+
+- 新增居中进度弹窗：标题 + 进度条 + 状态文字 + 计时（`00:00 / 02:00`）
+- 非确定进度从 10% 缓慢爬升至 95%，示意「仍在跑」；真实完成时跳 100%
+- **120s 长时限**（`c.executionCtx` 修复后 update 即时返回；进度条覆盖等待期）
+- 硬性超时（120s+) → 进度条红色置满 + 显示「操作超时，请稍后重试」
+- 请求侧 `AbortError` → 中文「请求超时，请重试」（替代英文原生 message）
+- `updateSub` 与 `redetectGeo` 均接入，按钮带 loading 态防重复点
+
 ## [2.16.0] - 2026-09-02
 
 ### 性能修复：节点列表与订阅更新超时（实测根因）

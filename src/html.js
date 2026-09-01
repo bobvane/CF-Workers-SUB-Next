@@ -566,6 +566,22 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
   </div>
 </div>
 
+<!-- Progress Modal (v2.17: 大刷新/拉取操作居中进度条，长时限 + 超时报错) -->
+<div class="modal-overlay" id="progressModal">
+  <div class="modal-content" style="max-width:480px;text-align:center">
+    <div class="modal-header" style="justify-content:center"><h3 id="progressTitle">⏳ 处理中</h3></div>
+    <div class="modal-body">
+      <div style="margin:4px 0 16px;font-size:14px;color:var(--text2);min-height:20px" id="progressStatus">请稍候…</div>
+      <div style="height:8px;background:rgba(0,0,0,0.08);border-radius:999px;overflow:hidden">
+        <div id="progressBar" style="height:100%;width:0%;background:var(--accent);border-radius:999px;transition:width .3s ease"></div>
+      </div>
+      <div style="margin-top:12px;font-size:13px;color:var(--text2)">
+        <span id="progressTimer">00:00</span> / <span id="progressCap">02:00</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- Config Preview Modal -->
 <div class="modal-overlay" id="configModal">
   <div class="modal-content" style="max-width:800px">
@@ -643,6 +659,80 @@ function closeModal(id) { document.getElementById(id).classList.remove('show'); 
 document.addEventListener('click', function(e) {
   if (e.target.classList.contains('modal-overlay')) e.target.classList.remove('show');
 });
+
+// ============ Progress Modal (v2.17) ============
+// 大刷新/拉取操作（订阅更新/重新检测国家码）居中弹进度条：显示进度 + 计时 + 硬性上限，超时报错。
+let _progressTimer = null;
+let _progressElapsed = 0;
+
+function fmtClock(sec) {
+  const m = String(Math.floor(sec / 60)).padStart(2, '0');
+  const s = String(Math.floor(sec % 60)).padStart(2, '0');
+  return \`\${m}:\${s}\`;
+}
+
+// 打开进度弹窗。capMs = 硬性上限（超时自动报错），非确定进度从 10% 起步向 95% 慢速爬升示意“仍在跑”
+function showProgress(title, capMs = 120000) {
+  closeProgress();
+  document.getElementById('progressTitle').textContent = title;
+  document.getElementById('progressStatus').textContent = '请稍候…';
+  const bar = document.getElementById('progressBar');
+  bar.style.width = '10%';
+  document.getElementById('progressCap').textContent = fmtClock(capMs / 1000);
+  document.getElementById('progressTimer').textContent = '00:00';
+  document.getElementById('progressModal').classList.add('show');
+  _progressElapsed = 0;
+  // 伪进度：前 90% 缓慢爬升（真实成功时 closeProgress 跳到 100%），剩余 10% 留给超时兜底
+  _progressTimer = setInterval(() => {
+    _progressElapsed += 200;
+    const el = document.getElementById('progressTimer');
+    if (el) el.textContent = fmtClock(_progressElapsed / 1000);
+    const ratio = Math.min(_progressElapsed / capMs, 0.95);
+    bar.style.width = \`\${10 + ratio * 85}%\`;
+  }, 200);
+}
+
+function updateProgress(text) {
+  const el = document.getElementById('progressStatus');
+  if (el && text) el.textContent = text;
+}
+
+function closeProgress(errMsg) {
+  if (_progressTimer) { clearInterval(_progressTimer); _progressTimer = null; }
+  const modal = document.getElementById('progressModal');
+  if (!modal) return;
+  const bar = document.getElementById('progressBar');
+  const st = document.getElementById('progressStatus');
+  if (errMsg) {
+    bar.style.width = '100%';
+    bar.style.background = 'var(--red)';
+    if (st) st.textContent = '❌ ' + errMsg;
+    setTimeout(() => modal.classList.remove('show'), 1600);
+  } else {
+    bar.style.width = '100%';
+    setTimeout(() => modal.classList.remove('show'), 400);
+  }
+}
+
+// 带进度弹窗的长操作封装（async）：capMs 超时报帅；请求本身的 timeout 负责真正中断
+async function runWithProgress({ title, capMs = 120000, fn }) {
+  showProgress(title, capMs);
+  let done = false;
+  const hardTimer = setTimeout(() => {
+    if (!done) { closeProgress('操作超时，请稍后重试'); done = true; }
+  }, capMs);
+  try {
+    const res = await fn();
+    if (done) throw new Error('操作超时');
+    clearTimeout(hardTimer); done = true;
+    closeProgress();
+    return res;
+  } catch (e) {
+    clearTimeout(hardTimer); done = true;
+    closeProgress((e && e.name === 'AbortError') ? '请求超时，请重试' : ((e && e.message) || '操作失败'));
+    throw e;
+  }
+}
 
 // ============ API ============
 // 带超时的 fetch 封装：避免网络挂起（黑洞）导致请求永不返回 → 白屏
@@ -1025,9 +1115,14 @@ async function updateSub(id) {
   const btn = document.querySelector(\`button[onclick*="updateSub('\${id}')"]\`);
   if (btn) { if (btn.disabled) return; btn.disabled = true; btn.textContent = '⏳ 更新中'; }
   try {
-    // v2.16.0：订阅更新是重操作，给 90s 预算（后台 prewarm 已异步，此时只等订阅本体抓取+解析）
-    await api('/subscriptions/' + id + '/update', { method: 'POST', timeout: 90000 });
+    // v2.17.0：居中进度条，120s 长时限（后台 prewarm 已异步，只等订阅抓取+解析）
+    const res = await runWithProgress({
+      title: '🔄 更新订阅',
+      capMs: 120000,
+      fn: () => api('/subscriptions/' + id + '/update', { method: 'POST', timeout: 120000 }),
+    });
     toast('更新成功');
+    if (res && res.data) updateProgress(\`✅ 更新完成：\${res.data.nodeCount ?? 0} 个节点\`);
     loadSubscriptions();
   } catch (e) { toast('更新失败: ' + e.message, 'error'); }
   finally {
@@ -1076,14 +1171,20 @@ async function redetectGeo() {
   const orig = btn ? btn.textContent : null;
   if (btn) btn.disabled = true;
   try {
-    const res = await api('/nodes/geo-redetect', { method: 'POST', body: JSON.stringify({ scope: 'unlocated' }) });
-    const d = res.data || {};
+    // v2.17.0：居中进度条，120s 长时限；geo-redetect 并发锁 60s 幂等，真实耗时取决于未识别数量
+    const res = await runWithProgress({
+      title: '🔍 重新检测国家码',
+      capMs: 120000,
+      fn: () => api('/nodes/geo-redetect', { method: 'POST', body: JSON.stringify({ scope: 'unlocated' }), timeout: 120000 }),
+    });
+    const d = (res && res.data) || {};
     let msg = \`✅ 重新检测完成：检索 \${d.queried ?? 0}，新识别 \${d.resolved ?? 0}，失败 \${d.failed ?? 0}；剩余未识别 \${d.unlocatedAfter ?? 0}\`;
     if (Array.isArray(d.unlocatedServers) && d.unlocatedServers.length) {
       const shown = d.unlocatedServers.slice(0, 8).join(', ');
       const more = d.unlocatedServers.length > 8 ? \` 等\${d.unlocatedServers.length}个\` : '';
       msg += \`：\${shown}\${more}\`;
     }
+    updateProgress(msg);
     toast(msg);
     loadNodes(); // 刷新 stats（geoUnlocated 归零或减少）
   } catch (e) {
