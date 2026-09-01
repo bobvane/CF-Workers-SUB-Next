@@ -2,6 +2,21 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.17] - 2026-09-01
+
+### 修复：__NULL__ 负缓存卡死——batchQuery 命中 __NULL__ 仍无条件 continue 跳过重查
+
+- **根因**：`batchQuery` 缓存命中 `__NULL__` 后，无论是否有效都执行 `continue`，
+  `__NULL__` 永远不会被加入 uncached，导致 ip-api 请求永远发不出去，节点国家
+  码永久卡死在「未识别」状态
+- **修复**：`batchQuery` 命中 `__NULL__` 时不再写入 result，但 push 到 uncached
+  重新查询；`prewarmIpGeo` 同步修复——`__NULL__` 不写入 ipToCountry、不计
+  cached，落入 uncached 由 batchQuery 重查
+- **测试**：新增 batchQuery `__NULL__` 重查并写入有效缓存、prewarmIpGeo
+  `__NULL__` 重查后 resolved=2 两用例；全套 390 通过
+- 顺带：`.gitignore` 排除 PROJECT_CONTEXT.md / CURRENT_TASK.md（本地会话固化
+  文档不入库）
+
 ## [2.12.16] - 2026-09-01
 
 ### 增强：geo-redetect 响应携带未识别节点列表，一键诊断 14 个"死活查不出"的节点
