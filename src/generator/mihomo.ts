@@ -352,10 +352,9 @@ export async function generateProxyGroups(
     name: '自动选择',
     type: 'url-test',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Auto.png',
-    url: 'https://cp.cloudflare.com/generate_204',
+    url: 'http://www.gstatic.com/generate_204',
     interval: 300,
     tolerance: 50,
-    lazy: false,
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
@@ -462,10 +461,9 @@ export async function generateProxyGroups(
       proxies: geo.nodes,
     };
     if (useUrlTest) {
-      group.url = 'https://cp.cloudflare.com/generate_204';
+      group.url = 'http://www.gstatic.com/generate_204';
       group.interval = 300;
       group.tolerance = 50;
-      group.lazy = false;
     }
     groups.push(group);
   }
@@ -487,11 +485,20 @@ export async function generateMihomoConfig(
 ): Promise<string> {
   // 注：v2.12.2 按用户指令去除全部硬编码头字段（mixed-port/allow-lan/mode/log-level/ipv6/
   // external-controller/secret）及 profile/dns/sniffer 段，配置仅输出 proxies/proxy-groups/rules。
+  // v2.13.0：按用户指令恢复必要头部（port/socks-port/allow-lan/mode/log-level），与硬编码规则集一起
+  // 构成 Mihomo 完整可运行配置；自动选择 + url-test 地理组的测速参数同步调整（砍掉 lazy，
+  // url/interval/tolerance 移到 type 正下方便于阅读，测速地址统一用 google generate_204）。
   const uniqueNodes = makeUniqueNames(nodes);
   const proxies = uniqueNodes.map(nodeToMihomoProxy);
   const groups = await generateProxyGroups(uniqueNodes, selectedRules, ruleGroups, ipGeoResolver);
 
   const config: Record<string, unknown> = {
+    'mixed-port': 7890,
+    port: 7890,
+    'socks-port': 7891,
+    'allow-lan': true,
+    mode: 'Rule',
+    'log-level': 'info',
     proxies,
     'proxy-groups': groups,
     rules: ['MATCH,漏网之鱼'],

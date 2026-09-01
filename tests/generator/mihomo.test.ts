@@ -158,10 +158,12 @@ describe('generateMihomoConfig', () => {
 
   it('should generate single node config', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    // v2.12.2: 配置直接从 profile: 开始，头字段（mixed-port/allow-lan/mode 等）已移除
-    expect(yaml).not.toContain('mixed-port');
-    expect(yaml).not.toContain('allow-lan');
-    expect(yaml).not.toContain('mode: rule');
+    // v2.13.0：按用户指令恢复必要头部（port/socks-port/allow-lan/mode/log-level），与硬编码规则集一起构成 Mihomo 完整可运行配置
+    expect(yaml).toContain('port: 7890');
+    expect(yaml).toContain('socks-port: 7891');
+    expect(yaml).toContain('allow-lan: true');
+    expect(yaml).toContain('mode: Rule');
+    expect(yaml).toContain('log-level: info');
     expect(yaml).not.toContain('profile:'); // v2.12.2: profile 段已移除
     expect(yaml).not.toContain('dns:'); // v2.12.2: dns 段已移除
     expect(yaml).not.toContain('sniffer:'); // v2.12.2: sniffer 段已移除
@@ -183,7 +185,7 @@ describe('generateMihomoConfig', () => {
 
   it('should NOT include removed hardcoded template header fields (v2.12.2)', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    // v2.12.2: 按用户指令去除 profile: 之上的硬编码头字段，配置从 profile: 开始
+    // v2.12.2: 按用户指令去除 profile: 之上的硬编码头字段（v2.13.0 仅恢复 port/socks-port/allow-lan/mode/log-level），其余仍不出现
     expect(yaml).not.toContain('external-controller');
     expect(yaml).not.toContain('secret:');
     expect(yaml).not.toContain('unified-delay');
@@ -220,16 +222,17 @@ describe('generateMihomoConfig', () => {
   });
 
   it('should NOT emit allow-lan header (removed in v2.12.2)', async () => {
+    // v2.13.0：按用户指令恢复 allow-lan，此处断言改为要求存在
     const yaml = await generateMihomoConfig([makeNode()]);
-    expect(yaml).not.toContain('allow-lan');
+    expect(yaml).toContain('allow-lan: true');
   });
 
-  it('should ignore custom template (header fields removed in v2.12.2)', async () => {
-    // 模板参数已随头字段移除，传入任何配置不再影响输出
+  it('should ignore custom template (header fields restored in v2.13.0)', async () => {
+    // v2.13.0：模板参数已随 v2.12.2 移除，但 port/socks-port/allow-lan/mode/log-level 已按新指令硬编码输出
     const yaml = await generateMihomoConfig([makeNode()]);
-    expect(yaml).not.toContain('mixed-port');
-    expect(yaml).not.toContain('allow-lan');
-    expect(yaml).not.toContain('log-level');
+    expect(yaml).toContain('port: 7890');
+    expect(yaml).toContain('allow-lan: true');
+    expect(yaml).toContain('log-level: info');
     expect(yaml).toContain('proxies:');
   });
 

@@ -104,13 +104,17 @@ describe('用户自定义规则置顶', () => {
 describe('AI 审查意见修复', () => {
   it('输出配置已移除 DNS 段 + fake-ip + sniffer（v2.12.2）', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    // v2.12.2: profile/dns/sniffer 三段落全部移除，配置仅 proxies/proxy-groups/rules
+    // v2.12.2: profile/dns/sniffer 三段落全部移除；v2.13.0: 恢复必要头部（port/socks-port/allow-lan/mode/log-level）
     expect(yaml).not.toContain('dns:');
     expect(yaml).not.toContain('enhanced-mode');
     expect(yaml).not.toContain('fake-ip');
     expect(yaml).not.toContain('nameserver-policy');
     expect(yaml).not.toContain('fallback-filter');
-    expect(yaml).not.toContain('log-level');
+    expect(yaml).toContain('port: 7890');
+    expect(yaml).toContain('socks-port: 7891');
+    expect(yaml).toContain('allow-lan: true');
+    expect(yaml).toContain('mode: Rule');
+    expect(yaml).toContain('log-level: info');
     expect(yaml).not.toContain('sniffer:');
     expect(yaml).not.toContain('sniff:');
     expect(yaml).toContain('proxies:');
