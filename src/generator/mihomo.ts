@@ -339,11 +339,13 @@ export async function generateProxyGroups(
   });
 
   // 3. 手动切换（select：具体节点扁平列表，逐节点选）
+  // default-selected：优先取「美国」组的第一个节点（用户 2026-09-02 指定 美国bob-bob@gmail.com），否则取第一个地理节点，再兜底 DIRECT
+  const usGeo = geoGroupNames.findIndex(n => n.includes('美国'));
   groups.push({
     name: '手动切换',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Final.png',
-    'default-selected': allGeoNodes[0] || 'DIRECT',
+    'default-selected': (usGeo >= 0 && geoGroups[usGeo].nodes[0]) || allGeoNodes[0] || 'DIRECT',
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
@@ -358,12 +360,12 @@ export async function generateProxyGroups(
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
-  // 5. 国外媒体（流媒体 PROXY，默认 DIRECT）——固化策略组
+  // 5. 国外媒体（流媒体 PROXY，默认自动选择）——固化策略组
   groups.push({
     name: '国外媒体',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Streaming.png',
-    'default-selected': 'DIRECT',
+    'default-selected': '自动选择',
     proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
 
@@ -394,9 +396,9 @@ export async function generateProxyGroups(
     'microsoft': { name: '微软服务', default: 'DIRECT' },
     'apple': { name: '苹果服务', default: 'DIRECT' },
     'game': { name: '游戏平台', default: 'DIRECT' },
-    'ai': { name: 'AI 平台', default: 'DIRECT' },
-    'social': { name: '社交', default: 'DIRECT' },
-    'crypto': { name: '加密货币', default: 'DIRECT' },
+    'ai': { name: 'AI 平台', default: '手动切换' },
+    'social': { name: '社交', default: '自动选择' },
+    'crypto': { name: '加密货币', default: '🇹🇼 台湾' },
     'user': { name: '用户规则', default: '手动切换' },
   };
   const independentGroupKeys = Object.keys(groupDefaults);
@@ -437,13 +439,12 @@ export async function generateProxyGroups(
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
-  // 10. GLOBAL（只含核心切换组，默认 DIRECT — 用户 2026-08-30 拍板）
+  // 10. GLOBAL（只含核心切换组，默认 DIRECT — 用户 2026-08-30 拍板；无 url，不需要测速 — 用户 2026-09-02 拍板）
   groups.push({
     name: 'GLOBAL',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Final.png',
     'default-selected': 'DIRECT',
-    url: 'https://cp.cloudflare.com/generate_204',
     // 用户 2026-08-30 拍板：GLOBAL 只保留 节点选择/手动切换/自动选择/DIRECT 四组
     proxies: ['节点选择', '手动切换', '自动选择', 'DIRECT'],
   });
@@ -455,16 +456,17 @@ export async function generateProxyGroups(
     const isUrlTest = URL_TEST_REGIONS.some(r => geo.name.includes(r));
     // 单节点自动降级为 select（用户 2026-08-30 拍板：url-test 组仅 1 个节点时测速无意义）
     const useUrlTest = isUrlTest && geo.nodes.length > 1;
+    // 键顺序：name → type →（url/interval/tolerance）→ proxies，让测速参数紧跟 type 下方，排版更清晰（用户 2026-09-02 拍板）
     const group: Record<string, unknown> = {
       name: geo.name,
       type: useUrlTest ? 'url-test' : 'select',
-      proxies: geo.nodes,
     };
     if (useUrlTest) {
       group.url = 'http://www.gstatic.com/generate_204';
       group.interval = 300;
       group.tolerance = 50;
     }
+    group.proxies = geo.nodes;
     groups.push(group);
   }
 

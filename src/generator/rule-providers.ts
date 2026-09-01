@@ -134,8 +134,8 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
 /**
  * 生成完整 rules 数组（有序，V3.2 冻结版 — v2.11.0 规则排序重构）
  * 优先级（自上而下匹配）：
- *   ① 用户规则（默认 DIRECT，面板可切换）—— 无预设规则，等用户添加
- *   ② 内网防代理：GEOIP,lan,DIRECT,no-resolve + GEOSITE,private,DIRECT
+ *   ① 内网防代理：GEOIP,lan,DIRECT,no-resolve + GEOSITE,private,DIRECT（必须最前，防内网误代理）
+ *   ② 用户规则（默认面板可切换）—— 放在 GEOSITE,private,DIRECT 之后（用户 2026-09-02 拍板）
  *   ③ 广告拦截 (CATEGORY-ADS-ALL 等) → REJECT
  *   ④ 国内直连（china-direct 组 7 条 GEOSITE → DIRECT）
  *   ⑤ 谷歌FCM
@@ -150,8 +150,8 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
  *   ⑭ MATCH,漏网之鱼
  *
  * 依据：Mihomo 规则自上而下匹配，先命中的生效。
- *   - 用户规则置顶（用户显式意图最优先）
  *   - 内网防代理必须最前（防 192.168.x.x 误代理），lan 在前 private 在后
+ *   - 用户规则紧跟 private 之后（用户显式意图次优先于内网防代理）
  *   - 细分业务规则优先于宽泛国内规则
  *   - GEOIP,CN,DIRECT 剥离出国内直连组，移到 crypto 之后 MATCH 之前
  */
@@ -159,19 +159,18 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   const selectedSet = new Set(selected.map(r => r.id));
   const lines: string[] = [];
 
-  // === ① 用户规则（默认 DIRECT，面板可切换）===
-  // 自定义规则可覆盖一切内置分类（包括 CN/国内直连/广告拦截）——用户显式声明的意图最优先。
-  // 注意：内网防代理紧随其后（内网流量不应被任何代理规则劫持）。
+  // === ① 内网防代理（必须最前，防内网误代理）===
+  // lan 在前 private 在后（Q3 已确认）
+  lines.push('GEOIP,lan,DIRECT,no-resolve');
+  lines.push('GEOSITE,private,DIRECT');
+
+  // === ② 用户规则（紧随 GEOSITE,private,DIRECT 之后 — 用户 2026-09-02 拍板）===
+  // 自定义规则可覆盖后续内置分类；但内网防代理仍在其前（内网流量不应被任何代理规则劫持）。
   for (const r of selected) {
     if (r.custom && selectedSet.has(r.id)) {
       lines.push(ruleSetLine(r, groups));
     }
   }
-
-  // === ② 内网防代理（必须最前，防内网误代理）===
-  // lan 在前 private 在后（Q3 已确认）
-  lines.push('GEOIP,lan,DIRECT,no-resolve');
-  lines.push('GEOSITE,private,DIRECT');
 
   // === ③ 广告拦截（REJECT，最高业务优先级）===
   // 遍历 ads 组所有选中项（CATEGORY-ADS-ALL + TRACKER 等），全部输出到广告拦截组

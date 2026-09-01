@@ -2,6 +2,26 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.14.0] - 2026-09-02
+
+### 变更：策略组默认出口（用户 2026-09-02 拍板）
+
+- **手动切换** default-selected 取「美国」组第一个节点（本订阅为 `美国bob-bob@gmail.com`），无美国组则回退第一个地理节点
+- **国外媒体** default-selected → `自动选择`（原 DIRECT）
+- **AI 平台** default-selected → `手动切换`（原 DIRECT）
+- **社交** default-selected → `自动选择`（原 DIRECT）
+- **加密货币** default-selected → `🇹🇼 台湾`（原 DIRECT）
+- **GLOBAL** 删除 `url: https://cp.cloudflare.com/generate_204`（GLOBAL 为 select，不需要测速）
+
+### 调整：url-test 地理组参数排版（用户 2026-09-02 拍板）
+
+- 自动生成的地理组（url-test）的 `url` / `interval` / `tolerance` 三个参数移到 `type: url-test` 正下方、`proxies` 之前，排版更清晰
+
+### 调整：rules 段落用户规则顺序（用户 2026-09-02 拍板）
+
+- 用户规则从「最前」移到 `- GEOSITE,private,DIRECT` 之后、广告拦截之前
+- 优先级：① 内网防代理（lan + private）→ ② 用户规则 → ③ 广告拦截 …
+
 ## [2.13.1] - 2026-09-02
 
 ### 修复：用户规则组输出逻辑
