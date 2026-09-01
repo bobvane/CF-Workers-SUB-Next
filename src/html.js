@@ -757,7 +757,7 @@ function renderRulesTree() {
         return \`<label class="rules-item">
           <input type="checkbox" data-rule-check data-g="\${gi}" data-id="\${escHtml(it.id)}" \${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
           <span class="rule-label"><span class="rule-name">\${escHtml(it.label)}</span><span class="rule-id">\${escHtml(it.tag)}:\${escHtml(it.id)}</span></span>
-          \${isCustom ? \`<span style="cursor:pointer;color:var(--red);font-size:14px;margin-left:4px" onclick="event.stopPropagation();deleteCustomRule('\${escHtml(it.id)}')" title="删除此规则">✕</span>\` : ''}
+          \${isCustom ? \`<span title="删除此规则" style="cursor:pointer;color:var(--red);font-size:16px;margin-left:8px;opacity:.8" class="rule-del" onclick="event.stopPropagation();deleteCustomRule('\${escHtml(it.id)}')">🗑</span>\` : ''}
         </label>\`;
       }).join('');
     }
@@ -826,10 +826,10 @@ function selectAllRules(check) {
 // ============ 快速预设 ============
 // 以"组"为单位：选中组全组勾选，未选组全组取消；组内规则目标配置不变
 const RULE_PRESETS = [
-  { key: 'mini', label: '🟢 极简', groups: ['ads','china-direct','media','ai'] },
-  { key: 'mini-crypto', label: '🟢 极简+加密', groups: ['ads','china-direct','media','ai','crypto'] },
-  { key: 'standard', label: '🔵 标准', groups: ['ads','china-direct','media','ai','google-fcm','microsoft','apple','game'] },
-  { key: 'standard-crypto', label: '🔵 标准+加密', groups: ['ads','china-direct','media','ai','google-fcm','microsoft','apple','game','crypto'] },
+  { key: 'mini', label: '🟢 极简', groups: ['ads','china-direct','media','google','ai'] },
+  { key: 'mini-crypto', label: '🟢 极简+加密', groups: ['ads','china-direct','media','google','ai','crypto'] },
+  { key: 'standard', label: '🔵 标准', groups: ['ads','china-direct','media','google','ai','google-fcm','microsoft','apple','game'] },
+  { key: 'standard-crypto', label: '🔵 标准+加密', groups: ['ads','china-direct','media','google','ai','google-fcm','microsoft','apple','game','crypto'] },
   { key: 'full', label: '🟣 完全体', groups: null },  // null = 除 crypto 外全部
   { key: 'full-crypto', label: '🟣 完全+加密', groups: 'ALL' },
 ];

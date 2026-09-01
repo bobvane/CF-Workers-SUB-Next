@@ -369,6 +369,15 @@ export async function generateProxyGroups(
     proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
 
+  // 5b. Google服务（v2.15.0，用户拍板：放国外媒体后面，default-selected 手动切换）——固化策略组
+  groups.push({
+    name: 'Google服务',
+    type: 'select',
+    icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Google.png',
+    'default-selected': '手动切换',
+    proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
+  });
+
   // 6. 广告拦截（默认 REJECT）——固化策略组，只保留 REJECT 和 DIRECT（用户 2026-08-30 拍板）
   groups.push({
     name: '广告拦截',

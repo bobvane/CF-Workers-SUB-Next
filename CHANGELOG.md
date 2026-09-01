@@ -2,6 +2,26 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.15.0] - 2026-09-02
+
+### 新增：Google服务 分流组（用户 2026-09-02 拍板）
+
+- 分流规则页新增「Google服务」组，位置在「国外媒体」之后
+- 组内 7 条规则（全部原生 GEOSITE/GEOIP 输出，默认在预设勾选、可取消）：
+  - geosite: `google` / `google-gemini` / `google-deepmind` / `google-play` / `google-scholar` / `google-trust-services`
+  - geoip: `google`（内部 id `google-geoip` 避开与 geosite:google 同名冲突）
+- 该组加入全部 6 个快速预设（极简 / 极简+加密 / 标准 / 标准+加密 / 完全体 / 完全+加密）
+
+### Mihomo 输出
+
+- 新增「Google服务」固定策略组，放在国外媒体之后，`default-selected: 手动切换`
+- `rules:` 段落：6 条 `GEOSITE,google*` 就近输出在国外媒体（⑧）之后；`geoip:google` 单独放 `GEOIP,CN,DIRECT`（⑬）之后作 IP 兜底（⑬b）
+- `buildRules` step⑤ 跳过 geoip 项；orphan 去重跳过 geoip 项，避免用错误 id（google-geoip）重复输出
+
+### UI
+
+- 用户添加规则删除按钮：`✕` → 垃圾桶 `🗑`，位置移到规则标签后面（排版更整洁）
+
 ## [2.14.0] - 2026-09-02
 
 ### 变更：策略组默认出口（用户 2026-09-02 拍板）

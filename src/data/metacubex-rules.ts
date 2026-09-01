@@ -130,6 +130,20 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
+    key: 'google', name: 'Google服务', icon: '🔍',
+    items: [
+      // 原生 GEOSITE + GEOIP 输出（v2.15.0）；默认在预设里勾选，用户可取消
+      { id: 'google', label: 'Google', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'google-gemini', label: 'Google Gemini', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'google-deepmind', label: 'Google DeepMind', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'google-play', label: 'Google Play', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'google-scholar', label: 'Google 学术', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'google-trust-services', label: 'Google Trust 服务', tag: 'geosite', target: 'PROXY', native: true },
+      // geoip:google 单独放加密货币之后兜底（v2.15.0），内部 id 用 google-geoip 避开与 geosite:google 同名冲突
+      { id: 'google-geoip', label: 'Google IP段', tag: 'geoip', target: 'PROXY', native: true },
+    ],
+  },
+  {
     key: 'game', name: '游戏平台', icon: '🎮',
     items: [
       // 原生 GEOSITE 输出；category-games-!cn 灰色固定；点名的 11 条已移除

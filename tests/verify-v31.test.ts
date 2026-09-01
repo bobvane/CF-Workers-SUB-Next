@@ -24,6 +24,39 @@ function makeNode(overrides: Partial<Node> = {}): Node {
 }
 
 describe('V3.1 验证', () => {
+  it('Google服务组：geosite 6条在国外媒体后、geoip:google 在 crypto 后兜底（v2.15.0）', () => {
+    const googleGroup = RULE_GROUPS.find(g => g.key === 'google');
+    // 组存在
+    expect(googleGroup).toBeDefined();
+    // geosite + geoip 共 7 条
+    expect(googleGroup!.items.length).toBe(7);
+    expect(googleGroup!.items.every(i => i.native)).toBe(true);
+    // geosite:google 等 6 条
+    const geositeIds = googleGroup!.items.filter(i => i.tag === 'geosite').map(i => i.id);
+    expect(geositeIds).toEqual(['google','google-gemini','google-deepmind','google-play','google-scholar','google-trust-services']);
+    // geoip:google 用内部 id google-geoip 避开同名冲突
+    const geoipItem = googleGroup!.items.find(i => i.tag === 'geoip');
+    expect(geoipItem!.id).toBe('google-geoip');
+
+    // buildRules：google 组选中的 geosite 规则输出在国外媒体之后（GEOSITE,google,...），geoip:google 在 GEOIP,CN 之后
+    const selected = [
+      { id: 'category-media', label: '媒体聚合', tag: 'geosite', target: 'PROXY' as const, native: true },
+      { id: 'google', label: 'Google', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
+      { id: 'google-gemini', label: 'Google Gemini', tag: 'geosite' as const, target: 'PROXY' as const, native: true },
+      { id: 'google-geoip', label: 'Google IP段', tag: 'geoip' as const, target: 'PROXY' as const, native: true },
+    ];
+    const rules = buildRules(selected as MetaCubeXRule[], RULE_GROUPS);
+    const idxMedia = rules.findIndex(r => r === 'GEOSITE,category-media,国外媒体');
+    const idxGsuite = rules.findIndex(r => r === 'GEOSITE,google,Google服务');
+    const idxGpn = rules.findIndex(r => r === 'GEOIP,CN,DIRECT');
+    const idxGeoipGoogle = rules.findIndex(r => r === 'GEOIP,google,Google服务');
+    expect(idxGsuite).toBeGreaterThan(idxMedia); // geosite:google 在国外媒体后
+    expect(idxGeoipGoogle).toBeGreaterThan(idxGpn); // geoip:google 在 GEOIP,CN（crypto 后）后
+    // geoip 只出现一次，且用正确 id 'google'
+    expect(rules.filter(r => r.includes('google')).length).toBe(3); // GEOSITE,google + GEOIP,google + google-gemini
+    expect(rules.some(r => r.startsWith('GEOIP,google-geoip'))).toBe(false);
+  });
+
   it('策略组数量约 22 个，无应用净化/国内媒体，GLOBAL默认 DIRECT', async () => {
     const nodes = [makeNode({ name: 'JP-01' }), makeNode({ id: 'n2', name: 'US-01', server: 'us.example.com' })];
     const selectedRules = [

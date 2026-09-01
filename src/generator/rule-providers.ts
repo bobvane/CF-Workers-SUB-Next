@@ -197,11 +197,13 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
 
   // === ⑤ 业务分类：按 RULE_GROUPS 顺序输出（细分在前、宽泛在后）===
   // 跳过 ads（已在第③步处理）和 china-direct（已在第④步处理）
+  // v2.15.0：跳过 geoip 项（google 组内的 geoip:google 单独放加密货币后兜底，见下）
   const skipKeys = new Set(['ads', 'china-direct']);
   for (const g of groups) {
     if (skipKeys.has(g.key)) continue;
     for (const item of g.items) {
       if (item.custom) continue; // 自定义规则已在 ① 置顶输出
+      if (item.tag === 'geoip') continue; // geoip:google 单独在 crypto 后输出
       // native 规则 id 可能小写（如 'netflix'），用大小写不敏感匹配
       const match = selected.find(r => r.id.toLowerCase() === item.id.toLowerCase());
       if (match) {
@@ -210,9 +212,17 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     }
   }
 
-  // === ⑬ GEOIP,CN,DIRECT（从国内直连组剥离，排 crypto 之后 MATCH 之前）===
+  // === ⑬ GEOIP,CN,DIRECT（从国内直连组剥离，排 crypto 之后 MACH 之前）===
   // 兜底去重后仍须保留此承重墙：国内 IP 最终直连
   lines.push('GEOIP,CN,DIRECT');
+
+  // === ⑬b geoip:google（2026-09-02 用户拍板：单放加密货币之后兜底）===
+  // geosite:google 等 6 条在 ⑤ 仿国外媒体位置输出；geoip:google 作 IP 兜底跟在 GEOIP,CN 后面
+  const googleGroup = groups.find(g => g.key === 'google');
+  const geoipItem = googleGroup?.items.find(i => i.tag === 'geoip');
+  if (googleGroup && geoipItem && selectedSet.has(geoipItem.id)) {
+    lines.push(`GEOIP,google,${googleGroup.name}`);
+  }
 
   // === 兜底去重：防止孤儿规则重复 ===
   // 注意：GEOSITE/GEOIP 行的 id 已转小写，matchedIds 也用小写匹配，避免大小写不一致导致重复输出
@@ -229,7 +239,8 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   }
   const validGroupIds = new Set(groups.flatMap(g => g.items.map(i => i.id)));
   // custom 规则已在 ① 置顶输出，orphan 步骤跳过 custom 避免重复
-  const orphanSelected = selected.filter(r => !r.custom && !matchedIds.has(r.id.toLowerCase()) && validGroupIds.has(r.id));
+  // v2.15.0：geoip 项已在 ⑬b 单独处理，orphan 跳过避免用错误 id（google-geoip）重复输出
+  const orphanSelected = selected.filter(r => !r.custom && r.tag !== 'geoip' && !matchedIds.has(r.id.toLowerCase()) && validGroupIds.has(r.id));
   for (const r of orphanSelected) {
     lines.push(ruleSetLine(r, groups));
   }
