@@ -2,6 +2,22 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.12] - 2026-09-01
+
+### 修复节点落「其他」组两类盲区
+
+**A. 域名 server 支持 DoH 解析成 IP**（`src/services/ip-geo.service.ts`）
+- 新增 `resolveDomainToIP(server)`：用 Google/Cloudflare DoH 端点解析域名→IPv4，单域名独立请求（5s 超时），解析失败跳过该 server 不阻塞整体
+- `prewarmIpGeo` 在批量查询前先对全部 server 做 DNS 解析，域名节点现在可正确归入地理组
+
+**B. 失败结果不缓存，存量 `__NULL__` 视为过期重查**（`src/services/ip-geo.service.ts`）
+- 移除所有写 `__NULL__` 的缓存写入点：ip-api 限流回退、批量请求失败、单个查询失败、无 countryCode 均不写缓存
+- 存量旧格式 `__NULL__` 缓存（无时间戳版本）也视为无效，下次 resolver 触发时自动重查
+- 根因：之前失败结果写 30 天 `__NULL__` 缓存后永久锁死在「其他」组，任何重试机制均被绕过
+
+### 测试
+- 新增 3 个测试：`__NULL__` 重查、失败不写缓存、仅成功结果写缓存（共 8 个 ip-geo 测试，全量 381 个测试 ✅）
+
 ## [2.12.11] - 2026-09-01
 
 ### Mihomo 所有 url-test 测速组 interval 调整为 300

@@ -1,11 +1,12 @@
 /**
- * IP 地理定位服务（纯 IP 批量）
+ * IP 地理定位服务（支持域名解析）
  *
  * 用途：节点不具备国家/地区识别能力时，用其 server 查 IP 归属地 → 地区（emoji中文名）或 null。
  * 数据源：ip-api.com（免费，无需 key，支持批量接口，一次 HTTP 最多 100 个 IP）
- * 实现：批量 IP 定位（≤100IP/次），15 次/分钟滑动窗口限流，L1 内存+KV 兜底（7 天 TTL），失败回退到单个 IP 查询，不阻塞主流程。
- *
- * 注意：ip-api 免费版限 15 次 Batch HTTP 请求/分钟，不缓存批量查询结果（每次都重新查询，但批量查询不触发 rate limit，rate limit 指的是 Batch HTTP 请求次数，不是单个 IP 查询次数）。第一批查询瞬间可能超过 rate limit，但后续小批量可以容错；失效回退到单个 IP 请求。
+ * 实现：
+ *   - 批量 IP 定位（≤100IP/次），15 次/分钟滑动窗口限流
+ *   - 域名 server 先用 DoH（DNS over HTTPS）解析成 IP 再查询（支持 IPv4 回退）
+ *   - L1 内存+KV 兜底，失败不写缓存，存量 __NULL__ 视为过期重查
  */
 
 import { countryDisplayName } from '@/data/country-codes';
@@ -18,6 +19,55 @@ const BATCH_LIMIT = 100;
 const RATE_LIMIT_REQUESTS = 15;
 const RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 分钟
 const IP_GEO_CACHE_MS = 30 * 24 * 60 * 60 * 1000; // 30 天缓存
+
+// DoH 端点：Google + Cloudflare 双选，任一成功即可
+const DOH_ENDPOINTS = [
+  { url: 'https://dns.google/resolve', param: 'name' },
+  { url: 'https://cloudflare-dns.com/dns-query', param: 'name' },
+];
+
+/** IPv4 正则：4段点分十进制，每段1-3位数字 */
+const IPV4_RE = /^\d{1,3}(?:\.\d{1,3}){3}$/;
+
+/** 判断 server 是否为纯 IP（IPv4） */
+function isPureIP(server: string): boolean {
+  return IPV4_RE.test(server);
+}
+
+/**
+ * DNS over HTTPS（DoH）解析域名 → IPv4
+ * 依次尝试 Google + Cloudflare，任一成功即返回首个 IPv4；全部失败返回 null。
+ * 若 server 本身已是纯 IP 则直接返回（短路）。
+ */
+export async function resolveDomainToIP(
+  server: string,
+  fetchFn: typeof fetch = fetch
+): Promise<string | null> {
+  if (!server) return null;
+  // 已经是纯 IP，无需 DNS
+  if (isPureIP(server)) return server;
+
+  for (const ep of DOH_ENDPOINTS) {
+    try {
+      const url = `${ep.url}?type=A&${ep.param}=${encodeURIComponent(server)}`;
+      const res = await fetchFn(url, {
+        signal: AbortSignal.timeout(5000),
+        headers: { accept: 'application/dns-json' },
+      });
+      if (!res.ok) continue;
+      const data = await res.json() as { Status: number; Answer?: { type: number; data: string }[] };
+      if (data.Status === 0 && Array.isArray(data.Answer)) {
+        for (const ans of data.Answer) {
+          // type 1 = A record (IPv4)
+          if (ans.type === 1 && isPureIP(ans.data)) return ans.data;
+        }
+      }
+    } catch {
+      // 下一个端点
+    }
+  }
+  return null;
+}
 
 interface IpApiBatchResponse {
   status: 'success' | 'fail';
@@ -39,6 +89,7 @@ export async function batchQuery(
 ): Promise<Map<string, string | null>> {
   if (!ips.length) return new Map();
   // 1. 检查缓存（仅用于单个 IP）
+  // 注意：__NULL__ 不视为有效缓存，始终允许重查（失败不应永久阻塞）
   const uncached: string[] = [];
   const result = new Map<string, string | null>();
 
@@ -54,8 +105,11 @@ export async function batchQuery(
             continue;
           }
         } else {
-          result.set(ip, cached === '__NULL__' ? null : cached);
-          continue;
+          // 旧格式无时间戳：__NULL__ 视为无效缓存，需重查
+          if (cached !== '__NULL__') {
+            result.set(ip, cached);
+            continue;
+          }
         }
       }
     } catch {
@@ -79,15 +133,11 @@ export async function batchQuery(
   } catch {}
 
   if (history.length >= RATE_LIMIT_REQUESTS) {
-    // 超过速率限制 -> 退回单个查询
+    // 超过速率限制 -> 退回单个查询，失败不写缓存
     for (const ip of uncached) {
       try {
         const singleRes = await singleQuery(ip, fetchFn);
         result.set(ip, singleRes);
-        // 缓存单查询结果
-        try {
-          await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${singleRes || '__NULL__'}`);
-        } catch {}
       } catch {
         result.set(ip, null);
       }
@@ -118,14 +168,11 @@ export async function batchQuery(
       await cache.set('__ip_geo_batch_history', JSON.stringify(history));
     } catch {}
   } catch {
-    // 批量请求失败 -> 退回单个查询
+    // 批量请求失败 -> 退回单个查询，失败不写缓存
     for (const ip of batch) {
       try {
         const singleRes = await singleQuery(ip, fetchFn);
         result.set(ip, singleRes);
-        try {
-          await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${singleRes || '__NULL__'}`);
-        } catch {}
       } catch {
         result.set(ip, null);
       }
@@ -135,9 +182,6 @@ export async function batchQuery(
       try {
         const singleRes = await singleQuery(ip, fetchFn);
         result.set(ip, singleRes);
-        try {
-          await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${singleRes || '__NULL__'}`);
-        } catch {}
       } catch {
         result.set(ip, null);
       }
@@ -145,7 +189,7 @@ export async function batchQuery(
     return result;
   }
 
-  // 批量成功 -> 映射结果
+  // 批量成功 -> 映射结果（仅成功写入缓存，失败不写）
   const ipToCountry: Map<string, string | null> = new Map();
   for (let i = 0; i < batch.length && i < responses.length; i++) {
     const ip = batch[i];
@@ -156,10 +200,12 @@ export async function batchQuery(
       country = display || null;
     }
     ipToCountry.set(ip, country);
-    // 缓存结果
-    try {
-      await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${country || '__NULL__'}`);
-    } catch {}
+    // 仅成功结果写缓存；null 不写（允许后续重试）
+    if (country) {
+      try {
+        await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${country}`);
+      } catch {}
+    }
   }
 
   // 合并到主结果
@@ -167,14 +213,17 @@ export async function batchQuery(
     result.set(ip, country);
   }
 
-  // 剩余 uncached 项 -> 单个查询
+  // 剩余 uncached 项 -> 单个查询，失败不写缓存
   for (const ip of uncached.slice(batch.length)) {
     try {
       const singleRes = await singleQuery(ip, fetchFn);
       result.set(ip, singleRes);
-      try {
-        await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${singleRes || '__NULL__'}`);
-      } catch {}
+      // 仅成功写缓存
+      if (singleRes) {
+        try {
+          await cache.set(IP_GEO_KEY_PREFIX + ip, `${Date.now()}|${singleRes}`);
+        } catch {}
+      }
     } catch {
       result.set(ip, null);
     }
@@ -238,20 +287,41 @@ export async function prewarmIpGeo(
   };
   if (unique.length === 0) return result;
 
+  // 0. DNS 解析：域名 server 先用 DoH 解析成 IP（失败则跳过该 server，不阻塞整体）
+  const resolved: string[] = [];
+  for (const server of unique) {
+    try {
+      const ip = await resolveDomainToIP(server, fetchFn);
+      if (ip) {
+        resolved.push(ip);
+      }
+      // 解析失败：server 无法确定归属，跳过（不调用 batchQuery）
+    } catch {
+      // 单个解析失败不阻塞
+    }
+  }
+  if (resolved.length === 0) return result;
+
   // 1. 剔除缓存命中项（命中且未过期）
+  // 注意：__NULL__ 视为无效缓存（失败不写缓存），需重查
   const uncached: string[] = [];
-  for (const ip of unique) {
+  for (const ip of resolved) {
     const cacheKey = IP_GEO_KEY_PREFIX + ip;
     try {
       const cached = await cache.get(cacheKey);
       if (cached) {
         const [ts, name] = cached.split('|');
-        const fresh = ts && name
-          ? Date.now() - Number(ts) < IP_GEO_CACHE_MS
-          : true; // 旧格式无时间戳视为有效
-        if (fresh) {
-          result.cached++;
-          continue;
+        if (ts && name) {
+          if (Date.now() - Number(ts) < IP_GEO_CACHE_MS) {
+            result.cached++;
+            continue;
+          }
+        } else {
+          // 旧格式无时间戳：仅非 __NULL__ 视为有效
+          if (cached !== '__NULL__') {
+            result.cached++;
+            continue;
+          }
         }
       }
     } catch {
@@ -262,7 +332,7 @@ export async function prewarmIpGeo(
 
   if (uncached.length === 0) return result;
 
-  // 2. 批量合并查询（batchQuery 内部自动分批 ≤100/IP + 限流 + 写回缓存）
+  // 2. 批量合并查询（batchQuery 内部自动分批 ≤100/IP + 限流，失败不写缓存）
   result.queried = uncached.length;
   const map = await batchQuery(uncached, cache, fetchFn);
   for (const country of map.values()) {
@@ -297,14 +367,20 @@ export function createIpGeoResolver(
         const [ts, name] = persisted.split('|');
         if (ts && name) {
           if (Date.now() - Number(ts) < IP_GEO_CACHE_MS) {
-            const country = name === '__NULL__' ? null : name;
+            // __NULL__ 视为未缓存，仍重查
+            if (name !== '__NULL__') {
+              const country = name;
+              batchCache.set(cacheKey, { country, ts: Date.now() });
+              return country;
+            }
+          }
+        } else {
+          // 旧格式无时间戳：非 __NULL__ 视为有效
+          if (persisted !== '__NULL__') {
+            const country = persisted;
             batchCache.set(cacheKey, { country, ts: Date.now() });
             return country;
           }
-        } else {
-          const country = persisted === '__NULL__' ? null : persisted;
-          batchCache.set(cacheKey, { country, ts: Date.now() });
-          return country;
         }
       }
     } catch {

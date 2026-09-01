@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createIpGeoResolver, IpGeoCache } from '@/services/ip-geo.service';
+import { createIpGeoResolver, batchQuery, IpGeoCache } from '@/services/ip-geo.service';
 import { countryDisplayName } from '@/data/country-codes';
 
 /** 内存缓存 adapter + 手动控制 fetch 的测试替身 */
@@ -82,5 +82,55 @@ describe('createIpGeoResolver', () => {
       status: 'success', countryCode: 'HK',
     })));
     expect(await resolver('')).toBeNull();
+  });
+
+  it('__NULL__ stale cache is re-queried and resolved to country', async () => {
+    const { cache, dump } = makeCache({
+      'ip_geo:us.example.com': `1|__NULL__`, // 旧格式无时间戳，值为 __NULL__
+    });
+    let calls = 0;
+    const fetchMock = makeFetch((_url) => {
+      calls++;
+      return { status: 'success', countryCode: 'US' };
+    });
+    const resolver = createIpGeoResolver(cache, fetchMock);
+    // 应重查，不应命中缓存
+    const r = await resolver('us.example.com');
+    expect(r).toBe(countryDisplayName('US'));
+    expect(calls).toBeGreaterThanOrEqual(1);
+    // 写入的新缓存不含 __NULL__
+    const stored = dump()['ip_geo:us.example.com'] as string;
+    expect(stored).toBeDefined();
+    expect(stored).toContain('|');
+    expect(stored).not.toContain('__NULL__');
+  });
+
+  it('batchQuery does not write __NULL__ to cache on failure', async () => {
+    const { cache, dump } = makeCache();
+    // batch 返回 fail
+    const fetchMock = makeFetch((_url) => {
+      return [{ status: 'fail', message: 'invalid query', query: 'example.com' }];
+    });
+    const map = await batchQuery(['example.com'], cache, fetchMock);
+    expect(map.get('example.com')).toBeNull();
+    // 缓存中不应有 ip_geo:example.com
+    expect(dump()['ip_geo:example.com']).toBeUndefined();
+  });
+
+  it('batchQuery writes only successful results to cache', async () => {
+    const { cache, dump } = makeCache();
+    // batch 部分成功：第一个 success，第二个 fail
+    const fetchMock = makeFetch((_url) => {
+      return [
+        { status: 'success', countryCode: 'JP' },
+        { status: 'fail', message: 'invalid query', query: 'bad.com' },
+      ];
+    });
+    const map = await batchQuery(['good.com', 'bad.com'], cache, fetchMock);
+    expect(map.get('good.com')).toBe(countryDisplayName('JP'));
+    expect(map.get('bad.com')).toBeNull();
+    // 只有 good.com 写入缓存
+    expect(dump()['ip_geo:good.com']).toBeDefined();
+    expect(dump()['ip_geo:bad.com']).toBeUndefined();
   });
 });
