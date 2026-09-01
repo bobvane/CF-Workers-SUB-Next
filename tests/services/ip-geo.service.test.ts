@@ -185,6 +185,40 @@ describe('createIpGeoResolver', () => {
     await batchQuery(['1.1.1.1'], cache, fetchMock);
     expect(posts).toBe(0);
   });
+
+  it('__NULL__ 带时间戳缓存应触发重新查询（不视为有效命中）', async () => {
+    const now = Date.now();
+    const { cache, dump } = makeCache({
+      'ip_geo:1.2.3.4': `${now}|__NULL__`, // 30 天内负缓存
+      'ip_geo:5.6.7.8': `${now}|__NULL__`,
+    });
+    let posts = 0;
+    const fetchMock = (async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        posts++;
+        const payload = JSON.parse(String(init.body)) as { query: string }[];
+        return {
+          ok: true,
+          json: async () => payload.map(() => ({ status: 'success', countryCode: 'SG' })),
+        };
+      }
+      return { ok: false, json: async () => ({}) };
+    }) as unknown as typeof fetch;
+
+    const map = await batchQuery(['1.2.3.4', '5.6.7.8'], cache, fetchMock);
+    // 应发起 1 批 POST（2 个 IP 在 ≤100 的范围内）
+    expect(posts).toBe(1);
+    // 两个 IP 都识别出 SG
+    expect(map.get('1.2.3.4')).toBe(countryDisplayName('SG'));
+    expect(map.get('5.6.7.8')).toBe(countryDisplayName('SG'));
+    // 写入的新缓存不含 __NULL__
+    const stored1 = dump()['ip_geo:1.2.3.4'] as string;
+    const stored2 = dump()['ip_geo:5.6.7.8'] as string;
+    expect(stored1).toBeDefined();
+    expect(stored2).toBeDefined();
+    expect(stored1).not.toContain('__NULL__');
+    expect(stored2).not.toContain('__NULL__');
+  });
 });
 
 describe('filterUnlocatedServers / countUnlocatedGeo（未识别统计，纯读缓存不查询）', () => {
@@ -262,5 +296,39 @@ describe('prewarmIpGeo（域名节点缓存 key 一致性修复）', () => {
     expect(res.resolved).toBe(1);
     expect(await hasGeoCountry('8.8.8.8', cache)).toBe(true);
     expect(dump()['ip_geo:8.8.8.8']).toBeDefined();
+  });
+
+  it('prewarmIpGeo 对 __NULL__ 负缓存的 IP 应触发重新查询并识别', async () => {
+    const now = Date.now();
+    const { cache, dump } = makeCache({
+      // 同时清空限流历史，避免受之前测试干扰
+      '__ip_geo_batch_history': '',
+      'ip_geo:128.199.82.20': `${now}|__NULL__`,
+      'ip_geo:18.141.12.17': `${now}|__NULL__`,
+    });
+    // 纯 IP 不需要 DoH，mock 只响应 POST
+    const fetchMock = (async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        const payload = JSON.parse(String(init.body)) as { query: string }[];
+        return {
+          ok: true,
+          json: async () => payload.map(() => ({ status: 'success', countryCode: 'SG' })),
+        };
+      }
+      return { ok: false, json: async () => ({}) };
+    }) as unknown as typeof fetch;
+    const res = await prewarmIpGeo(['128.199.82.20', '18.141.12.17'], cache, fetchMock);
+    // queried 应 > 0（确实发了 ip-api 请求）
+    expect(res.queried).toBeGreaterThan(0);
+    // resolved 应 = 2（两个都识别）
+    expect(res.resolved).toBe(2);
+    // 写入的缓存不含 __NULL__
+    for (const ip of ['128.199.82.20', '18.141.12.17']) {
+      const stored = dump()[`ip_geo:${ip}`] as string;
+      expect(stored).toBeDefined();
+      expect(stored).not.toContain('__NULL__');
+      // 统计侧应能识别
+      expect(await hasGeoCountry(ip, cache)).toBe(true);
+    }
   });
 });

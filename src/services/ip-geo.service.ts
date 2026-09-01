@@ -102,7 +102,13 @@ export async function batchQuery(
         const [ts, name] = cached.split('|');
         if (ts && name) {
           if (Date.now() - Number(ts) < IP_GEO_CACHE_MS) {
-            result.set(ip, name === '__NULL__' ? null : name);
+            // __NULL__ 仍视为未识别（负缓存仅表示「某次查询失败」，不应永久卡死）
+            if (name !== '__NULL__') {
+              result.set(ip, name);
+            } else {
+              // __NULL__ 不写 result，但要加入 uncached 以便重新查询
+              uncached.push(ip);
+            }
             continue;
           }
         } else {
@@ -266,9 +272,13 @@ export async function prewarmIpGeo(
         const [ts, name] = cached.split('|');
         if (ts && name) {
           if (Date.now() - Number(ts) < IP_GEO_CACHE_MS) {
-            if (name !== '__NULL__') ipToCountry.set(ip, name);
-            result.cached++;
-            continue;
+            // __NULL__ 视为未识别（不写入映射，不 cached++，不 continue → 加入 uncached 重查）
+            if (name !== '__NULL__') {
+              ipToCountry.set(ip, name);
+              result.cached++;
+            }
+            // __NULL__ 跳过 continue，让它落到 uncached
+            if (name !== '__NULL__') continue;
           }
         } else {
           // 旧格式无时间戳：仅非 __NULL__ 视为有效
