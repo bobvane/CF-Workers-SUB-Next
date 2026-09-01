@@ -2,6 +2,24 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.13.0] - 2026-09-01
+
+### 新增：mihomo 配置输出恢复必要头部
+
+- 在 `proxies:` 前硬编码输出 `port: 7890` / `socks-port: 7891` / `allow-lan: true` / `mode: Rule` / `log-level: info`，与硬编码规则集一起构成 Mihomo 完整可运行配置（v2.12.2 暂时移除，此处恢复）
+- 不新增 `mixed-port` / `external-controller` / `secret` / `ipv6` / `profile` / `dns` / `sniffer` 字段（仍按 v2.12.2 保持精简）
+
+### 变更：自动选择 + 自动测速地理组的 url-test 参数
+
+- 移除 `lazy: false` 参数
+- 将 `url` / `interval` / `tolerance` 三个参数移到 `type` 行之后（视觉顺序更直观）
+- 测速地址全部统一为 `http://www.gstatic.com/generate_204`（与 v2.12.10+ 预填充 geo 阶段保持一致）
+
+### 修复：GLOBAL select 组误加 url 字段
+
+- GLOBAL（最终组）和手动切换组类型均为 `select`，不应有 `url`；本次修复从 `urlTestGeoGroupNames` 中剔除 `GLOBAL` 和 `手动切换`，避免 Mihomo 校验拒绝
+- 测试断言同步更新，验证上述四组变更
+
 ## [2.12.17] - 2026-09-01
 
 ### 修复：__NULL__ 负缓存卡死——batchQuery 命中 __NULL__ 仍无条件 continue 跳过重查
