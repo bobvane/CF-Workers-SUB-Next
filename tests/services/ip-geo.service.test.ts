@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createIpGeoResolver, batchQuery, filterUnlocatedServers, countUnlocatedGeo, IpGeoCache } from '@/services/ip-geo.service';
+import { createIpGeoResolver, batchQuery, filterUnlocatedServers, countUnlocatedGeo, prewarmIpGeo, hasGeoCountry, IpGeoCache } from '@/services/ip-geo.service';
 import { countryDisplayName } from '@/data/country-codes';
 
 /** 内存缓存 adapter + 手动控制 fetch 的测试替身 */
@@ -217,5 +217,50 @@ describe('filterUnlocatedServers / countUnlocatedGeo（未识别统计，纯读�
     const { cache } = makeCache();
     expect(await countUnlocatedGeo(['', ' ', undefined as unknown as string], cache)).toBe(0);
     expect(await countUnlocatedGeo([], cache)).toBe(0);
+  });
+});
+
+describe('prewarmIpGeo（域名节点缓存 key 一致性修复）', () => {
+  /** mock fetch：POST → ip-api batch；GET → DoH（dns.google 优先） */
+  function makePrewarmFetch(domainToIp: Record<string, string>, countryCode: string) {
+    return (async (url: string, init?: RequestInit) => {
+      if (init?.method === 'POST') {
+        const payload = JSON.parse(String(init.body)) as { query: string }[];
+        return {
+          ok: true,
+          json: async () => payload.map(() => ({ status: 'success', countryCode })),
+        };
+      }
+      // DoH：dns.google/resolve?type=A&name=xxx
+      const name = new URL(url).searchParams.get('name') || '';
+      const ip = domainToIp[name];
+      if (ip) {
+        return { ok: true, json: async () => ({ Status: 0, Answer: [{ type: 1, data: ip }] }) };
+      }
+      return { ok: false, json: async () => ({}) };
+    }) as unknown as typeof fetch;
+  }
+
+  it('域名 server 解析后同时写入 IP key 与 server key，统计侧可识别', async () => {
+    const { cache, dump } = makeCache();
+    const fetchMock = makePrewarmFetch({ 'hk.example.com': '1.2.3.4' }, 'HK');
+    const res = await prewarmIpGeo(['hk.example.com'], cache, fetchMock);
+    // server key 已回写 → hasGeoCountry（统计口径）为 true
+    expect(await hasGeoCountry('hk.example.com', cache)).toBe(true);
+    expect(dump()['ip_geo:hk.example.com']).toBeDefined();
+    // IP key 由 batchQuery 写入
+    expect(dump()['ip_geo:1.2.3.4']).toBeDefined();
+    // 统计侧不再把域名节点算作未识别
+    expect(await countUnlocatedGeo(['hk.example.com'], cache)).toBe(0);
+    expect(res.resolved).toBe(1);
+  });
+
+  it('纯 IP server 不受影响（server key 即 IP key）', async () => {
+    const { cache, dump } = makeCache();
+    const fetchMock = makePrewarmFetch({}, 'US');
+    const res = await prewarmIpGeo(['8.8.8.8'], cache, fetchMock);
+    expect(res.resolved).toBe(1);
+    expect(await hasGeoCountry('8.8.8.8', cache)).toBe(true);
+    expect(dump()['ip_geo:8.8.8.8']).toBeDefined();
   });
 });

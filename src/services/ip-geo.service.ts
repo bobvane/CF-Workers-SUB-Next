@@ -219,9 +219,10 @@ export interface PrewarmResult {
  * 不再触发任何 HTTP；真正的外网查询只在此处发生。
  *
  * 流程：
- *   1. 逐个 server 先查 KV 缓存（30 天 TTL），命中且未过期则跳过
- *   2. 未命中项交给 batchQuery 合并成单次批量查询（≤100/IP/次自动分批 + 15 次/分钟限流）
- *   3. batchQuery 逐 IP 写回 KV 缓存（失败/无归属写 __NULL__，同样防重复查询）
+ *   1. 逐个 server 用 DoH 解析域名 → IP，记录 server→ip 映射
+ *   2. 按 IP 去重，查 KV 缓存（30 天 TTL），命中且未过期则跳过
+ *   3. 未命中项交给 batchQuery 合并成单次批量查询（≤100/IP/次自动分批 + 15 次/分钟限流）
+ *   4. 结果同时写回两份缓存：ip_geo:{IP}（batchQuery 内部）和 ip_geo:{server}（统计口径）
  *
  * @returns 统计信息（供日志/返回体展示本次查询情况）
  */
@@ -240,25 +241,24 @@ export async function prewarmIpGeo(
   };
   if (unique.length === 0) return result;
 
-  // 0. DNS 解析：域名 server 先用 DoH 解析成 IP（失败则跳过该 server，不阻塞整体）
-  const resolved: string[] = [];
+  // 0. DNS 解析并记录 server→ip 映射
+  const serverToIp = new Map<string, string>();
   for (const server of unique) {
     try {
       const ip = await resolveDomainToIP(server, fetchFn);
-      if (ip) {
-        resolved.push(ip);
-      }
+      if (ip) serverToIp.set(server, ip);
       // 解析失败：server 无法确定归属，跳过（不调用 batchQuery）
     } catch {
       // 单个解析失败不阻塞
     }
   }
-  if (resolved.length === 0) return result;
+  if (serverToIp.size === 0) return result;
 
-  // 1. 剔除缓存命中项（命中且未过期）
-  // 注意：__NULL__ 视为无效缓存（失败不写缓存），需重查
+  // 1. 查缓存，构建 ip→country 映射（含缓存命中项，确保 server key 兜底回写）
+  const ips = [...new Set(serverToIp.values())];
+  const ipToCountry = new Map<string, string>();
   const uncached: string[] = [];
-  for (const ip of resolved) {
+  for (const ip of ips) {
     const cacheKey = IP_GEO_KEY_PREFIX + ip;
     try {
       const cached = await cache.get(cacheKey);
@@ -266,12 +266,14 @@ export async function prewarmIpGeo(
         const [ts, name] = cached.split('|');
         if (ts && name) {
           if (Date.now() - Number(ts) < IP_GEO_CACHE_MS) {
+            if (name !== '__NULL__') ipToCountry.set(ip, name);
             result.cached++;
             continue;
           }
         } else {
           // 旧格式无时间戳：仅非 __NULL__ 视为有效
           if (cached !== '__NULL__') {
+            ipToCountry.set(ip, cached);
             result.cached++;
             continue;
           }
@@ -283,14 +285,27 @@ export async function prewarmIpGeo(
     uncached.push(ip);
   }
 
-  if (uncached.length === 0) return result;
+  // 2. 未命中项批量合并查询（batchQuery 内部写 ip_geo:{IP} 缓存）
+  if (uncached.length > 0) {
+    result.queried = uncached.length;
+    const map = await batchQuery(uncached, cache, fetchFn);
+    for (const [ip, country] of map) {
+      if (country) ipToCountry.set(ip, country);
+    }
+  }
 
-  // 2. 批量合并查询（batchQuery 内部自动分批 ≤100/IP + 限流，失败不写缓存）
-  result.queried = uncached.length;
-  const map = await batchQuery(uncached, cache, fetchFn);
-  for (const country of map.values()) {
-    if (country) result.resolved++;
-    else result.failed++;
+  // 3. 按 server 回写缓存（与 hasGeoCountry/统计/重检筛选 key 一致）
+  //    域名节点才能被统计侧识别为"已识别"；同时保证修复前只写了 IP key 的存量也能补上
+  for (const [server, ip] of serverToIp) {
+    const country = ipToCountry.get(ip);
+    if (country) {
+      result.resolved++;
+      try {
+        await cache.set(IP_GEO_KEY_PREFIX + server, `${Date.now()}|${country}`);
+      } catch {}
+    } else {
+      result.failed++;
+    }
   }
   return result;
 }
