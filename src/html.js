@@ -1124,7 +1124,7 @@ async function loadCleanRules() {
       return;
     }
     box.style.display = 'block';
-    box.innerHTML = '<b style="font-size:14px;color:var(--text1,#061b31)">已保存的清洗规则</b><span style="color:var(--text2);font-size:14px;margin-left:8px">每次订阅更新后自动应用</span><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:2px 20px;margin-top:4px">' + rules.map(r =>
+    box.innerHTML = '<b style="font-size:14px;color:var(--text1,#061b31)">已保存的清洗规则</b><span style="color:var(--text2);font-size:14px;margin-left:8px">每次订阅更新后自动应用</span><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:2px 20px;margin-top:4px">' + rules.map(r =>
       \`<div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border,#e5edf5);font-size:14px">
         <b style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\${escHtml(r.pattern)}">\${escHtml(r.pattern)}</b>
         <input type="checkbox" style="flex-shrink:0;width:16px;height:16px;cursor:pointer" \${r.enabled ? 'checked' : ''} onchange="toggleCleanRule('\${r.id}', this.checked)" title="启用/停用">
