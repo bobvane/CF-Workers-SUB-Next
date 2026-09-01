@@ -2,11 +2,41 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.13.1] - 2026-09-02
+
+### 修复：用户规则组输出逻辑
+
+- **用户规则组 default-selected 改为「手动切换」**（之前硬编码 `DIRECT`，用户添加规则后默认应能手动切换节点）
+- **用户自定义规则统一走 GEOSITE 原生输出**（不再用 `RULE-SET` + `rule-providers` 方式），与 native 规则输出方式一致
+- **修复自定义规则重复输出问题**：orphan 去重步骤现在跳过 custom 规则（已在 step ① 置顶输出），且 `matchedIds` 统一用小写匹配，避免大小写不一致导致重复
+
+### 技术细节
+
+- `ruleSetLine()`: `rule.native || rule.custom` → GEOSITE/GEOIP 原生输出
+- `buildRuleProviders()`: 跳过 `rule.custom`，不生成 provider
+- `buildRules()` orphan 步骤：`!r.custom && !matchedIds.has(r.id.toLowerCase())` 双重过滤
+- `generateMihomoConfig()`: `nonNativeRules` 过滤加上 `!r.custom`
+
 ## [2.13.0] - 2026-09-01
 
 ### 新增：mihomo 配置输出恢复必要头部
 
-- 在 `proxies:` 前硬编码输出 `port: 7890` / `socks-port: 7891` / `allow-lan: true` / `mode: Rule` / `log-level: info`，与硬编码规则集一起构成 Mihomo 完整可运行配置（v2.12.2 暂时移除，此处恢复）
+- 在 `proxies:` 前硬编码输出 `port: 7890` / `socks-port: 7891` / `allow-lan: true` / `mode: Rule` / `log-level: info`，与硬编码规则集一起构成 Mihomo 完整可运行配置（v2.12.3 曾去除全部硬编码头字段，本次按用户指令恢复 5 行必要头部；`dns:` / `sniffer:` / `profile:` 三段仍保持去除状态）
+
+### 变更：url-test 组参数整理
+
+- **砍掉 `lazy: false`**（v2.12.9 引入，本次移除）
+- **参数顺序调整**：`url` / `interval` / `tolerance` 移到 `type` 下方，便于阅读
+- **测速地址统一**：`https://cp.cloudflare.com/generate_204` → `http://www.gstatic.com/generate_204`（与 v2.12.10+ geo 预填充阶段保持一致）
+- **interval 统一为 300**（v2.12.8 之前 自动选择=1800、地理=300；v2.12.8 统一为 600；本次改回 300）
+- **修复 GLOBAL / 手动切换 误带 `url` 问题**：这两类 select 组被错误地纳入 `urlTestGeoGroupNames`，加了 url 字段。Mihomo 校验拒绝 url-test 专属字段出现在 select 组。修复：剔除 GLOBAL 和 手动切换，只保留六国地理 url-test 组
+
+### 测试
+
+- `tests/generator/mihomo.test.ts`：4 处断言反向更新（旧断言验 v2.12.2 移除头部，现改为验 v2.13.0 恢复头部；旧断言验 v2.12.2 移 DNS/sniffer，现改为验 v2.13.0 仍无 DNS/sniffer + 有 5 行头部）
+- `tests/verify-v31.test.ts`：1 处注释更新
+- 新增 1 个参考文档 `references/mihomo-hardcode-rules.md` 记录 v2.13.0 完整规范与历史对比表
+- **测试基线保持 390 tests**
 - 不新增 `mixed-port` / `external-controller` / `secret` / `ipv6` / `profile` / `dns` / `sniffer` 字段（仍按 v2.12.2 保持精简）
 
 ### 变更：自动选择 + 自动测速地理组的 url-test 参数

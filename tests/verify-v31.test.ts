@@ -93,11 +93,13 @@ describe('用户自定义规则置顶', () => {
     const selectedRules = [customRule, { id: 'category-ads-all', label: '广告拦截', tag: 'geosite' as const, target: 'REJECT' as const, native: true }, { id: 'openai', label: 'OpenAI', tag: 'geosite' as const, target: 'PROXY' as const, native: true }];
     const groups: RuleGroup[] = RULE_GROUPS.map(g => ({ ...g, items: g.key === 'user' ? [...g.items, customRule] : [...g.items] }));
     const rules = buildRules(selectedRules, groups);
-    expect(rules[0]).toContain('geosite-my-custom-site'); // ① 用户规则最前
+    // v2.13.1: custom 规则走 GEOSITE 原生输出（不再 RULE-SET + rule-providers），位置仍在 ① 用户规则最前
+    expect(rules[0]).toBe('GEOSITE,my-custom-site,用户规则'); // ① 用户规则最前，路由到「用户规则」组
     expect(rules[1]).toBe('GEOIP,lan,DIRECT,no-resolve'); // ② 内网防代理
     expect(rules[2]).toBe('GEOSITE,private,DIRECT');
     expect(rules.some(r => r.includes('category-ads-all'))).toBe(true);
-    expect(rules.filter(r => r.includes('geosite-my-custom-site')).length).toBe(1);
+    // custom 规则只出现一次（orphan 步骤已跳过 custom 避免重复）
+    expect(rules.filter(r => r.includes('my-custom-site')).length).toBe(1);
   });
 });
 

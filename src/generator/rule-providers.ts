@@ -96,7 +96,8 @@ export function ruleActionTarget(rule: MetaCubeXRule, groups: RuleGroup[] = []):
  *   - native=false（或无）→ RULE-SET,geosite-<id>,<出口>（HTTP 规则集下载，极少数 .mrs 规则集）
  */
 export function ruleSetLine(rule: MetaCubeXRule, groups: RuleGroup[] = []): string {
-  if (rule.native) {
+  // native 规则和 custom（用户添加）规则统一走 GEOSITE/GEOIP 原生输出，不生成 RULE-SET + rule-providers
+  if (rule.native || rule.custom) {
     const action = ruleActionTarget(rule, groups);
     // 原生规则 id 统一用小写（geosite 分类名规范）
     const normalizedId = rule.id.toLowerCase();
@@ -115,6 +116,8 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
   for (const rule of selected) {
     // native 规则走原生 GEOSITE/GEOIP 输出，不生成 provider
     if (rule.native) continue;
+    // custom（用户添加）规则也走 GEOSITE 原生输出，不生成 provider
+    if (rule.custom) continue;
     const p = buildRuleProvider(rule);
     providers[p.name] = {
       type: p.type,
@@ -213,19 +216,21 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   lines.push('GEOIP,CN,DIRECT');
 
   // === 兜底去重：防止孤儿规则重复 ===
+  // 注意：GEOSITE/GEOIP 行的 id 已转小写，matchedIds 也用小写匹配，避免大小写不一致导致重复输出
   const matchedIds = new Set<string>();
   for (const l of lines) {
     const parts = l.split(',');
     if (parts[0] === 'RULE-SET' && parts[1].startsWith('geosite-')) {
-      matchedIds.add(parts[1].slice(8));
+      matchedIds.add(parts[1].slice(8).toLowerCase());
     } else if (parts[0] === 'GEOSITE' || parts[0] === 'GEOIP') {
-      matchedIds.add(parts[1]); // 保留 @cn/!cn 属性
+      matchedIds.add(parts[1].toLowerCase()); // 保留 @cn/!cn 属性
     } else {
-      matchedIds.add(parts[0]);
+      matchedIds.add(parts[0].toLowerCase());
     }
   }
   const validGroupIds = new Set(groups.flatMap(g => g.items.map(i => i.id)));
-  const orphanSelected = selected.filter(r => !matchedIds.has(r.id) && validGroupIds.has(r.id));
+  // custom 规则已在 ① 置顶输出，orphan 步骤跳过 custom 避免重复
+  const orphanSelected = selected.filter(r => !r.custom && !matchedIds.has(r.id.toLowerCase()) && validGroupIds.has(r.id));
   for (const r of orphanSelected) {
     lines.push(ruleSetLine(r, groups));
   }

@@ -397,7 +397,7 @@ export async function generateProxyGroups(
     'ai': { name: 'AI 平台', default: 'DIRECT' },
     'social': { name: '社交', default: 'DIRECT' },
     'crypto': { name: '加密货币', default: 'DIRECT' },
-    'user': { name: '用户规则', default: 'DIRECT' },
+    'user': { name: '用户规则', default: '手动切换' },
   };
   const independentGroupKeys = Object.keys(groupDefaults);
   const ruleClassGroupNames: string[] = [];
@@ -505,7 +505,8 @@ export async function generateMihomoConfig(
   };
 
   // 分流规则：用户勾选了规则才生成 rule-providers + 有序 rules
-  const nonNativeRules = selectedRules.filter(r => !r.native);
+  // custom（用户添加）规则和 native 规则一样走 GEOSITE 原生输出，不生成 rule-providers
+  const nonNativeRules = selectedRules.filter(r => !r.native && !r.custom);
   if (selectedRules.length > 0) {
     // 只有非 native 规则才生成 rule-providers（原生规则走 GEOSITE 直出）
     if (nonNativeRules.length > 0) {
