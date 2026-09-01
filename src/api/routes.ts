@@ -194,18 +194,23 @@ export function createApp(deps: AppDeps): Hono {
     const id = c.req.param('id') as string;
     try {
       const { nodeCount } = await subscriptions.update(id, deps.fetchRaw);
-      // 订阅更新后预填充：拉取本次新增节点的服务 IP 进行地理缓存
-      try {
-        const nodes = deduplicateNodes(await repos.nodes.getAll());
-        const servers = [...new Set(nodes.map((n) => n.server).filter((v): v is string => typeof v === 'string'))];
-        if (servers.length > 0) {
-          const ipGeoCache = { get: (k: string) => deps.repos.settings.get(k), set: (k: string, v: string) => deps.repos.settings.set(k, v) };
-          const geoResult = await import('@/services/ip-geo.service').then(m => m.prewarmIpGeo(servers, ipGeoCache));
-          console.warn(`[SubscriptionUpdate:${id}] IP地理预填充完成: 总数 ${geoResult.total}，已缓存 ${geoResult.cached}，新查 ${geoResult.queried}，解析成功 ${geoResult.resolved}，失败 ${geoResult.failed}`);
-        }
-      } catch (e) {
-        console.warn(`[SubscriptionUpdate:${id}] IP地理预填充失败(不阻塞): ${(e as Error).message}`);
-      }
+      // v2.16.0：IP 地理预填充改为后台执行（waitUntil），不再同步阻塞订阅更新响应
+      // 之前同步 prewarmIpGeo 会让手动更新在节点多/未识别多时拖到 >15s，被前端 AbortController 掐断报「signal is aborted without reason」
+      c.executionCtx.waitUntil(
+        (async () => {
+          try {
+            const nodes = deduplicateNodes(await repos.nodes.getAll());
+            const servers = [...new Set(nodes.map((n) => n.server).filter((v): v is string => typeof v === 'string'))];
+            if (servers.length > 0) {
+              const ipGeoCache = { get: (k: string) => repos.settings.get(k), set: (k: string, v: string) => repos.settings.set(k, v) };
+              const geoResult = await import('@/services/ip-geo.service').then(m => m.prewarmIpGeo(servers, ipGeoCache));
+              console.warn(`[SubscriptionUpdate:${id}] IP地理预填充完成(后台): 总数 ${geoResult.total}，已缓存 ${geoResult.cached}，新查 ${geoResult.queried}，解析成功 ${geoResult.resolved}，失败 ${geoResult.failed}`);
+            }
+          } catch (e) {
+            console.warn(`[SubscriptionUpdate:${id}] IP地理预填充失败(后台,不阻塞): ${(e as Error).message}`);
+          }
+        })()
+      );
       return c.json({ success: true, data: { nodeCount } });
     } catch (err) {
       if (err instanceof AppError) throw err;

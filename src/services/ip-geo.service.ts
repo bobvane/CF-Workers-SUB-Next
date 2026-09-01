@@ -354,16 +354,23 @@ export async function hasGeoCountry(
 /**
  * 从一批 server 中筛出「未识别国家码」的（不触发外网查询）。
  * @returns 去重后、判定为未识别的 server 列表
+ * v2.16.0：从逐条串行读 KV 改为分批并发（每批 CONCURRENCY 个 Promise.all），
+ *           避免节点数多时串行 KV get 拖慢整个请求（实测 /api/nodes 22.9s → 期望 <1s）。
  */
+const GEO_BATCH_CONCURRENCY = 20;
+
 export async function filterUnlocatedServers(
   servers: string[],
   cache: IpGeoCache,
 ): Promise<string[]> {
   const unique = [...new Set(servers.map(s => (s || '').trim()).filter(Boolean))];
   const unlocated: string[] = [];
-  for (const server of unique) {
-    const ok = await hasGeoCountry(server, cache);
-    if (!ok) unlocated.push(server);
+  for (let i = 0; i < unique.length; i += GEO_BATCH_CONCURRENCY) {
+    const batch = unique.slice(i, i + GEO_BATCH_CONCURRENCY);
+    const okFlags = await Promise.all(batch.map(server => hasGeoCountry(server, cache)));
+    batch.forEach((server, j) => {
+      if (!okFlags[j]) unlocated.push(server);
+    });
   }
   return unlocated;
 }

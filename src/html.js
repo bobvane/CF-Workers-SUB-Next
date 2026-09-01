@@ -646,6 +646,7 @@ document.addEventListener('click', function(e) {
 
 // ============ API ============
 // 带超时的 fetch 封装：避免网络挂起（黑洞）导致请求永不返回 → 白屏
+// v2.16.0：支持 per-call timeout（options.timeout ms），abort 改为友好中文文案
 function fetchWithTimeout(url, options = {}, ms = 15000) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), ms);
@@ -658,7 +659,17 @@ async function api(path, options = {}) {
   const token = urlParams.get('token');
   const sep = path.includes('?') ? '&' : '?';
   const url = '/api' + path + (token ? \`\${sep}token=\${token}\` : '');
-  const res = await fetchWithTimeout(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...options });
+  // v2.16.0：从 options 读可选 timeout（默认 15s，订阅更新等重操作可传更长）
+  const timeout = options.timeout !== undefined ? options.timeout : 15000;
+  const opts = Object.assign({}, options);
+  delete opts.timeout;
+  let res;
+  try {
+    res = await fetchWithTimeout(url, { method: 'GET', headers: { 'Content-Type': 'application/json' }, credentials: 'include', ...opts }, timeout);
+  } catch (e) {
+    if (e && e.name === 'AbortError') throw new Error('请求超时，请重试');
+    throw e;
+  }
   const data = await res.json();
   if (!res.ok) throw new Error(data.error?.message || 'Request failed');
   return data;
@@ -1011,11 +1022,17 @@ async function addSub() {
 }
 
 async function updateSub(id) {
+  const btn = document.querySelector(\`button[onclick*="updateSub('\${id}')"]\`);
+  if (btn) { if (btn.disabled) return; btn.disabled = true; btn.textContent = '⏳ 更新中'; }
   try {
-    await api('/subscriptions/' + id + '/update', { method: 'POST' });
+    // v2.16.0：订阅更新是重操作，给 90s 预算（后台 prewarm 已异步，此时只等订阅本体抓取+解析）
+    await api('/subscriptions/' + id + '/update', { method: 'POST', timeout: 90000 });
     toast('更新成功');
     loadSubscriptions();
   } catch (e) { toast('更新失败: ' + e.message, 'error'); }
+  finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 更新'; }
+  }
 }
 
 async function deleteSub(id) {
@@ -1028,21 +1045,29 @@ async function deleteSub(id) {
 }
 
 // ============ Nodes ============
-async function loadNodes() {
-  try {
-    const res = await api('/nodes');
-    state.nodes = res.data || [];
-    // 显示去重统计
-    if (res.stats) {
-      const setStat = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v ?? 0); };
-      setStat('statsOriginal', res.stats.original);
-      setStat('statsDuplicates', res.stats.duplicates);
-      setStat('statsUnique', res.stats.unique);
-      setStat('statsGeoUnlocated', res.stats.geoUnlocated);
-    }
-    renderNodes();
-  } catch { toast('加载节点失败', 'error'); }
-  loadCleanRules();
+// v2.16.0：loadNodes 在途合并——同一时刻只允许一个 /nodes 请求在飞，后续调用复用同一 Promise，
+//           避免切页/刷新连点时并发打爆 KV（配合后端 filterUnlocatedServers 分批并发，节点列表秒开）
+let _loadNodesPromise = null;
+async function loadNodes(forceRefresh = false) {
+  if (!forceRefresh && _loadNodesPromise) return _loadNodesPromise;
+  const p = (async () => {
+    try {
+      const res = await api('/nodes');
+      state.nodes = res.data || [];
+      // 显示去重统计
+      if (res.stats) {
+        const setStat = (id, v) => { const el = document.getElementById(id); if (el) el.textContent = String(v ?? 0); };
+        setStat('statsOriginal', res.stats.original);
+        setStat('statsDuplicates', res.stats.duplicates);
+        setStat('statsUnique', res.stats.unique);
+        setStat('statsGeoUnlocated', res.stats.geoUnlocated);
+      }
+      renderNodes();
+    } catch { toast('加载节点失败', 'error'); }
+    loadCleanRules();
+  })().finally(() => { _loadNodesPromise = null; });
+  _loadNodesPromise = p;
+  return p;
 }
 
 // 手动触发重新检测未识别国家码（POST /api/nodes/geo-redetect，复用后端批次+限流管线）

@@ -2,6 +2,29 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.16.0] - 2026-09-02
+
+### 性能修复：节点列表与订阅更新超时（实测根因）
+
+**问题一：`GET /api/nodes` 实测 22.9s » 前端 15s 超时 → 弹「加载节点失败」/节点列表空白**
+- 根因：`filterUnlocatedServers`（供 `/nodes` 统计 `geoUnlocated`）对每个节点 server **逐条串行**读 KV，节点数百个时轻松拖到 20s+
+- 修复：改为分批并发（每批 20 个 `Promise.all`），逻辑不变，`/nodes` 预计降到 <1s
+
+**问题二：`POST /api/subscriptions/:id/update` 实测 >40s » 15s 超时 → 弹「更新失败: signal is aborted without reason」**
+- 根因：订阅更新后**同步**执行 `prewarmIpGeo`（逐批查 ip-api + 15次/min 限流），Edgetunnel 108 节点叠加拖超 40s；前端 AbortController 掐断后 catch 直接弹浏览器原生英文 message
+- 修复①：`prewarmIpGeo` 移到 `c.executionCtx.waitUntil()` 后台执行，update 立即返回（逻辑不变，仅异步化）
+- 修复②：前端 `api()` 捕获 `AbortError` 转友好中文「请求超时，请重试」
+- 修复③：`api()` 支持 per-call `timeout`；订阅更新给 90s 预算（此时只等订阅本体抓取+解析，后台 prewarm 已异步）
+
+**体验改善（前端）**
+- 订阅更新按钮加 loading 态（⏳ 更新中 + 禁用）防重复点击
+- `loadNodes()` 在途合并：同一时刻只允许一个 `/nodes` 请求在飞，避免切页/刷新连点并发打爆 KV
+
+### 说明
+
+- 未改变任何分流/策略组/规则逻辑，仅优化 KV 读取并发度与请求时序
+- `filterUnlocatedServers` 分批并发是纯实现细节，行为与口径完全一致（已有测试覆盖，391 pass）
+
 ## [2.15.1] - 2026-09-02
 
 ### 修复：用户自定义规则删除按钮排版
