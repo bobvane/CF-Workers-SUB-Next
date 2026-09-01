@@ -353,11 +353,15 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
     <div class="card" style="padding:12px 16px;font-size:14px;color:var(--text2)">
       💡 勾选 = 该节点会进入输出配置；取消勾选 = 从输出的订阅中排除。测速请在客户端（OpenClash/Mihomo 等）导入订阅后测试。
     </div>
-    <div class="card" id="nodeStats" style="margin:12px 0;padding:10px 16px;display:flex;gap:24px;font-size:14px">
+    <div class="card" id="nodeStats" style="margin:12px 0;padding:10px 16px;display:flex;gap:24px;font-size:14px;flex-wrap:wrap;align-items:center">
       <span>📥 总节点 <b id="statsOriginal">0</b></span>
       <span>🔀 重复 <b id="statsDuplicates">0</b></span>
       <span>✅ 实际 <b id="statsUnique">0</b></span>
+      <span >🌐 未识别国家码 <b id="statsGeoUnlocated" style="color:var(--danger)">0</b></span>
       <span style="color:var(--text2)">（去重依据：IP + 端口 + 协议）</span>
+      <span style="margin-left:auto">
+        <button class="btn btn-sm" onclick="redetectGeo()">🔄 重新检测国家码</button>
+      </span>
     </div>
     <div class="card" style="margin:0 0 12px;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <label style="font-size:14px;font-weight:500">🧹 节点名清洗</label>
@@ -1021,10 +1025,30 @@ async function loadNodes() {
       setStat('statsOriginal', res.stats.original);
       setStat('statsDuplicates', res.stats.duplicates);
       setStat('statsUnique', res.stats.unique);
+      setStat('statsGeoUnlocated', res.stats.geoUnlocated);
     }
     renderNodes();
   } catch { toast('加载节点失败', 'error'); }
   loadCleanRules();
+}
+
+// 手动触发重新检测未识别国家码（POST /api/nodes/geo-redetect，复用后端批次+限流管线）
+async function redetectGeo() {
+  const btn = event.target;
+  const orig = btn ? btn.textContent : null;
+  if (btn) btn.disabled = true;
+  try {
+    const res = await api('/nodes/geo-redetect', { method: 'POST', body: JSON.stringify({ scope: 'unlocated' }) });
+    const d = res.data || {};
+    toast(\`✅ 重新检测完成：检索 \${d.queried ?? 0}，新识别 \${d.resolved ?? 0}，失败 \${d.failed ?? 0}；剩余未识别 \${d.unlocatedAfter ?? 0}\`);
+    loadNodes(); // 刷新 stats（geoUnlocated 归零或减少）
+  } catch (e) {
+    const msg = (e && e.message) || '重新检测失败';
+    // 409 GEO_SCAN_IN_PROGRESS / 429 已在 message 里带中文提示，直接透出
+    toast('⚠️ ' + msg, 'error');
+  } finally {
+    if (btn) btn.disabled = false;
+  }
 }
 
 // ============ 协议显示名（独立链路，只影响展示） ============

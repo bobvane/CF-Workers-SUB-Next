@@ -18,6 +18,7 @@ import { rateLimit } from './rate-limit';
 import { nodeToLink } from '@/services/config.service';
 import { nodeFingerprint } from '@/models/node';
 import { deduplicateNodes } from '@/parser';
+import { prewarmIpGeo } from '@/services/ip-geo.service';
 import { APP_META, isNewerVersion } from '@/meta';
 import { createCatalogSyncService, CatalogSyncService } from '@/services/catalog-sync.service';
 import { RuleCatalogMeta } from '@/models/rule-catalog';
@@ -278,10 +279,63 @@ export function createApp(deps: AppDeps): Hono {
     const all = await repos.nodes.getAll();
     const original = all.length;
     const unique = deduplicateNodes(all);
+    const geoUnlocated = await config.countUnlocatedGeo(unique.map(n => n.server));
     return c.json({
       success: true,
       data: unique.map(mapper),
-      stats: { original, duplicates: original - unique.length, unique: unique.length },
+      stats: { original, duplicates: original - unique.length, unique: unique.length, geoUnlocated },
+    });
+  });
+
+  // 手动触发重新检测未识别国家码（复用 prewarmIpGeo 批次+限流管线）
+  // body: { scope?: 'unlocated' }，默认仅重检未识别项（省 ip-api 免费额度）
+  app.post('/api/nodes/geo-redetect', async (c) => {
+    const body = await readBody<{ scope?: string }>(c);
+    const all = await repos.nodes.getAll();
+    const unique = deduplicateNodes(all);
+    const servers = [...new Set(unique.map((n) => n.server).filter((v): v is string => typeof v === 'string'))];
+    // 1. 并发锁：同一次检测进行中返回 409
+    const LOCK_KEY = 'geo_redetect_lock';
+    const lockRaw = await repos.settings.get(LOCK_KEY);
+    if (lockRaw) {
+      try {
+        const lock = JSON.parse(lockRaw) as { ts: number };
+        if (Date.now() - lock.ts < 60 * 1000) {
+          return c.json({ success: false, error: { code: 'GEO_SCAN_IN_PROGRESS', message: '检测已在进行中，请稍候' } }, 409);
+        }
+      } catch {
+        // 锁格式异常视为可用
+      }
+    }
+    await repos.settings.set(LOCK_KEY, JSON.stringify({ ts: Date.now() }));
+
+    const ipGeoCache = { get: (k: string) => repos.settings.get(k), set: (k: string, v: string) => repos.settings.set(k, v) };
+    // 2. 统计重检前未识别数（countUnlocatedGeo 返回的即未识别数）
+    const unlocatedBefore = await config.countUnlocatedGeo(servers);
+    // 3. 仅重检未识别项（默认 scope='unlocated'），全量则为所有 server
+    const targets = body.scope === 'all' ? servers : await config.getUnlocatedServers(servers);
+    let result = { total: 0, cached: 0, queried: 0, resolved: 0, failed: 0 };
+    try {
+      if (targets.length > 0) {
+        result = await prewarmIpGeo(targets, ipGeoCache);
+      }
+    } finally {
+      // 释放锁：settings 无 delete，用一个过期时间戳(旧)覆盖，锁检查依 TTL 判定为可用
+      await repos.settings.set(LOCK_KEY, JSON.stringify({ ts: 0 }));
+    }
+    // 4. 统计重检后未识别数
+    const unlocatedAfter = await config.countUnlocatedGeo(servers);
+    return c.json({
+      success: true,
+      data: {
+        total: result.total,
+        cached: result.cached,
+        queried: result.queried,
+        resolved: result.resolved,
+        failed: result.failed,
+        unlocatedBefore: unlocatedBefore,
+        unlocatedAfter,
+      },
     });
   });
 

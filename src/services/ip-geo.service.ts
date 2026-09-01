@@ -342,6 +342,62 @@ export async function prewarmIpGeo(
   return result;
 }
 
+/**
+ * 判断单个 server 是否已有「有效」地理缓存（即能识别国家）。
+ *
+ * 口径与 createIpGeoResolver 严格一致：查 ip_geo:{server} 缓存，TTL 内且非 __NULL__
+ * 才算已识别；无缓存 / 已过期 / __NULL__ / 旧格式 __NULL__ 一律视为未识别。
+ * 纯读缓存，不触发任何外网查询（列表页统计与手动重检共用此判定）。
+ */
+export async function hasGeoCountry(
+  server: string,
+  cache: IpGeoCache,
+): Promise<boolean> {
+  if (!server) return false;
+  const cacheKey = IP_GEO_KEY_PREFIX + server;
+  try {
+    const cached = await cache.get(cacheKey);
+    if (!cached) return false;
+    const [ts, name] = cached.split('|');
+    if (ts && name) {
+      // 有时间戳
+      if (Date.now() - Number(ts) < IP_GEO_CACHE_MS) {
+        return name !== '__NULL__';
+      }
+      return false; // 过期
+    }
+    // 旧格式无时间戳：非 __NULL__ 视为有效
+    return cached !== '__NULL__';
+  } catch {
+    return false; // 缓存不可用视为未识别
+  }
+}
+
+/**
+ * 从一批 server 中筛出「未识别国家码」的（不触发外网查询）。
+ * @returns 去重后、判定为未识别的 server 列表
+ */
+export async function filterUnlocatedServers(
+  servers: string[],
+  cache: IpGeoCache,
+): Promise<string[]> {
+  const unique = [...new Set(servers.map(s => (s || '').trim()).filter(Boolean))];
+  const unlocated: string[] = [];
+  for (const server of unique) {
+    const ok = await hasGeoCountry(server, cache);
+    if (!ok) unlocated.push(server);
+  }
+  return unlocated;
+}
+
+/** 统计一批 server 中「未识别国家码」的数量（不触发外网查询） */
+export async function countUnlocatedGeo(
+  servers: string[],
+  cache: IpGeoCache,
+): Promise<number> {
+  return (await filterUnlocatedServers(servers, cache)).length;
+}
+
 /** 创建纯 IP 地理定位 resolver */
 export function createIpGeoResolver(
   cache: IpGeoCache,

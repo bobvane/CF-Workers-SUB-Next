@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createIpGeoResolver, batchQuery, IpGeoCache } from '@/services/ip-geo.service';
+import { createIpGeoResolver, batchQuery, filterUnlocatedServers, countUnlocatedGeo, IpGeoCache } from '@/services/ip-geo.service';
 import { countryDisplayName } from '@/data/country-codes';
 
 /** 内存缓存 adapter + 手动控制 fetch 的测试替身 */
@@ -132,5 +132,38 @@ describe('createIpGeoResolver', () => {
     // 只有 good.com 写入缓存
     expect(dump()['ip_geo:good.com']).toBeDefined();
     expect(dump()['ip_geo:bad.com']).toBeUndefined();
+  });
+});
+
+describe('filterUnlocatedServers / countUnlocatedGeo（未识别统计，纯读缓存不查询）', () => {
+  const now = Date.now();
+
+  it('视无缓存 / __NULL__ / 旧格式 __NULL__ / 过期为未识别，去重', async () => {
+    const { cache } = makeCache({
+      // 新格式带时间戳，未过期：已识别
+      'ip_geo:ok.jp': `${now}|JP`,
+      // 新格式带时间戳但值 __NULL__：未识别
+      'ip_geo:null.jp': `${now}|__NULL__`,
+      // 旧格式无时间戳，非 __NULL__：已识别
+      'ip_geo:ok.us': `US`,
+      // 旧格式无时间戳，值为 __NULL__：未识别
+      'ip_geo:null.us': `__NULL__`,
+      // 新格式但已过期：未识别
+      'ip_geo:stale.hk': `${now - 31 * 24 * 3600 * 1000}|HK`,
+      // 无缓存项 b01.jp：未识别（仅靠缓存判定，不触发查询）
+      // 重复 server 应去重后只统计一次
+    });
+    const unlocated = await filterUnlocatedServers(
+      ['ok.jp', 'null.jp', 'ok.us', 'null.us', 'stale.hk', 'b01.jp', 'b01.jp'],
+      cache,
+    );
+    expect(unlocated.sort()).toEqual(['b01.jp', 'null.jp', 'null.us', 'stale.hk'].sort());
+    expect(await countUnlocatedGeo(['ok.jp', 'null.jp', 'ok.us', 'null.us', 'stale.hk', 'b01.jp'], cache)).toBe(4);
+  });
+
+  it('空 server 与空数组合法返回 0', async () => {
+    const { cache } = makeCache();
+    expect(await countUnlocatedGeo(['', ' ', undefined as unknown as string], cache)).toBe(0);
+    expect(await countUnlocatedGeo([], cache)).toBe(0);
   });
 });

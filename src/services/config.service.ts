@@ -15,7 +15,7 @@ import { generateShadowrocketConfig } from '@/generator/shadowrocket';
 import { generateLoonConfig } from '@/generator/loon';
 import { nodeToUrl } from '@/generator/node-to-url';
 import { MetaCubeXRule, RULE_GROUPS, CustomRule, mergeCustomRules, findRuleInGroups } from '@/data/metacubex-rules';
-import { createIpGeoResolver, prewarmIpGeo, PrewarmResult } from './ip-geo.service';
+import { createIpGeoResolver, prewarmIpGeo, PrewarmResult, filterUnlocatedServers, countUnlocatedGeo } from './ip-geo.service';
 import { deduplicateNodes } from '@/parser';
 import { createCleanRule, applyCleanRules } from '@/models/clean-rule';
 
@@ -69,6 +69,10 @@ export interface ConfigService {
   applyCleanRulesNow(): Promise<number>;
   /** 主动预填充：批量合并查询一批 server 的 IP 归属地并写入缓存（查询与配置生成解耦） */
   prewarmGeo(servers: string[]): Promise<PrewarmResult>;
+  /** 返回一批 server 中「未识别国家码」的（纯读缓存，不触发外网查询，口径与 resolver 一致） */
+  getUnlocatedServers(servers: string[]): Promise<string[]>;
+  /** 统计一批 server 中「未识别国家码」的数量（纯读缓存） */
+  countUnlocatedGeo(servers: string[]): Promise<number>;
 }
 
 const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string }> = {
@@ -236,6 +240,20 @@ export function createConfigService(repos: Repositories): ConfigService {
 
     async prewarmGeo(servers: string[]): Promise<PrewarmResult> {
       return prewarmIpGeo(
+        servers,
+        { get: (k) => repos.settings.get(k), set: (k, v) => repos.settings.set(k, v) },
+      );
+    },
+
+    async getUnlocatedServers(servers: string[]): Promise<string[]> {
+      return filterUnlocatedServers(
+        servers,
+        { get: (k) => repos.settings.get(k), set: (k, v) => repos.settings.set(k, v) },
+      );
+    },
+
+    async countUnlocatedGeo(servers: string[]): Promise<number> {
+      return countUnlocatedGeo(
         servers,
         { get: (k) => repos.settings.get(k), set: (k, v) => repos.settings.set(k, v) },
       );
