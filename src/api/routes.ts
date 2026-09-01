@@ -612,6 +612,79 @@ export function createApp(deps: AppDeps): Hono {
     return c.json({ success: true });
   });
 
+  // ============ Cloudflare 请求统计（v2.18.0） ============
+
+  // 读全部账户（不回传 apiToken）
+  app.get('/api/cf-usage/accounts', requireAuth(auth), async (c) => {
+    const list = await config.getCFUsageAccounts();
+    return c.json({
+      success: true,
+      data: list.map((a) => ({ id: a.id, name: a.name, accountId: a.accountId, enabled: a.enabled })),
+    });
+  });
+
+  // 新增 / 更新账户（编辑时不传 apiToken = 保留原值）
+  app.post('/api/cf-usage/accounts', requireAuth(auth), async (c) => {
+    const body = await readBody<{ id?: string; name?: string; accountId?: string; apiToken?: string }>(c);
+    if (!body.name || !body.accountId) {
+      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: '自定义名和 Account ID 必填' } }, 400);
+    }
+    try {
+      const created = await config.upsertCFUsageAccount({
+        id: body.id,
+        name: body.name,
+        accountId: body.accountId,
+        apiToken: body.apiToken,
+      });
+      return c.json({ success: true, data: { id: created.id, name: created.name, accountId: created.accountId } });
+    } catch (e) {
+      return c.json({ success: false, error: { code: 'LIMIT_EXCEEDED', message: (e as Error).message } }, 400);
+    }
+  });
+
+  // 删除账户
+  app.delete('/api/cf-usage/accounts/:id', requireAuth(auth), async (c) => {
+    const id = c.req.param('id');
+    if (!id) return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: '无效 id' } }, 400);
+    await config.deleteCFUsageAccount(id);
+    return c.json({ success: true });
+  });
+
+  // 查询今日请求数（逐账户并发调 CF GraphQL；token 仅服务端使用，不回传）
+  app.get('/api/cf-usage', requireAuth(auth), async (c) => {
+    const list = await config.getCFUsageAccounts();
+    const enabled = list.filter((a) => a.enabled);
+    const results = await Promise.all(
+      enabled.map(async (a) => {
+        try {
+          const r = await import('@/services/cf-usage.service').then((m) =>
+            m.fetchCfUsage(a.accountId || '', a.apiToken)
+          );
+          return { accountId: a.accountId, name: a.name, ...r };
+        } catch (e) {
+          return { accountId: a.accountId, name: a.name, success: false, pages: 0, workers: 0, total: 0, max: 100000, error: (e as Error).message };
+        }
+      })
+    );
+    return c.json({ success: true, data: results });
+  });
+
+  // 测试单账户连接（调一次 CF GraphQL 验证 token/accountId）
+  app.post('/api/cf-usage/test', requireAuth(auth), async (c) => {
+    const body = await readBody<{ accountId?: string; apiToken?: string }>(c);
+    if (!body.accountId || !body.apiToken) {
+      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'Account ID 和 API Token 必填' } }, 400);
+    }
+    try {
+      const r = await import('@/services/cf-usage.service').then((m) =>
+        m.fetchCfUsage(body.accountId!, body.apiToken!)
+      );
+      return c.json({ success: true, data: r });
+    } catch (e) {
+      return c.json({ success: false, error: { code: 'QUERY_FAILED', message: (e as Error).message } }, 400);
+    }
+  });
+
   // 获取当前用户名
   app.get('/api/auth/username', requireAuth(auth), async (c) => {
     const username = await auth.getUsername();

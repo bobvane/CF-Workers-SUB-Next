@@ -2,6 +2,35 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.18.0] - 2026-09-02
+
+### 新增：Cloudflare 请求数统计（仪表盘显示今日请求量）
+
+借鉴 cmliu/edgetunnel 的 `getCloudflareUsage`（CF GraphQL 取今日请求数）。
+
+**功能**
+- **设置页**新增「📊 Cloudflare 请求统计」卡片：可添加最多 **3** 个 CF 账户（自定义名 + Account ID + API Token），支持编辑/删除，Account ID 掩码显示
+- **仪表盘**新增「📊 Cloudflare 请求数统计（今日）」区块：每个账户一张卡片，显示今日请求 `total/100000` + 百分比 + 进度条 + Pages/Workers 拆分；>80% 变红、>90% 深红警示
+- 未配置任何账户时仪表盘隐藏该区块，显示跳转「前往设置」链接
+
+**统计口径**
+- 周期：今日 0 点（UTC = 北京时间 8 点）→ 当前
+- 上限：100000（CF Workers 免费额度）
+- 只支持 API Token 认证（不用 Global API Key）
+
+**安全**
+- API Token 仅存 KV、仅服务端调 CF GraphQL 时使用
+- `GET /api/cf-usage` 与 `/cf-usage/accounts` **不回传 token**，前端只见自定义名 + 掩码 Account ID
+- 新增时必填 token；编辑时 token 留空 = 保留原值
+
+**后端接口**
+- `GET /api/cf-usage`（鉴权）：逐账户并发调 CF GraphQL，返回今日请求数数组
+- `GET/POST /api/cf-usage/accounts`、`DELETE /api/cf-usage/accounts/:id`：账户 CRUD
+- `POST /api/cf-usage/test`：测试单账户连接（验证 token/accountId）
+- 新增 `src/services/cf-usage.service.ts`：`fetchCfUsage` 封装 GraphQL query + 账户持久化
+
+**测试**：新增 8 用例（fetchCfUsage 解析/空/HTTP错/GraphQL错 + config CRUD/上限3/编辑保留token/删除），399 全过。
+
 ## [2.17.0] - 2026-09-02
 
 ### 修复：订阅更新返回 502 "This context has no ExecutionContext"

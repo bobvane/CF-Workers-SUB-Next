@@ -340,6 +340,13 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
     </div>
   </div>
 
+  <!-- Dashboard CF 请求统计（v2.18.0） -->
+  <div style="margin-top:16px;display:none" id="cfUsageSection">
+    <h3 style="margin-bottom:12px">📊 Cloudflare 请求数统计（今日）</h3>
+    <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px" id="cfUsageGrid"></div>
+    <div style="margin-top:8px;color:var(--text2);font-size:13px">未配置 CF 账户？<a href="#settings" style="color:var(--accent)">前往设置添加</a></div>
+  </div>
+
   <!-- Subscriptions -->
   <div class="page" id="page-subscribe">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
@@ -506,6 +513,17 @@ tbody tr:hover { background: rgba(44,5,116,0.04); }
       </div>
       <button class="btn btn-primary" onclick="changePassword()">修改密码</button>
       <p class="mt-12" style="color:var(--text2);font-size:14px">修改成功后需重新登录。</p>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3 style="margin:0 0 4px">📊 Cloudflare 请求统计</h3>
+      <p style="margin:0 0 12px;color:var(--text2);font-size:13px">填写 Cloudflare 账户凭证，在仪表盘显示今日请求数（最多 <b>3</b> 个）。API Token 仅存于服务端，不回显。</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
+        <input id="cfName" placeholder="自定义名，如 主站" style="flex:1;min-width:140px">
+        <input id="cfAccountId" placeholder="Account ID（32位hex）" style="flex:1.4;min-width:180px">
+        <input id="cfApiToken" type="password" placeholder="API Token" style="flex:1.6;min-width:200px" autocomplete="off">
+        <button class="btn btn-primary" id="cfSaveBtn" onclick="saveCFAccount()">＋ 添加</button>
+      </div>
+      <div id="cfAccountList" style="display:flex;flex-direction:column;gap:8px"></div>
     </div>
   </div>
 
@@ -1051,6 +1069,46 @@ async function loadDashboard() {
     // 最近更新时间
     document.getElementById('statUpdate').textContent = data.data.lastUpdate ? new Date(data.data.lastUpdate).toLocaleString() : '暂无';
   } catch { toast('加载仪表盘失败', 'error'); }
+  loadCFUsageDashboard();
+}
+
+// ============ Dashboard CF 请求统计（v2.18.0） ============
+async function loadCFUsageDashboard() {
+  const section = document.getElementById('cfUsageSection');
+  const grid = document.getElementById('cfUsageGrid');
+  if (!section || !grid) return;
+  try {
+    const res = await api('/cf-usage');
+    const list = res.data || [];
+    if (!list.length) { section.style.display = 'none'; return; }
+    section.style.display = 'block';
+    grid.innerHTML = list.map(renderCFUsageCard).join('');
+  } catch {
+    section.style.display = 'block';
+    grid.innerHTML = '<div class="card" style="color:var(--red)">加载 CF 请求统计失败</div>';
+  }
+}
+
+function renderCFUsageCard(a) {
+  const pct = a.max ? ((a.total / a.max) * 100) : 0;
+  const pctStr = pct.toFixed(2);
+  const warn = pct >= 90 ? '#c00000' : (pct >= 80 ? '#e00' : 'var(--text2)');
+  const barColor = pct >= 90 ? '#c00000' : (pct >= 80 ? '#e00' : 'var(--accent)');
+  return \`<div class="card" style="padding:14px 16px">
+    <div style="font-weight:600;margin-bottom:4px">📊 \${escHtml(a.name || a.accountId)}</div>
+    \${a.success ? \`
+      <div style="font-size:13px;color:var(--text2);margin-bottom:8px">今日请求量</div>
+      <div style="font-size:22px;font-weight:700">\${a.total.toLocaleString()} <span style="font-size:13px;color:var(--text2)">/ \${a.max.toLocaleString()}</span></div>
+      <div style="font-size:13px;color:\${warn};margin:4px 0 8px">\${pctStr}%</div>
+      <div style="height:6px;background:rgba(0,0,0,0.08);border-radius:999px;overflow:hidden">
+        <div style="height:100%;width:\${Math.min(pct,100)}%;background:\${barColor};border-radius:999px"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:8px">
+        <span>Pages: \${a.pages.toLocaleString()}</span>
+        <span>Workers: \${a.workers.toLocaleString()}</span>
+      </div>\` : \`
+      <div style="font-size:13px;color:var(--red)">⚠️ \${escHtml(a.error || '查询失败')}</div>\`}
+  </div>\`;
 }
 
 // ============ Subscriptions ============
@@ -1609,7 +1667,79 @@ async function loadSettings() {
     document.getElementById('settingSubUpdateHour').value = data.data?.sub_auto_update_hour ?? 7;
   } catch {}
   loadCatalogStatus();
+  loadCFAccounts();
   searchCatalog(); // 默认显示前 100 个分类
+}
+
+// ============ Cloudflare 请求统计账户管理（v2.18.0） ============
+let _cfEditingId = null;
+
+async function loadCFAccounts() {
+  const listEl = document.getElementById('cfAccountList');
+  if (!listEl) return;
+  try {
+    const res = await api('/cf-usage/accounts');
+    const list = res.data || [];
+    const btn = document.getElementById('cfSaveBtn');
+    if (btn) btn.textContent = list.length >= 3 ? '已满 3 个' : '＋ 添加';
+    if (!list.length) { listEl.innerHTML = '<div style="color:var(--text2);font-size:14px">尚未添加任何 Cloudflare 账户，上方添加后仪表盘显示今日请求数。</div>'; return; }
+    listEl.innerHTML = list.map((a) => \`
+      <div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--bg1);border-radius:8px;border:1px solid var(--border)">
+        <span style="font-weight:600">\${escHtml(a.name)}</span>
+        <span style="font-size:12px;color:var(--text2)">Account: \${escHtml(maskAccount(a.accountId))}</span>
+        <span style="margin-left:auto;display:flex;gap:6px">
+          <button class="btn btn-sm" onclick="editCFAccount('\${escHtml(a.id)}','\${escHtml(a.name)}','\${escHtml(a.accountId)}')">✏️ 编辑</button>
+          <button class="btn btn-sm btn-danger" onclick="deleteCFAccount('\${escHtml(a.id)}')">🗑 删除</button>
+        </span>
+      </div>\`).join('');
+  } catch { listEl.innerHTML = '<div style="color:var(--red)">加载失败</div>'; }
+}
+
+function maskAccount(id) {
+  if (!id) return '';
+  if (id.length <= 8) return '****';
+  return id.slice(0, 4) + '****' + id.slice(-4);
+}
+
+function editCFAccount(id, name, accountId) {
+  _cfEditingId = id;
+  document.getElementById('cfName').value = name;
+  document.getElementById('cfAccountId').value = accountId;
+  document.getElementById('cfApiToken').placeholder = '留空保持原 Token';
+  document.getElementById('cfApiToken').value = '';
+  document.getElementById('cfSaveBtn').textContent = '💾 保存修改';
+  toast('正在编辑：' + name);
+}
+
+async function saveCFAccount() {
+  const name = document.getElementById('cfName').value.trim();
+  const accountId = document.getElementById('cfAccountId').value.trim();
+  const apiToken = document.getElementById('cfApiToken').value.trim();
+  if (!name || !accountId) { toast('请填写自定义名和 Account ID', 'error'); return; }
+  if (!_cfEditingId && !apiToken) { toast('新增账户必须填写 API Token', 'error'); return; }
+  try {
+    await api('/cf-usage/accounts', { method: 'POST', body: JSON.stringify({ id: _cfEditingId, name, accountId, apiToken }) });
+    toast(_cfEditingId ? '账户已更新' : '账户已添加');
+    _cfEditingId = null;
+    document.getElementById('cfName').value = '';
+    document.getElementById('cfAccountId').value = '';
+    document.getElementById('cfApiToken').value = '';
+    document.getElementById('cfApiToken').placeholder = 'API Token';
+    document.getElementById('cfSaveBtn').textContent = '＋ 添加';
+    loadCFAccounts();
+    // 立即刷新仪表盘统计（若有配置）
+    if (typeof loadCFUsageDashboard === 'function') loadCFUsageDashboard();
+  } catch (e) { toast('保存失败: ' + e.message, 'error'); }
+}
+
+async function deleteCFAccount(id) {
+  if (!confirm('确定删除该 Cloudflare 账户？')) return;
+  try {
+    await api('/cf-usage/accounts/' + id, { method: 'DELETE' });
+    toast('已删除');
+    loadCFAccounts();
+    if (typeof loadCFUsageDashboard === 'function') loadCFUsageDashboard();
+  } catch (e) { toast('删除失败: ' + e.message, 'error'); }
 }
 
 async function saveSettings() {
