@@ -2,6 +2,19 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.12.16] - 2026-09-01
+
+### 增强：geo-redetect 响应携带未识别节点列表，一键诊断 14 个"死活查不出"的节点
+
+- **根因分析**：剩余 14 个节点反复重检仍无法识别，大概率是「ip-api 返回 fail（保
+ 留段/内网 IP）」或「国家码不在映射表 → countryDisplayName 返回 null → 不写缓存
+ → 每次重检重复查询、永远失败」
+- **诊断手段**：geo-redetect 响应新增 `unlocatedServers` 字段（前 50 个未识别
+  server），前端 toast 同步展示，部署后点一次重检就能看到 14 个节点的原始
+  server 字符串（域名？IP？保留段？），无需猜测
+- 后端 `routes.ts` 重检后调用 `getUnlocatedServers` 获取列表，slice(0,50)
+- 前端 `redetectGeo` toast 追加「：server1, server2 …」行
+
 ## [2.12.15] - 2026-09-01
 
 ### 修复：域名节点反复重检仍无法识别国家码（缓存 key 口径不一致）

@@ -1040,7 +1040,13 @@ async function redetectGeo() {
   try {
     const res = await api('/nodes/geo-redetect', { method: 'POST', body: JSON.stringify({ scope: 'unlocated' }) });
     const d = res.data || {};
-    toast(\`✅ 重新检测完成：检索 \${d.queried ?? 0}，新识别 \${d.resolved ?? 0}，失败 \${d.failed ?? 0}；剩余未识别 \${d.unlocatedAfter ?? 0}\`);
+    let msg = \`✅ 重新检测完成：检索 \${d.queried ?? 0}，新识别 \${d.resolved ?? 0}，失败 \${d.failed ?? 0}；剩余未识别 \${d.unlocatedAfter ?? 0}\`;
+    if (Array.isArray(d.unlocatedServers) && d.unlocatedServers.length) {
+      const shown = d.unlocatedServers.slice(0, 8).join(', ');
+      const more = d.unlocatedServers.length > 8 ? \` 等\${d.unlocatedServers.length}个\` : '';
+      msg += \`：\${shown}\${more}\`;
+    }
+    toast(msg);
     loadNodes(); // 刷新 stats（geoUnlocated 归零或减少）
   } catch (e) {
     const msg = (e && e.message) || '重新检测失败';

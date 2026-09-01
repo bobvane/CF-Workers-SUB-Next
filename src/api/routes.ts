@@ -323,8 +323,9 @@ export function createApp(deps: AppDeps): Hono {
       // 释放锁：settings 无 delete，用一个过期时间戳(旧)覆盖，锁检查依 TTL 判定为可用
       await repos.settings.set(LOCK_KEY, JSON.stringify({ ts: 0 }));
     }
-    // 4. 统计重检后未识别数
+    // 4. 统计重检后未识别数 + 列出仍未识别的 server（诊断用：域名/IP/保留段形态一眼可辨）
     const unlocatedAfter = await config.countUnlocatedGeo(servers);
+    const unlocatedServers = (await config.getUnlocatedServers(servers)).slice(0, 50);
     return c.json({
       success: true,
       data: {
@@ -335,6 +336,7 @@ export function createApp(deps: AppDeps): Hono {
         failed: result.failed,
         unlocatedBefore: unlocatedBefore,
         unlocatedAfter,
+        unlocatedServers,
       },
     });
   });
