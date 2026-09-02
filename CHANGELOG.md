@@ -2,6 +2,28 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.19.1] - 2026-09-02
+
+### 新增：未识别国家码自动重试 + 界面提示（替代手动反复点重新检测）
+
+**背景**：部分节点首次查询国家码失败后成为「未识别」，此前只能等每日定时更新或手动点「重新检测」才重试。本次改为自动周期重试，识别率达到零残留前持续尝试。
+
+**逻辑（完全按批量模式，不采用单 IP）**
+- wrangler.toml 新增每分钟 Cron `* * * * *`，scheduled handler 进入 geo 重试分支
+- 每分钟检查：取全量节点 server，`filterUnlocatedServers` 筛出未识别 IP（**所有未识别都在池子里，全量批量重查**）
+- 重查复用 `prewarmIpGeo`/`batchQuery` 批量接口（每次最多 100 IP，batchQuery 内部 15 次/分钟限流兜底，分钟吞吐 1500 IP）
+- **连续重试 10 次**：每次 cron 发现仍有未识别则计数 +1；某次查完清零则重置；计到 10 次仍未清空则停止自动重试
+- 停止后剩余 IP 写入 KV `setting:geo_pending_result`，供前端展示
+
+**界面提示**
+- 节点列表页新增提示横幅（红色左边线）：连续重试 10 次后仍剩的未识别 IP 逐个列出，并提示「建议检查这些节点的 IP/域名是否正确」
+- 新增接口 `GET /api/nodes/geo-pending`（需认证）返回 `{ retryCount, unlocatedServers[], lastRetryTs, resultTs }`，前端 `loadNodes` 时自动拉取显示
+- 查完清零自动隐藏横幅，不打扰
+
+### 测试
+- 新增 `tests/integration/geo-pending-api.test.ts`（5 用例）：空状态 / 10次提示 / 重试中 / 未登录401 / 损坏KV降级
+- 全量 404 测试通过，lint / tsc / build 全绿
+
 ## [2.19.0] - 2026-09-02
 
 ### 界面视觉整体升级（设计系统精修）

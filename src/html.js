@@ -378,6 +378,7 @@ tbody tr:hover { background: var(--accent-soft); }
         <button class="btn btn-sm" onclick="redetectGeo()">🔄 重新检测国家码</button>
       </span>
     </div>
+    <div id="geoPendingBanner" class="card" style="display:none;margin:0 0 12px;padding:10px 16px;font-size:14px;border-left:4px solid var(--danger);box-shadow:var(--shadow-sm)"></div>
     <div class="card" style="margin:0 0 12px;padding:10px 16px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <label style="font-size:14px;font-weight:500">🧹 节点名清洗</label>
       <input id="cleanPattern" placeholder="匹配内容（片段或正则）" style="width:auto;flex:1;min-width:180px">
@@ -1223,9 +1224,28 @@ async function loadNodes(forceRefresh = false) {
       renderNodes();
     } catch { toast('加载节点失败', 'error'); }
     loadCleanRules();
+    loadGeoPending();
   })().finally(() => { _loadNodesPromise = null; });
   _loadNodesPromise = p;
   return p;
+}
+
+// 读取未识别国家码自动重试状态（v2.19.1）——连续重试 10 次后仍剩的 IP 显示提示横幅「建议检查节点正确性」
+async function loadGeoPending() {
+  const banner = document.getElementById('geoPendingBanner');
+  if (!banner) return;
+  try {
+    const res = await api('/nodes/geo-pending');
+    const d = (res && res.data) || {};
+    const unlocated = (d.unlocatedServers || []).filter(Boolean);
+    const retryCount = d.retryCount || 0;
+    if (unlocated.length > 0 && retryCount >= 10) {
+      banner.style.display = '';
+      banner.textContent = \`⚠️ 已自动重试 \${retryCount} 次国家码识别，仍有 \${unlocated.length} 个节点未识别国家码：\${unlocated.join('、')}。建议检查这些节点的 IP/域名是否正确。\`;
+    } else {
+      banner.style.display = 'none';
+    }
+  } catch { banner.style.display = 'none'; }
 }
 
 // 手动触发重新检测未识别国家码（POST /api/nodes/geo-redetect，复用后端批次+限流管线）

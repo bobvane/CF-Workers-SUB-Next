@@ -346,6 +346,35 @@ export function createApp(deps: AppDeps): Hono {
     });
   });
 
+  // 读取未识别国家码自动重试的当前状态（v2.19.1，前端节点列表提示用）
+  // 返回: { retryCount, unlocatedServers[] } —— 连续重试 10 次后仍剩的 IP 供界面提示「建议检查节点正确性」
+  app.get('/api/nodes/geo-pending', async (c) => {
+    const retryRaw = await repos.settings.get('geo_pending_retry');
+    const resultRaw = await repos.settings.get('geo_pending_result');
+    let retryCount = 0;
+    let lastRetryTs: number | null = null;
+    try {
+      if (retryRaw) {
+        const p = JSON.parse(retryRaw) as { count?: number; ts?: number };
+        retryCount = p.count || 0;
+        lastRetryTs = p.ts ?? null;
+      }
+    } catch {}
+    let unlocatedServers: string[] = [];
+    let resultTs: number | null = null;
+    try {
+      if (resultRaw) {
+        const r = JSON.parse(resultRaw) as { unlocatedServers?: string[]; ts?: number };
+        unlocatedServers = Array.isArray(r.unlocatedServers) ? r.unlocatedServers : [];
+        resultTs = r.ts ?? null;
+      }
+    } catch {}
+    return c.json({
+      success: true,
+      data: { retryCount, lastRetryTs, unlocatedServers, resultTs },
+    });
+  });
+
   // 设置节点启用状态（保存禁用列表）
   app.put('/api/nodes/enabled', async (c) => {
     const body = await readBody<{ enabled?: string[] }>(c);

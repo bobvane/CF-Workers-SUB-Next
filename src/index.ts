@@ -135,6 +135,56 @@ export default {
       return;
     }
 
+    // 每分钟未识别国家码自动重试（v2.19.1）：发现未识别 IP 全量批量重查，连续重试 10 次后停止并提示检查节点
+    if (cron === '* * * * *') {
+      try {
+        const allNodes = deduplicateNodes(await repos.nodes.getAll());
+        const servers = [...new Set(allNodes.map((n) => n.server).filter((v): v is string => typeof v === 'string'))];
+        if (servers.length === 0) return;
+        // 与 geo-redetect 锁/统计口径一致：走 repos.settings 的 setting: 前缀
+        const ipGeoCache = { get: (k: string): Promise<string | null> => repos.settings.get(k), set: (k: string, v: string) => repos.settings.set(k, v) };
+        const { prewarmIpGeo, filterUnlocatedServers } = await import('@/services/ip-geo.service');
+        const unlocated = await filterUnlocatedServers(servers, ipGeoCache);
+
+        // 读连续重试计数
+        const pendingRaw = await repos.settings.get('geo_pending_retry');
+        let count = 0;
+        try {
+          if (pendingRaw) count = (JSON.parse(pendingRaw) as { count: number }).count || 0;
+        } catch {}
+
+        if (unlocated.length === 0) {
+          // 全部已识别：重置计数 + 清空提示结果
+          await repos.settings.set('geo_pending_retry', JSON.stringify({ ts: Date.now(), count: 0 }));
+          await repos.settings.set('geo_pending_result', JSON.stringify({ ts: Date.now(), unlocatedServers: [] }));
+          return;
+        }
+
+        if (count >= 10) {
+          // 连续 10 次仍有未识别：停止重试，记录剩余 IP 供界面提示「建议检查节点正确性」
+          await repos.settings.set('geo_pending_result', JSON.stringify({ ts: Date.now(), unlocatedServers: unlocated }));
+          return;
+        }
+
+        // 全量批量重查（batchQuery 内部 15 次/分钟限流兜底，未识别 IP 全在池子里一次查完）
+        const res = await prewarmIpGeo(unlocated, ipGeoCache);
+        const after = await filterUnlocatedServers(servers, ipGeoCache);
+        await repos.settings.set('geo_pending_retry', JSON.stringify({ ts: Date.now(), count: count + 1 }));
+        if (after.length === 0) {
+          // 本次查完清零
+          await repos.settings.set('geo_pending_retry', JSON.stringify({ ts: Date.now(), count: 0 }));
+          await repos.settings.set('geo_pending_result', JSON.stringify({ ts: Date.now(), unlocatedServers: [] }));
+        } else {
+          // 仍有残留：更新提示结果（界面实时可见剩余 IP）
+          await repos.settings.set('geo_pending_result', JSON.stringify({ ts: Date.now(), unlocatedServers: after }));
+        }
+        console.warn(`[GeoRetry] 第${count + 1}次重试: 查${res.queried} 剩${after.length}`);
+      } catch (e) {
+        console.warn(`[GeoRetry] 重试失败(不阻塞): ${(e as Error).message}`);
+      }
+      return;
+    }
+
     // 每日订阅自动更新（时间由设置页 sub_auto_update_hour 控制，北京时间）
     const hourSetting = await repos.settings.get('sub_auto_update_hour');
     const hour = hourSetting !== null ? parseInt(hourSetting, 10) : 7;
