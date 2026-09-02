@@ -4,7 +4,7 @@
  */
 export const APP_META = {
   name: 'CF-Workers-SUB-Next',
-  version: '2.18.1',
+  version: '2.19.0',
   repo: 'https://github.com/bobvane/CF-Workers-SUB-Next',
   repoShort: 'bobvane/CF-Workers-SUB-Next',
   author: 'Bob Vane',
