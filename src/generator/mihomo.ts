@@ -403,7 +403,7 @@ export async function generateProxyGroups(
   };
   const groupDefaults: Record<string, { name: string; default: string }> = {
     'google-fcm': { name: '谷歌FCM', default: 'DIRECT' },
-    'microsoft': { name: '微软服务', default: 'DIRECT' },
+    'microsoft': { name: '微软服务', default: '自动选择' },
     'apple': { name: '苹果服务', default: 'DIRECT' },
     'game': { name: '游戏平台', default: 'DIRECT' },
     'ai': { name: 'AI 平台', default: '手动切换' },
@@ -440,21 +440,21 @@ export async function generateProxyGroups(
     });
   }
 
-  // 9. 漏网之鱼（MATCH 兜底，默认自动选择）——用户 2026-08-30 拍板：默认自动选择
+  // 9. 漏网之鱼（MATCH 兜底，默认手动切换）——用户 2026-09-03 修改：从自动选择改为手动切换
   groups.push({
     name: '漏网之鱼',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Global.png',
-    'default-selected': '自动选择',
+    'default-selected': '手动切换',
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
-  // 10. GLOBAL（只含核心切换组，默认 DIRECT — 用户 2026-08-30 拍板；无 url，不需要测速 — 用户 2026-09-02 拍板）
+  // 10. GLOBAL（只含核心切换组，默认自动选择 —— 用户 2026-09-03 修改：从 DIRECT 改为自动选择；无 url，不需要测速 —— 用户 2026-09-02 拍板）
   groups.push({
     name: 'GLOBAL',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Final.png',
-    'default-selected': 'DIRECT',
+    'default-selected': '自动选择',
     // 用户 2026-08-30 拍板：GLOBAL 只保留 节点选择/手动切换/自动选择/DIRECT 四组
     proxies: ['节点选择', '手动切换', '自动选择', 'DIRECT'],
   });

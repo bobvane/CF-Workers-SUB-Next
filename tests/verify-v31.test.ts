@@ -74,7 +74,7 @@ describe('V3.1 验证', () => {
 
     expect(groupNames).not.toContain('应用净化');
     expect(groupNames).not.toContain('国内媒体');
-    expect(groups.find(g => g.name === 'GLOBAL')?.['default-selected']).toBe('DIRECT');
+    expect(groups.find(g => g.name === 'GLOBAL')?.['default-selected']).toBe('自动选择');
     expect(groupNames.length).toBeGreaterThanOrEqual(11);
   });
 

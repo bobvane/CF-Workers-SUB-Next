@@ -2,6 +2,16 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.19.5] - 2026-09-03
+
+### 修改：三组策略组 default-selected 调整
+
+- **微软服务**：`default-selected` 从 `DIRECT` 改为 `自动选择`（用户需求：微软服务走自动选择）
+- **漏网之鱼**：`default-selected` 从 `自动选择` 改为 `手动切换`（用户需求：兜底组用手动切换）
+- **GLOBAL**：`default-selected` 从 `DIRECT` 改为 `自动选择`（用户需求：全局默认自动选择）
+- 同步更新 `tests/verify-v31.test.ts`、`tests/generator/mihomo.test.ts` 断言为新值
+- 404 测试全绿，lint/tsc/build 全绿
+
 ## [2.19.4] - 2026-09-03
 
 ### 修改：自动选择组 proxies 从扁平节点名改为国家地理组名
