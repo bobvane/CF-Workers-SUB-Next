@@ -504,7 +504,7 @@ export async function generateMihomoConfig(
   const groups = await generateProxyGroups(uniqueNodes, selectedRules, ruleGroups, ipGeoResolver);
 
   const config: Record<string, unknown> = {
-    'mixed-port': 7890,
+    'mixed-port': 7893,
     port: 7890,
     'socks-port': 7891,
     'allow-lan': true,

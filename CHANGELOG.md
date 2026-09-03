@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.19.3] - 2026-09-03
+
+### 修改：Mihomo 配置输出 mixed-port 改 7893
+
+- `src/generator/mihomo.ts` 硬编码段 `mixed-port` 由 7890 改为 7893，与旁路由（192.168.2.5）的 Mixed 端口对齐
+- `port: 7890` / `socks-port: 7891` / `allow-lan: true` / `mode: Rule` / `log-level: info` 不变
+- 现存 404 测试无相关 mixed-port 断言，回归测试全绿，lint/tsc/build 全绿
+
 ## [2.19.2] - 2026-09-03
 
 ### 移除：广告拦截组 geosite:tracker 规则
