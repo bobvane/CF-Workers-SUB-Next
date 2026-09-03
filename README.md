@@ -1,84 +1,75 @@
 # CF-Workers-SUB-Next V2
 
 > 基于 Cloudflare Workers 的订阅管理与多客户端配置生成平台
-> 无需 VPS / Docker / 本地数据库，Fork 即用
+> 无需 VPS / Docker / 本地数据库 —— Fork 即用
 
 [![CI/CD](https://github.com/bobvane/CF-Workers-SUB-Next/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/bobvane/CF-Workers-SUB-Next/actions/workflows/ci-cd.yml)
-![Version](https://img.shields.io/badge/version-2.9.2-533afd)
+![Version](https://img.shields.io/badge/version-2.19.5-533afd)
 
 ---
 
-## ✨ 功能特性
+## 🎯 什么是这个项目？
 
-| 功能 | 说明 |
-|------|------|
-| 🔐 **用户名 + 密码登录** | 双因子凭据认证，HttpOnly Cookie Session，可在设置页修改用户名/密码 |
-| 📥 **订阅管理** | 添加 / 删除 / 手动更新订阅 URL；显示订阅链接；**每日自动更新**（更新时间可配置，北京时间） |
-| 🔗 **节点解析** | VMess / VLESS / Trojan / Shadowsocks 四协议 |
-| 🧹 **节点去重** | 按 `server:port:protocol` 三项指纹去重（节点列表页与输出生成层统一） |
-| ✅ **节点启用管理** | 勾选/取消节点控制是否输出；订阅更新后新节点默认全部启用 |
-| 🧼 **节点名清洗规则集** | 保存多条清洗规则（删除片段 / 替换 / 正则），**每次订阅更新后自动按序应用**；删除规则自动还原 |
-| 🚀 **9 种客户端配置输出** | Mihomo / sing-box / v2ray / v2rayN / NekoBox / Shadowrocket / Loon / Surge / Quantumult X |
-| 🌐 **分流规则系统** | 预置分组 + 六个预设按钮（极简/标准/完全体 ± 加密货币），双栏布局 + 1546 分类 MetaCubeX 规则库搜索 |
-| 🛡️ **安全防护** | SSRF 防护 / XSS 转义 / 登录限流 / PBKDF2 密码哈希 |
-| ⏱️ **定时任务** | 每小时 Cron 触发，命中设定小时执行订阅自动更新；规则目录每月同步一次 |
-| 📊 **Web 管理面板** | Stripe 设计风格：仪表盘 / 订阅管理 / 节点列表 / 分流规则 / 输出配置 / 设置 |
-| 🔔 **升级检测** | 自动检查 GitHub Releases 新版本，页面内提示 |
-| 🌙 **暗色/亮色主题** | 手动切换 + localStorage 持久化 |
+**CF-Workers-SUB-Next** 是一个部署在 Cloudflare Workers 上的订阅管理 + 配置生成器。它解决了「机场订阅里节点乱码 / 重复 / 没国家标签」、「想切换客户端却要一个个手动导」等痛点。
+
+**工作流程（用户视角）：**
+
+```
+添加订阅 URL
+    ↓
+每日 07:00 (北京) 自动抓取
+    ↓
+解析 VMess / VLESS / Trojan / SS / Hysteria2 / TUIC / WireGuard / AnyTLS
+    ↓
+按 server:port:protocol 去重 + 节点名清洗
+    ↓
+自动识别节点国家归属 → 按地区生成策略组
+    ↓
+输出 9 种客户端配置
+    ↓
+订阅链接 /sub/... 供 Clash / Mihomo / Loon / Shadowrocket 等直接订阅
+```
+
+📦 部署在 Cloudflare Workers，0 成本（免费额度内），每日自动更新。
 
 ---
 
-## 🚀 快速部署
+## 🚀 5 分钟部署教程
 
 ### 前提条件
 
-- Cloudflare 账号
+- Cloudflare 账号（ Workers 免费额度即可 ）
 - GitHub 账号
 
 ### 第一步：Fork 仓库
 
-Fork [bobvane/CF-Workers-SUB-Next](https://github.com/bobvane/CF-Workers-SUB-Next) 到你自己的 GitHub 账号。
+点击 [bobvane/CF-Workers-SUB-Next](https://github.com/bobvane/CF-Workers-SUB-Next/generate) →「Use this template」→ 创建新仓库。
 
 ### 第二步：创建 KV 命名空间
 
 1. 打开 [Cloudflare Dashboard](https://dash.cloudflare.com/) → **Workers & Pages** → **KV**
 2. 点击 **Create namespace**，名称填 `DATABASE`，创建
-3. 创建后复制 **Namespace ID**（一串字母数字）
+3. 复制 **Namespace ID**
 
 ### 第三步：配置 GitHub Secrets
 
-进入你 Fork 的仓库 → **Settings** → **Secrets and variables** → **Actions** → **New repository secret**，添加：
+进入你的仓库 → **Settings** → **Secrets and variables → Actions** → **New repository secret**：
 
 | Secret | 说明 | 必填 |
 |--------|------|------|
-| `CLOUDFLARE_API_TOKEN` | Cloudflare API Token（权限：Workers R2 Edit + KV Edit） | ✅ |
-| `KV_NAMESPACE_ID` | 上一步创建的 KV 命名空间 ID | ✅ |
-| `ADMIN_PASSWORD` | 管理界面初始密码 | ✅ |
-| `SESSION_SECRET` | Session 加密密钥（可用 `openssl rand -hex 32` 生成） | ✅ |
-| `WORKER_GITHUB_TOKEN` | GitHub Personal Access Token（规则目录同步用，避免 403 限流） | ❌ |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API Token（权限：Workers Scripts Edit + KV Edit） | ✅ |
+| `KV_NAMESPACE_ID` | 上一步创建的 KV ID | ✅ |
+| `ADMIN_PASSWORD` | 登录密码 | ✅ |
+| `SESSION_SECRET` | Session 密钥（`openssl rand -hex 32` 生成） | ✅ |
+| `WORKER_GITHUB_TOKEN` | GitHub Token 防 API 限流（可选，推荐） | ❌ |
 
-> **WORKER_GITHUB_TOKEN 说明**（可选，推荐设置）
->
-> 规则库的「立即刷新」按钮会调用 GitHub API 拉取 MetaCubeX 规则分类清单。未认证的 GitHub API 每小时限 60 次，
-> 多人使用或频繁刷新容易触发 403 错误。设置此 Token 可将限流提升至 5000 次/小时。
->
-> **申请步骤：**
-> 1. 登录 GitHub → 右上角头像 → **Settings** → **Developer settings** → **Personal access tokens** → **Fine-grained tokens**
-> 2. 点击 **Generate new token**
-> 3. 设置：
->    - Token name: `CF-Workers-SUB-Next`
->    - Expiration: 选 **No expiration**（长期有效）
->    - Repository access: **Public repositories (read-only)**
->    - Permissions: 不需要额外权限（只读公开仓库，无需勾选）
-> 4. 点击 **Generate token**，复制生成的 token
-> 5. 在仓库 **Settings → Secrets and variables → Actions** 中新增 `WORKER_GITHUB_TOKEN`，填入复制的 token
-> 6. 后续每次部署时，CI/CD 会自动将此 token 注入 Cloudflare Worker 的 Secrets，无需手动配置 Worker
-
-### 第四步：启用 GitHub Actions
+### 第四步：触发部署
 
 1. 进入仓库 **Actions** 页面
-2. 如果看到 `"Workflows are disabled"`，点击 **"I understand my workflows, go ahead and enable them"**
-3. 推送任意修改到 `main` 分支，或点击 **Actions** → **CI/CD** → **Run workflow**
+2. 如果显示 **"Workflows are disabled"**，点击启用
+3. 推送任意修改到 `main` 分支，或点击 **Run workflow** 手动触发
+
+CI 会自动：安装依赖 → 跑测试 → 构建 → 部署到 Cloudflare Workers → 创建 Release。
 
 ### 第五步：访问
 
@@ -88,92 +79,146 @@ Fork [bobvane/CF-Workers-SUB-Next](https://github.com/bobvane/CF-Workers-SUB-Nex
 https://cf-workers-sub-next.<你的子域名>.workers.dev
 ```
 
-默认用户名 `admin`，密码为 `ADMIN_PASSWORD` 设置的值（登录后可在设置页修改）。
+默认用户名 `admin`，密码为 `ADMIN_PASSWORD` 设置的值（登录后在设置页可修改）。
 
 ---
 
-## 📖 使用指南
+## 🔧 功能特性
 
-### 基本流程
+### 订阅管理
+- **多订阅**：添加 / 删除 / 手动更新任意数量订阅 URL
+- **每日自动更新**：默认北京时间 07:00，设置页可调
 
-1. **添加订阅** → 订阅管理页面，填入名称和订阅 URL
-2. **查看节点** → 节点列表页面，勾选/取消勾选需要输出的节点
-3. **保存清洗规则** → 节点页输入匹配内容（可正则、可替换），保存后立即生效且此后每次订阅更新自动应用
-4. **配置规则** → 分流规则页面勾选分流规则，或直接点击预设按钮一键套用
-5. **输出配置** → 选择客户端格式下载，或在客户端中填入订阅链接自动拉取
+### 节点解析 & 清洗
+- **9 种协议支持**：VMess / VLESS(TCP+Reality+XTLS) / Trojan / SS / Hysteria2 / TUIC / WireGuard / AnyTLS
+- **去重**：按 `server:port:protocol` 三项指纹去重
+- **节点名清洗规则集**：删除片段 / 替换 / 正则；订阅更新后自动按序应用；删除规则即时还原
+- **节点启用管理**：勾选 / 取消控制是否输出；订阅更新后新节点默认全部启用
 
-### 订阅链接与自动更新
+### 智能分流
+- **11 组固定分流**（全部原生 GEOSITE 输出）：广告拦截 / 国内直连 / 谷歌FCM / AI平台 / 社交 / 国外媒体 / Google服务 / 游戏平台 / 微软服务 / 苹果服务 / 加密货币
+- **6 个快速预设按钮**：极简 / 极简+加密 / 标准 / 标准+加密 / 完全体 / 完全+加密
+- **自定义规则**：从 1546 个 MetaCubeX 分类中搜索添加到任意分组
+- **国家归属识别**：自动解析节点 IP → 查询地理归属 → 按国家生成策略组
 
-- 订阅管理页面显示每个订阅的专属链接，可直接导入 OpenClash / Clash Mi 等客户端
-- 客户端拉取 `/sub/{format}/{token}` 时**实时读取最新节点并生成配置**——不需要手动重新导出
-- **每日自动更新**：设置页可配置更新时间（0-23 整数，北京时间，默认 07:00），到点自动拉取全部上游订阅并刷新节点
+### 多客户端输出
+- **9 种格式**：Mihomo YAML / sing-box JSON / v2ray / v2rayN / NekoBox / Shadowrocket / Loon / Surge / Quantumult X
+- **智能跳过**：不支持的协议自动跳过（如 Surge 不支持 VLESS）
 
-### 节点名清洗
+### 安全防护
+- **SSRF 防护**：拒绝 localhost / 私有 IP / 内网地址，重定向二次校验
+- **密码安全**：PBKDF2-SHA256 哈希 + 随机盐，改密码需验证旧密码
+- **Session 管理**：HttpOnly + Secure + SameSite=Strict Cookie，7 天过期
+- **XSS 防护**：前端所有用户输入插入 DOM 前转义
+- **登录限流**：10 次/分钟/IP，防暴力破解
+- **Secrets 管理**：全部存 Cloudflare Secrets，代码零敏感信息
 
-节点列表页支持持久化清洗规则集，解决"订阅每天更新把原始乱名拉回来"的问题：
+### 界面 & 体验
+- **Stripe 风格设计**：仪表盘 / 订阅管理 / 节点列表 / 分流规则 / 输出配置 / 设置
+- **暗色 / 亮色主题**：手动切换 + localStorage 持久化
+- **进度提示**：订阅更新 / 国家检测带居中进度条 + 120s 超时
 
-- **匹配内容**：要删除或匹配的片段（勾选"正则"则按正则表达式处理）
-- **替换为**：留空 = 删除该片段；填写内容 = 替换（如 `香港` → `🇭🇰`）
-- 保存后**立即应用到存量节点**，此后每次订阅更新完成自动按序应用
-- 已保存规则可随时启停/删除；删除规则后其效果自动还原（应用时始终从原始节点名出发重放）
-- "⚡ 立即应用已保存规则"按钮可对当前全部节点手动执行一遍
+### 后台服务
+- **Cloudflare 请求统计（v2.18.0）**：仪表盘显示今日 Workers 请求量，最多绑定 3 个 CF 账户
+- **未识别节点自动重试（v2.19.1）**：后台每分钟批量重查未识别 IP，10 次仍未识别时界面提示
 
-### 分流规则系统
+---
 
-规则页面采用双栏布局（左侧规则树 + 右侧规则库），顶部六个预设按钮：
+## 📲 支持的客户端 (9 种)
 
-| 预设 | 包含分组 |
-|------|----------|
-| 极简 | 广告拦截、国内直连、国内媒体、网易音乐、国外媒体、AI平台 |
-| 极简+加密 | 极简 + 加密货币 |
-| 标准 | 极简 + 谷歌FCM、微软Bing、微软云盘、微软服务、苹果服务、游戏平台 |
-| 标准+加密 | 标准 + 加密货币 |
-| 完全体 | 除加密货币外的全部 16 组 |
-| 完全+加密 | 全部组 |
+| 格式 | 支持协议 | 说明 |
+|------|---------|------|
+| **Mihomo YAML** | 全部 | Clash Meta 内核，完整分流规则 + rule-providers |
+| **sing-box JSON** | 全部 | 1.11+ 新格式，含 DNS/TUN/urltest |
+| **v2ray** | 全部 | Base64 节点链接 |
+| **v2rayN** | 全部 | Base64 节点链接，兼容 v2rayN 系 |
+| **NekoBox / nekoray** | 全部 | Base64 节点链接 |
+| **Shadowrocket** | 全部 | 原生语法，VLESS/Reality 完整支持 |
+| **Loon** | 全部 | 原生 Loon 配置文件 |
+| **Surge** | 部分 | 不支持 VLESS 的协议自动跳过 |
+| **Quantumult X** | 部分 | VLESS 跳过，Vmess 补全 ws transport |
 
-- 预设高亮仅在当前勾选状态与预设完全一致时显示；手动增删任何规则后即为自定义状态
-- 细分业务组（AI平台/开发工具/社交等）排在宽泛厂商组之前——例如 GitHub 归"开发工具"而非"微软服务"，避免误直连
-- 规则库扩展：可搜索 1546 个 MetaCubeX 全量分类加入任意分组，支持自定义显示名称和目标策略
+> ⚠️ **客户端兼容性**：sing-box ≥ 1.11；Mihomo/Clash.Meta ≥ v1.12；Shadowrocket ≥ 2.2.0；Loon ≥ 2.0；Surge ≥ 4.9.0；QX ≥ 1.3。
 
-### 核心策略组关系
+---
 
-| 策略组 | 类型 | 默认策略 |
-|--------|------|----------|
-| 节点选择 | select | 自动选择 |
-| 手动切换 | select | 第一个节点 |
-| 自动选择 | url-test | interval 1800s + tolerance 50（低频测速省流量） |
-| 地理分组（香港/日本/美国…） | select | 手动选，零自动测速 |
-| 广告拦截 | select | REJECT |
-| 国内媒体 | select | DIRECT |
-| 国外媒体 | select | 自动选择 |
-| 漏网之鱼 | select | 节点选择 |
+## 🌟 项目特色
 
-DNS 采用 `nameserver-policy` 单轮分流：国内域名走国内 DoH，国外域名走国外 DoH 并经代理隧道发出（`#节点选择` 后缀）；Sniffer 自动嗅探 TLS/HTTP/QUIC。
+### 1. 零成本地部署
+纯 Cloudflare Workers，无需 VPS、Docker、本地数据库，Fork 后 5 分钟上线。
 
-### 输出格式
+### 2. 自动清洗节点名
+订阅更新后，**自动** 应用你的清洗规则集 —— 删除乱码、统一命名、批量替换。
 
-九种格式均从同一份去重后的节点实时生成：
+### 3. 智能国家归属识别
+系统自动解析节点 IP 地址 → 查询 IP 地理归属 → **自动生成国家策略组**，自动选择组在有节点的国家地理组间测速。
 
-| 格式 | 说明 |
+### 4. 原生 GEOSITE 分流
+所有分流规则均使用**原生 `GEOSITE,xxx,DIRECT`** 输出（无 rule-providers 下载开销），依赖 Mihomo/Clash 内核自带的 GeoSite 数据库。
+
+### 5. 自动选择组按地区测速 (v2.19.4)
+「自动选择」组（url-test）的测速对象从「单个节点」改为「有节点的国家地理组」，选出最优地区而非单节点，更稳定。
+
+### 6. 节点启用 / 过滤
+在节点列表页勾选 / 取消节点，仅选中的节点会出现在输出配置中。
+
+### 7. 每日自动更新
+订阅每日北京 07:00 (UTC+8) 自动抓取；规则库每月 1 号同步一次。
+
+### 8. 仪表盘统计 (v2.18.0)
+仪表盘显示今日 Cloudflare Workers 请求量（Pages + Workers 拆分），最多绑定 3 个 CF 账户，>80% 红色警示。
+
+### 9. 未识别节点自动重试 (v2.19.1)
+后台每分钟批量重查未识别 IP，连续 10 次仍未识别时在界面提示具体 IP 列表，建议检查节点。
+
+### 10. 三组默认策略可定制
+微软服务 / 漏网之鱼 / GLOBAL 的 `default-selected` 可在生成的 Mihomo 配置中定制。
+
+---
+
+## ⚙️ 管理面板
+
+| 页面 | 功能 |
 |------|------|
-| **Mihomo YAML** | Clash Meta 内核（推荐，完整分流规则 + rule-providers） |
-| sing-box JSON | 1.11+ 新写法（action: reject / hijack-dns），含 DNS/TUN/urltest |
-| v2ray / v2rayN | Base64 节点链接 |
-| NekoBox / Shadowrocket | 节点链接 |
-| Loon | 原生语法（VLESS/Reality 完整支持） |
-| Surge | 不支持 VLESS 的协议自动跳过，不伪造兼容行 |
-| Quantumult X | vmess 补全 ws transport；VLESS 跳过 |
+| **📊 仪表盘** | 节点总数 / 订阅数 / CF 请求统计 |
+| **📥 订阅管理** | 添加 / 删除 / 更新订阅 URL；显示专属订阅链接 |
+| **🔗 节点列表** | 查看 / 启用 / 禁用节点；设置清洗规则；国家归属 |
+| **🌐 分流规则** | 勾选规则 / 自定义规则；六个预设按钮 |
+| **📦 输出配置** | 下载 9 种格式；手动刷新订阅 |
+| **⚙️ 设置** | 修改用户名/密码；配置自动更新时间；CF 统计账户 |
 
 ---
 
-## 🧾 API 参考
+## ⏰ 定时任务
+
+| 任务 | 触发 | 说明 |
+|------|------|------|
+| **订阅自动更新** | 每小时 Cron（默认北京 07:00） | 拉取全部订阅并刷新节点 |
+| **规则目录同步** | 每月 1 号 03:00 UTC | 同步 MetaCubeX 最新分类清单 |
+| **Geo 重试 (后台)** | 每分钟 Cron | 批量重查未识别 IP，10 次上限 |
+| **客户端侧** | Mihomo url-test 300s | 输出配置内建，非 Worker 定时 |
+
+---
+
+## 🛡️ 安全设计
+
+- **SSRF 防护**：拒绝 localhost / 私有 IP / 内网地址，重定向二次校验
+- **密码安全**：PBKDF2-SHA256 哈希 + 随机盐，改密码需验证旧密码
+- **Session 管理**：HttpOnly + Secure + SameSite=Strict Cookie，7 天过期
+- **XSS 防护**：前端所有用户输入插入 DOM 前转义
+- **登录限流**：10 次/分钟/IP，防暴力破解
+- **Secrets 管理**：全部存 Cloudflare Secrets，代码零敏感信息
+
+---
+
+## 📡 API 接口
 
 | 方法 | 路径 | 说明 | 认证 |
-|------|------|------|:----:|
-| GET | `/api/meta` | 项目信息（名称、版本、仓库） | ❌ |
+|------|------|------|------|
+| GET | `/api/meta` | 项目信息 | ❌ |
 | GET | `/api/meta/check-upgrade` | 升级检测 | ❌ |
 | GET | `/api/health` | 健康检查 | ❌ |
-| POST | `/api/auth/login` | 登录（用户名+密码） | ❌ |
+| POST | `/api/auth/login` | 登录 | ❌ |
 | POST | `/api/auth/logout` | 登出 | ❌ |
 | GET | `/api/auth/session` | 会话检查 | ❌ |
 | PUT | `/api/auth/password` | 修改密码 | ✅ |
@@ -183,98 +228,72 @@ DNS 采用 `nameserver-policy` 单轮分流：国内域名走国内 DoH，国外
 | POST | `/api/subscriptions` | 创建订阅 | ✅ |
 | DELETE | `/api/subscriptions/:id` | 删除订阅 | ✅ |
 | POST | `/api/subscriptions/:id/update` | 更新订阅 | ✅ |
-| GET | `/sub/:format/:token` | 订阅链接输出（客户端用） | ❌* |
-| GET | `/api/nodes` | 节点列表（已去重，含启用状态） | ✅ |
+| GET | `/sub/:format/:token` | 客户端订阅链接 | ❌* |
+| GET | `/api/nodes` | 节点列表 | ✅ |
+| GET | `/api/nodes/geo-pending` | 未识别节点重试状态 | ✅ |
 | PUT | `/api/nodes/disabled` | 设置禁用节点 | ✅ |
 | GET | `/api/nodes/clean-rules` | 清洗规则列表 | ✅ |
 | POST | `/api/nodes/clean-rules` | 新增清洗规则 | ✅ |
 | DELETE | `/api/nodes/clean-rules/:id` | 删除清洗规则 | ✅ |
 | PUT | `/api/nodes/clean-rules/:id/toggle` | 启停清洗规则 | ✅ |
 | POST | `/api/nodes/clean-rules/apply` | 立即应用全部规则 | ✅ |
-| GET | `/api/rules/groups` | 规则分组（含自定义） | ✅ |
-| GET | `/api/rules/catalog` | 全量分类目录（1546） | ✅ |
-| GET/PUT | `/api/rules/selection` | 已勾选规则读写 | ✅ |
-| GET/POST/DELETE | `/api/rules/custom[...]` | 自定义规则管理 | ✅ |
-| GET | `/api/output/:format` | 下载配置（9 种格式） | ✅ |
-| GET/PUT | `/api/settings` | 系统设置（名称/更新时间/密码等） | ✅ |
+| GET | `/api/rules/groups` | 规则分组 | ✅ |
+| GET | `/api/rules/catalog` | 全量分类目录 | ✅ |
+| GET/PUT | `/api/rules/selection` | 已勾选规则 | ✅ |
+| GET/POST/DELETE | `/api/rules/custom` | 自定义规则 | ✅ |
+| GET | `/api/output/:format` | 下载配置 | ✅ |
+| GET/PUT | `/api/settings` | 系统设置 | ✅ |
+| GET/POST/DELETE | `/api/cf-usage/accounts` | CF 统计账户 CRUD | ✅ |
+| GET | `/api/cf-usage` | CF 请求统计 | ✅ |
 
 > *`/sub/:format/:token` 使用长随机 token 鉴权，请勿泄露。
-
----
-
-## ⏰ 定时任务一览
-
-| 任务 | 触发 | 说明 |
-|------|------|------|
-| 订阅自动更新 | 每小时 Cron 触发，命中设定小时才执行 | 默认每天北京 07:00，设置页可调 |
-| 规则目录同步 | 每月 1 号 03:00 UTC | 同步 MetaCubeX 最新分类清单 |
-| 清洗规则自动应用 | 每次订阅更新完成后 | 无独立定时，跟随更新 |
-| 客户端侧 | Mihomo rule-providers 86400s / url-test 1800s | 输出配置内建，非 Worker 定时 |
-
-无人访问时项目仅消耗每小时 1 次 Cron 触发（约 24 次/天），远低于 Cloudflare 免费额度。
-
----
-
-## 🧩 项目结构
-
-```
-src/
-├── index.ts           # Worker 入口 + scheduled handler + 依赖装配
-├── meta.ts            # 项目元信息（版本、仓库、作者）
-├── api/
-│   ├── routes.ts      # Hono 路由（所有 API 端点）
-│   ├── middleware.ts  # 认证 / 错误处理 / 请求解析
-│   └── rate-limit.ts  # 登录限流
-├── services/
-│   ├── auth.service.ts          # 认证服务（用户名+密码, PBKDF2 Session）
-│   ├── config.service.ts        # 配置服务（规则选择/自定义规则/清洗规则/输出生成）
-│   ├── subscription.service.ts  # 订阅服务（更新后自动应用清洗规则）
-│   └── ip-geo.service.ts        # IP 归属地查询（30 天 KV 缓存）
-├── engine/
-│   └── fetcher.ts     # 订阅内容获取（SSRF 防护）
-├── parser/            # 协议解析器（vmess/vless/trojan/ss/clash/base64）
-├── generator/
-│   ├── mihomo.ts      # Mihomo YAML 生成器（策略组/DNS/Sniffer/rule-providers）
-│   ├── singbox.ts     # sing-box 1.11+ 生成器
-│   ├── loon.ts / surge.ts / quantumultx.ts / shadowrocket.ts
-│   ├── base64-generator.ts / node-to-url.ts
-│   ├── rule-providers.ts  # 分流规则提供者生成
-│   └── yaml-serializer.ts # YAML 序列化
-├── models/
-│   ├── node.ts        # 节点数据模型（含 metadata.originalName）
-│   └── clean-rule.ts  # 节点名清洗规则模型
-├── data/
-│   ├── metacubex-rules.ts       # 预定义规则分组（细分优先排序）
-│   └── metacubex-catalog.json   # 全量 1546 分类目录
-├── storage/
-│   └── kv.ts          # KV 仓储层（Repository Pattern）
-├── html.js            # 构建生成的前端内嵌模块
-public/
-└── index.html         # 前端 SPA（Stripe 风格，构建时内嵌）
-tests/
-├── api/ integration/ engine/ generator/ data/ services/ storage/
-```
-
----
-
-## 🔐 安全设计
-
-- **SSRF 防护**：拒绝 localhost / 私有 IP / 内网地址，重定向二次校验
-- **密码安全**：PBKDF2-SHA256 哈希 + 随机盐；改密码需验证旧密码
-- **Session 管理**：HttpOnly + Secure + SameSite=Strict Cookie，7 天过期
-- **XSS 防护**：前端所有用户输入在插入 DOM 前转义
-- **登录限流**：10 次/分钟/IP，防暴力破解
-- **Secrets 管理**：全部存 Cloudflare Secrets，代码零敏感信息
 
 ---
 
 ## 🧪 测试
 
 ```bash
-npm test         # 运行所有测试（299 项）
+npm test         # 运行所有测试（404 项）
 npm run lint     # ESLint 检查
-npm run typecheck # TypeScript 类型检查
+npx tsc --noEmit # TypeScript 类型检查
 npm run build    # 构建（含前端内嵌）
+```
+
+---
+
+## 📁 项目结构
+
+```
+CF-Workers-SUB-Next/
+├── src/
+│   ├── index.ts              # Worker 入口 + scheduled handler
+│   ├── meta.ts               # 项目元信息
+│   ├── api/
+│   │   ├── routes.ts         # Hono 路由（所有 API 端点）
+│   │   ├── middleware.ts     # 认证 / 错误处理
+│   │   └── rate-limit.ts     # 登录限流
+│   ├── services/
+│   │   ├── config.service.ts # 配置服务（规则/节点/清洗）
+│   │   ├── subscription.service.ts
+│   ├── parser/               # 协议解析 (VMess/VLESS/Trojan/SS/...)
+│   ├── generator/
+│   │   ├── mihomo.ts         # Mihomo YAML 生成
+│   │   ├── singbox.ts
+│   │   ├── loon.ts / surge.ts / quantumultx.ts / shadowrocket.ts
+│   │   ├── base64-generator.ts
+│   │   ├── rule-providers.ts
+│   │   └── yaml-serializer.ts
+│   ├── data/
+│   │   ├── metacubex-rules.ts  # 11 组分流规则定义
+│   │   └── metacubex-catalog.json
+│   ├── storage/kv.ts         # KV 仓储层
+│   └── html.js               # 构建生成的前端内嵌
+├── public/index.html         # 前端 SPA
+├── tests/                    # 404 测试
+├── docs/                     # 文档
+├── wrangler.toml
+├── package.json
+└── CHANGELOG.md
 ```
 
 ---
