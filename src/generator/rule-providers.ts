@@ -173,7 +173,7 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   }
 
   // === ③ 广告拦截（REJECT，最高业务优先级）===
-  // 遍历 ads 组所有选中项（CATEGORY-ADS-ALL + TRACKER 等），全部输出到广告拦截组
+  // 遍历 ads 组所有选中项（CATEGORY-ADS-ALL 等），全部输出到广告拦截组
   const adsGroup = groups.find(g => g.key === 'ads');
   if (adsGroup) {
     for (const item of adsGroup.items) {

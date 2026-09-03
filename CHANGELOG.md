@@ -2,6 +2,18 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.19.2] - 2026-09-03
+
+### 移除：广告拦截组 geosite:tracker 规则
+
+- `src/data/metacubex-rules.ts` 的 `ads` 组原本包含 2 条固定规则：`category-ads-all`（广告拦截通用合集）和 `tracker`（追踪器）。本次删除 `tracker`，仅保留 `category-ads-all` 一条
+- 效果：
+  - 分流规则页面的「广告拦截」组不再显示「追踪器(Tracker)」选项（前端从同一数据源渲染 `adsGroup.items`）
+  - `ruleSetLine` 不再为 `tracker` 输出原生 `GEOSITE,tracker,广告拦截` 行（因为 `buildRules` 遍历 ads 组时该项已不存在）
+  - Mihomo 配置 `rules` 段不再包含 `GEOSITE,tracker,广告拦截`
+- 同步修正 `src/generator/rule-providers.ts` 的注释文案（去掉 "TRACKER" 字样，避免误导后续维护者）
+- 测试 404 全绿，lint/tsc/build 全绿
+
 ## [2.19.1] - 2026-09-02
 
 ### 新增：未识别国家码自动重试 + 界面提示（替代手动反复点重新检测）

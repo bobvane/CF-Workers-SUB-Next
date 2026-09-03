@@ -90,7 +90,6 @@ export const RULE_GROUPS: RuleGroup[] = [
     items: [
       // 广告拦截 — 原生 GEOSITE 输出，不走 rule-provider
       { id: 'category-ads-all', label: '广告拦截通用合集', tag: 'geosite', target: 'REJECT', native: true, fixed: true },
-      { id: 'tracker', label: '追踪器(Tracker)', tag: 'geosite', target: 'REJECT', native: true, fixed: true },
     ],
   },
   {
