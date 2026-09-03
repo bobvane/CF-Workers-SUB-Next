@@ -1,0 +1,234 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CF-Workers-SUB-Next · 模板 C · 极简工具型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0d0d0d;
+    --fg: #e8e8e8;
+    --muted: #6a6a6a;
+    --accent: #00ff88;
+    --accent-dim: rgba(0,255,136,0.12);
+    --card: #141414;
+    --border: #262626;
+    --radius: 2px;
+    --mono: 'JetBrains Mono', monospace;
+    --sans: 'Space Grotesk', sans-serif;
+  }
+  body {
+    font-family: var(--sans);
+    background: var(--bg);
+    color: var(--fg);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-size: 14px;
+  }
+  .terminal-frame {
+    max-width: 1120px;
+    margin: 0 auto;
+    padding: 24px;
+    border: 1px solid var(--border);
+    background: var(--card);
+    min-height: 100vh;
+    position: relative;
+  }
+  .terminal-frame::before {
+    content: '⬤ ⬤ ⬤';
+    position: absolute; top: 12px; left: 16px;
+    font-size: 10px; color: var(--muted);
+    letter-spacing: 4px;
+  }
+  .header-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 0 16px; border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .app-title {
+    font-family: var(--mono); font-size: 12px; font-weight: 600;
+    color: var(--accent); letter-spacing: 0.05em;
+  }
+  .app-version { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+  .nav-tabs {
+    display: flex; gap: 2px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 20px;
+  }
+  .nav-tab {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    color: var(--muted); padding: 8px 16px;
+    cursor: pointer; border-bottom: 2px solid transparent;
+    transition: all .1s;
+  }
+  .nav-tab:hover { color: var(--fg); }
+  .nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+  .metrics-bar {
+    display: grid; grid-template-columns: repeat(4, 1fr);
+    gap: 8px; margin-bottom: 20px;
+  }
+  .metric {
+    background: var(--bg); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 16px;
+    font-family: var(--mono);
+  }
+  .metric-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .metric-value { font-size: 20px; font-weight: 700; margin-top: 4px; }
+  .metric-delta { font-size: 11px; color: var(--accent); margin-top: 2px; }
+  .table-wrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-family: var(--mono); font-size: 12px; }
+  th, td { padding: 10px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 500; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; }
+  tr:hover td { background: var(--bg); }
+  .col-flag { width: 36px; }
+  .col-name { width: 220px; font-family: var(--sans); font-weight: 500; }
+  .col-region { color: var(--muted); font-size: 11px; }
+  .col-protocol { font-family: var(--mono); font-size: 10px; color: var(--accent); }
+  .col-latency { font-variant-numeric: tabular-nums; }
+  .status { display: inline-block; width: 6px; height: 6px; border-radius: 50%; margin-right: 8px; }
+  .status.ok { background: var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .status.warn { background: #ffaa00; box-shadow: 0 0 8px #ffaa00; }
+  .status.off { background: var(--muted); }
+  .cmd-row {
+    display: flex; gap: 8px; margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border);
+    flex-wrap: wrap;
+  }
+  .cmd-btn {
+    font-family: var(--mono); font-size: 11px; font-weight: 500;
+    padding: 8px 14px; border: 1px solid var(--border);
+    background: transparent; color: var(--fg); cursor: pointer;
+    transition: all .1s;
+  }
+  .cmd-btn:hover { background: var(--bg); border-color: var(--accent); color: var(--accent); }
+  .cmd-btn.primary { background: var(--accent); border-color: var(--accent); color: var(--bg); }
+  .cmd-btn.primary:hover { filter: brightness(1.1); }
+  .cmd-prompt { color: var(--muted); margin-right: 8px; }
+  .prompt-input { flex: 1; min-width: 200px; }
+</style>
+</head>
+<body>
+<div class="terminal-frame">
+  <div class="header-row">
+    <div>
+      <div class="app-title">CF-WORKERS-SUB-NEXT</div>
+      <div class="app-version">v2.19.5  ·  main@ce36cad</div>
+    </div>
+    <div style="color:var(--muted);font-family:var(--mono);font-size:11px;">UPTIME: 14d 6h  ·  KV: 84.2MB/1GB</div>
+  </div>
+  <nav class="nav-tabs">
+    <a class="nav-tab active">DASHBOARD</a>
+    <a class="nav-tab">SUBSCRIPTIONS</a>
+    <a class="nav-tab">NODES</a>
+    <a class="nav-tab">RULES</a>
+    <a class="nav-tab">OUTPUT</a>
+    <a class="nav-tab">SETTINGS</a>
+  </nav>
+  <div class="metrics-bar">
+    <div class="metric">
+      <div class="metric-label">nodes</div>
+      <div class="metric-value">128</div>
+      <div class="metric-delta">+12</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">subs</div>
+      <div class="metric-value">3</div>
+      <div class="metric-delta">all ok</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">rules</div>
+      <div class="metric-value">42</div>
+      <div class="metric-delta">full preset</div>
+    </div>
+    <div class="metric">
+      <div class="metric-label">cf-req</div>
+      <div class="metric-value">8.4k</div>
+      <div class="metric-delta">8.4%</div>
+    </div>
+  </div>
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="col-flag"></th>
+          <th class="col-name">NAME</th>
+          <th class="col-region">REGION</th>
+          <th class="col-protocol">PROTO</th>
+          <th class="col-latency">LATENCY</th>
+          <th>STATUS</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="col-flag"><span class="status ok"></span></td>
+          <td class="col-name">JP-Tokyo-01</td>
+          <td class="col-region">JP</td>
+          <td class="col-protocol">VLESS</td>
+          <td class="col-latency">42 ms</td>
+          <td style="color:var(--accent);">ONLINE</td>
+        </tr>
+        <tr>
+          <td class="col-flag"><span class="status ok"></span></td>
+          <td class="col-name">US-LAX-03</td>
+          <td class="col-region">US</td>
+          <td class="col-protocol">VLESS</td>
+          <td class="col-latency">156 ms</td>
+          <td style="color:var(--accent);">ONLINE</td>
+        </tr>
+        <tr>
+          <td class="col-flag"><span class="status warn"></span></td>
+          <td class="col-name">SG-PCCW-02</td>
+          <td class="col-region">SG</td>
+          <td class="col-protocol">TROJAN</td>
+          <td class="col-latency">89 ms</td>
+          <td style="color:#ffaa00;">PROBING</td>
+        </tr>
+        <tr>
+          <td class="col-flag"><span class="status ok"></span></td>
+          <td class="col-name">TW-Taipei-01</td>
+          <td class="col-region">TW</td>
+          <td class="col-protocol">VMess</td>
+          <td class="col-latency">54 ms</td>
+          <td style="color:var(--accent);">ONLINE</td>
+        </tr>
+        <tr>
+          <td class="col-flag"><span class="status ok"></span></td>
+          <td class="col-name">HK-HGC-01</td>
+          <td class="col-region">HK</td>
+          <td class="col-protocol">SS</td>
+          <td class="col-latency">38 ms</td>
+          <td style="color:var(--accent);">ONLINE</td>
+        </tr>
+        <tr>
+          <td class="col-flag"><span class="status ok"></span></td>
+          <td class="col-name">KR-Seoul-02</td>
+          <td class="col-region">KR</td>
+          <td class="col-protocol">VLESS</td>
+          <td class="col-latency">72 ms</td>
+          <td style="color:var(--accent);">ONLINE</td>
+        </tr>
+        <tr>
+          <td class="col-flag"><span class="status ok"></span></td>
+          <td class="col-name">MY-KL-01</td>
+          <td class="col-region">MY</td>
+          <td class="col-protocol">TROJAN</td>
+          <td class="col-latency">98 ms</td>
+          <td style="color:var(--accent);">ONLINE</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="cmd-row">
+    <span class="cmd-prompt">$</span>
+    <button class="cmd-btn primary">npm run sub:update</button>
+    <button class="cmd-btn">npm run geo:redetect</button>
+    <button class="cmd-btn">npm run config:gen -- --format=mihomo</button>
+    <button class="cmd-btn">npm run deploy</button>
+    <input type="text" class="prompt-input" placeholder="filter nodes..." style="font-family:var(--mono);font-size:11px;padding:8px 12px;border:1px solid var(--border);background:var(--bg);color:var(--fg);border-radius:2px;">
+  </div>
+</div>
+</body>
+</html>

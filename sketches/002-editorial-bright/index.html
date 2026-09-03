@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CF-Workers-SUB-Next · 模板 B · 明亮编辑感</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #faf7f2;
+    --paper: #ffffff;
+    --ink: #1a1815;
+    --ink-soft: #6b6963;
+    --accent: #d97757;
+    --accent-soft: #fef3ec;
+    --line: #e8e3db;
+    --success: #2f9461;
+    --danger: #c2410c;
+    --radius: 4px;
+  }
+  body {
+    font-family: 'Inter', -apple-system, sans-serif;
+    background: var(--bg);
+    color: var(--ink);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 220px 1fr 280px;
+    max-width: 1400px;
+    margin: 0 auto;
+    min-height: 100vh;
+  }
+  .sidebar {
+    border-right: 1px solid var(--line);
+    padding: 40px 24px;
+    background: var(--paper);
+  }
+  .brand {
+    font-family: 'Fraunces', serif;
+    font-size: 22px; font-weight: 500;
+    letter-spacing: -0.02em;
+    margin-bottom: 40px;
+    line-height: 1.1;
+  }
+  .brand-sub {
+    font-size: 11px; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: 0.1em;
+    margin-top: 4px; font-family: 'Inter', sans-serif;
+  }
+  .nav { display: flex; flex-direction: column; gap: 2px; }
+  .nav-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 12px;
+    font-size: 14px; color: var(--ink-soft);
+    text-decoration: none; border-radius: var(--radius);
+    transition: all .15s;
+  }
+  .nav-item:hover { color: var(--ink); background: var(--accent-soft); }
+  .nav-item.active {
+    color: var(--accent); background: var(--accent-soft);
+    font-weight: 500;
+  }
+  .main { padding: 56px 64px; max-width: 720px; }
+  .page-eyebrow {
+    font-size: 11px; color: var(--accent);
+    text-transform: uppercase; letter-spacing: 0.15em;
+    font-weight: 600; margin-bottom: 12px;
+  }
+  .page-title {
+    font-family: 'Fraunces', serif;
+    font-size: 48px; font-weight: 500;
+    letter-spacing: -0.03em; line-height: 1.05;
+    margin-bottom: 12px;
+  }
+  .page-deck {
+    font-size: 17px; color: var(--ink-soft);
+    line-height: 1.5; margin-bottom: 48px;
+  }
+  .stats-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr);
+    gap: 1px; background: var(--line);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    margin-bottom: 48px; overflow: hidden;
+  }
+  .stat {
+    background: var(--paper);
+    padding: 24px;
+  }
+  .stat-num {
+    font-family: 'Fraunces', serif;
+    font-size: 36px; font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1; margin-bottom: 8px;
+  }
+  .stat-label { font-size: 13px; color: var(--ink-soft); }
+  .section-title {
+    font-family: 'Fraunces', serif;
+    font-size: 24px; font-weight: 500;
+    margin: 32px 0 16px;
+    display: flex; align-items: baseline; justify-content: space-between;
+  }
+  .section-count { font-size: 13px; color: var(--ink-soft); font-family: 'Inter', sans-serif; font-weight: 400; }
+  .node-list { border-top: 1px solid var(--line); }
+  .node-row {
+    display: grid; grid-template-columns: auto 1fr auto auto;
+    gap: 12px; align-items: center;
+    padding: 16px 4px;
+    border-bottom: 1px solid var(--line);
+    transition: background .15s;
+  }
+  .node-row:hover { background: var(--accent-soft); }
+  .node-flag { font-size: 18px; }
+  .node-name { font-weight: 500; font-size: 14px; }
+  .node-region { font-size: 12px; color: var(--ink-soft); }
+  .node-status { font-size: 12px; color: var(--success); }
+  .aside {
+    border-left: 1px solid var(--line);
+    padding: 40px 24px;
+    background: var(--paper);
+  }
+  .aside-title {
+    font-size: 11px; color: var(--ink-soft);
+    text-transform: uppercase; letter-spacing: 0.15em;
+    font-weight: 600; margin-bottom: 16px;
+  }
+  .activity-item {
+    padding: 12px 0;
+    border-bottom: 1px solid var(--line);
+    font-size: 13px;
+  }
+  .activity-time { color: var(--ink-soft); font-size: 11px; margin-bottom: 2px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: var(--radius);
+    font-size: 13px; font-weight: 500;
+    background: var(--paper); color: var(--ink);
+    border: 1px solid var(--line);
+    cursor: pointer; text-decoration: none;
+    transition: all .15s;
+  }
+  .btn:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-primary {
+    background: var(--ink); color: var(--paper); border-color: var(--ink);
+  }
+  .btn-primary:hover { background: var(--accent); border-color: var(--accent); color: var(--paper); }
+</style>
+</head>
+<body>
+<div class="layout">
+  <aside class="sidebar">
+    <div class="brand">
+      CF / SUB
+      <div class="brand-sub">v2.19.5 · Next</div>
+    </div>
+    <nav class="nav">
+      <a class="nav-item active">仪表盘</a>
+      <a class="nav-item">订阅管理</a>
+      <a class="nav-item">节点列表</a>
+      <a class="nav-item">分流规则</a>
+      <a class="nav-item">输出配置</a>
+      <a class="nav-item">设置</a>
+    </nav>
+  </aside>
+  <main class="main">
+    <div class="page-eyebrow">Dashboard</div>
+    <h1 class="page-title">今日概览</h1>
+    <p class="page-deck">订阅每日 07:00 北京时自动更新，节点解析后按归属地分组，自动选择组按地区测速。</p>
+    <div class="stats-grid">
+      <div class="stat">
+        <div class="stat-num">128</div>
+        <div class="stat-label">总节点数</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">3</div>
+        <div class="stat-label">活跃订阅</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">42</div>
+        <div class="stat-label">已启用规则</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num">8.4k</div>
+        <div class="stat-label">CF 请求 / 100k</div>
+      </div>
+    </div>
+    <h2 class="section-title">
+      节点列表
+      <span class="section-count">128 个节点</span>
+    </h2>
+    <div class="node-list">
+      <div class="node-row">
+        <span class="node-flag">🇯🇵</span>
+        <div><div class="node-name">JP-Tokyo-01</div><div class="node-region">日本 · Tokyo</div></div>
+        <span class="node-status">● 在线</span>
+        <button class="btn">查看</button>
+      </div>
+      <div class="node-row">
+        <span class="node-flag">🇺🇸</span>
+        <div><div class="node-name">US-LAX-03</div><div class="node-region">美国 · Los Angeles</div></div>
+        <span class="node-status">● 在线</span>
+        <button class="btn">查看</button>
+      </div>
+      <div class="node-row">
+        <span class="node-flag">🇸🇬</span>
+        <div><div class="node-name">SG-PCCW-02</div><div class="node-region">新加坡 · PCCW</div></div>
+        <span class="node-status">● 测速中</span>
+        <button class="btn">查看</button>
+      </div>
+      <div class="node-row">
+        <span class="node-flag">🇹🇼</span>
+        <div><div class="node-name">TW-Taipei-01</div><div class="node-region">台湾 · Taipei</div></div>
+        <span class="node-status">● 在线</span>
+        <button class="btn">查看</button>
+      </div>
+    </div>
+  </main>
+  <aside class="aside">
+    <div class="aside-title">最近活动</div>
+    <div class="activity-item">
+      <div class="activity-time">10:42</div>
+      订阅 bobsub 自动更新完成
+    </div>
+    <div class="activity-item">
+      <div class="activity-time">10:41</div>
+      新增 12 个节点
+    </div>
+    <div class="activity-item">
+      <div class="activity-time">09:15</div>
+      重新检测 IP 国家码
+    </div>
+    <div class="activity-item">
+      <div class="activity-time">08:00</div>
+      仪表盘刷新
+    </div>
+  </aside>
+</div>
+</body>
+</html>

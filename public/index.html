@@ -279,6 +279,146 @@ tbody tr:hover { background: var(--accent-soft); }
 .flex { display: flex; }
 .flex-wrap { flex-wrap: wrap; }
 .items-center { align-items: center; }
+/* ===== Skin System (v2.20.0) ===== */
+/* 默认（经典）浅色变量 */
+:root {
+  --accent: #6366f1;
+  --accent-hover: #4f52d9;
+  --accent-active: #4346c1;
+  --accent-soft: #6366f120;
+  --accent-soft2: #6366f110;
+  --accent-text: #fff;
+  --bg: #f8f9fc;
+  --bg1: #fff;
+  --bg2: #f1f3f9;
+  --bg3: #e9ecf5;
+  --text: #0f172a;
+  --text2: #64748b;
+  --text3: #94a3b8;
+  --border: #e2e6ef;
+  --side-bg: #fff;
+  --radius: 14px;
+  --radius-sm: 9px;
+  --radius-lg: 22px;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow: 0 4px 24px rgba(0,0,0,0.07), 0 1px 4px rgba(0,0,0,0.04);
+  --glass-border: rgba(255,255,255,0.5);
+  --scrollbar-track: transparent;
+  --scrollbar-thumb: var(--border);
+}
+[data-theme="dark"], [data-skin-mode="dark"] {
+  --accent: #7c5cff;
+  --accent-hover: #6a4be0;
+  --accent-active: #5a3dc7;
+  --accent-soft: #7c5cff25;
+  --accent-soft2: #7c5cff15;
+  --bg: #0e0e12;
+  --bg1: #18181f;
+  --bg2: #1e1e28;
+  --bg3: #252530;
+  --text: #f0f0f5;
+  --text2: #9999aa;
+  --text3: #55556a;
+  --border: #2a2a3a;
+  --side-bg: #13131a;
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.4), 0 1px 2px rgba(0,0,0,0.3);
+  --shadow: 0 4px 24px rgba(0,0,0,0.4), 0 1px 4px rgba(0,0,0,0.3);
+  --glass-border: rgba(255,255,255,0.07);
+}
+/* 玻璃态皮肤变量覆盖 */
+[data-skin="glass"] {
+  --bg: linear-gradient(135deg, #0a0a12 0%, #12121e 50%, #0e0e18 100%);
+  --bg1: rgba(24, 24, 35, 0.75);
+  --bg2: rgba(35, 35, 52, 0.75);
+  --bg3: rgba(50, 50, 72, 0.75);
+  --side-bg: rgba(16, 16, 26, 0.85);
+  --border: rgba(255, 255, 255, 0.08);
+  --shadow-sm: 0 1px 3px rgba(0,0,0,0.5), 0 1px 2px rgba(0,0,0,0.35);
+  --shadow: 0 8px 32px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.3);
+  --glass-border: rgba(255,255,255,0.1);
+  --radius: 20px;
+  --radius-sm: 14px;
+  --radius-lg: 28px;
+}
+[data-skin="glass"][data-theme="light"],
+[data-skin="glass"][data-skin-mode="light"] {
+  --bg: linear-gradient(135deg, #f0f4ff 0%, #e8eeff 50%, #f5f0ff 100%);
+  --bg1: rgba(255, 255, 255, 0.82);
+  --bg2: rgba(240, 244, 255, 0.82);
+  --bg3: rgba(220, 228, 250, 0.82);
+  --side-bg: rgba(248, 250, 255, 0.88);
+  --border: rgba(255, 255, 255, 0.6);
+}
+[data-skin="editorial"],
+[data-skin="editorial"][data-theme="light"],
+[data-skin="editorial"][data-skin-mode="light"] {
+  --bg: #f6f4f1;
+  --bg1: #fffdf9;
+  --bg2: #f0ece5;
+  --bg3: #e8e2d8;
+  --side-bg: #fffdf9;
+  --border: #e0dcd4;
+  --text: #1a1a1a;
+  --text2: #5a5a5a;
+  --text3: #8a8a8a;
+  --radius: 4px;
+  --radius-sm: 2px;
+  --radius-lg: 8px;
+}
+[data-skin="editorial"][data-theme="dark"],
+[data-skin="editorial"][data-skin-mode="dark"] {
+  --bg: #1c1c1a;
+  --bg1: #252522;
+  --bg2: #2e2e2a;
+  --bg3: #383834;
+  --side-bg: #222220;
+  --border: #3a3a36;
+  --text: #e8e6e1;
+  --text2: #a09e98;
+  --text3: #6a6864;
+}
+[data-skin="terminal"],
+[data-skin="terminal"][data-theme="dark"],
+[data-skin="terminal"][data-skin-mode="dark"] {
+  --bg: #0a0e14;
+  --bg1: #0d1117;
+  --bg2: #131a24;
+  --bg3: #1a2232;
+  --side-bg: #080c12;
+  --border: #1e2d3d;
+  --text: #c9d1d9;
+  --text2: #8b949e;
+  --text3: #484f58;
+  --radius: 0px;
+  --radius-sm: 0px;
+  --radius-lg: 2px;
+  --shadow-sm: none;
+  --shadow: none;
+  font-family: 'JetBrains Mono', 'Fira Code', 'Cascadia Code', 'SF Mono', Menlo, Consolas, monospace;
+}
+[data-skin="terminal"][data-theme="light"],
+[data-skin="terminal"][data-skin-mode="light"] {
+  --bg: #f0f0eb;
+  --bg1: #fafaf5;
+  --bg2: #eeecea;
+  --bg3: #e2e0da;
+  --side-bg: #f5f5f0;
+  --border: #c8c6c0;
+  --text: #1a1a1a;
+  --text2: #555;
+  --text3: #888;
+}
+/* skin 切换动画 */
+* { transition: background-color .18s ease, color .15s ease, border-color .18s ease, box-shadow .18s ease; }
+/* glass 特殊毛玻璃 */
+[data-skin="glass"] .card { background: var(--bg1); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); border: 1px solid var(--glass-border); }
+[data-skin="glass"] .sidebar { background: var(--side-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); }
+/* skin 选择器激活状态 */
+[data-skin-btn].active { border-color: var(--accent) !important; background: var(--accent-soft) !important; color: var(--accent) !important; }
+/* auto 跟随系统 */
+@media (prefers-color-scheme: dark) {
+  :root:not([data-skin-mode="light"]) { /* 由 JS 通过 data-skin-mode="dark" 处理，此处不重复 */ }
+}
 /* ===== Responsive ===== */
 @media (max-width: 900px) {
   .app-shell { flex-direction: column; }
@@ -487,8 +627,35 @@ tbody tr:hover { background: var(--accent-soft); }
       </div>
       <button class="btn btn-primary mt-12" onclick="saveSettings()">💾 保存</button>
     </div>
-    <div class="card" style="margin-top:16px">
-      <h3 style="margin:0 0 12px">👤 账号安全</h3>
+  <div class="card" style="margin-top:16px">
+    <h3 style="margin:0 0 12px">🎨 界面风格</h3>
+    <div class="form-group">
+      <label>皮肤模板</label>
+      <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:12px" id="skinPicker">
+        <button class="btn" data-skin-btn="glass" onclick="selectSkin('glass')">🔮 暗色玻璃态</button>
+        <button class="btn" data-skin-btn="editorial" onclick="selectSkin('editorial')">📖 明亮编辑风</button>
+        <button class="btn" data-skin-btn="terminal" onclick="selectSkin('terminal')">💻 极简终端风</button>
+        <button class="btn" data-skin-btn="default" onclick="selectSkin('default')">⚡ 经典版</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>色彩模式</label>
+      <div style="display:flex;gap:12px;align-items:center">
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="colorMode" value="light" onchange="selectMode('light')"> ☀️ 浅色</label>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="colorMode" value="dark" onchange="selectMode('dark')"> 🌙 深色</label>
+        <label style="display:flex;align-items:center;gap:4px;cursor:pointer"><input type="radio" name="colorMode" value="auto" onchange="selectMode('auto')"> 🌗 自动 (跟随系统)</label>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>自定义主题色</label>
+      <div style="display:flex;gap:10px;align-items:center">
+        <input type="color" id="accentColorPicker" value="#7c5cff" style="width:50px;height:38px;padding:2px;cursor:pointer" onchange="selectAccent(this.value)">
+        <span id="accentHexVal" style="font-size:14px;color:var(--text2)">#7c5cff</span>
+        <button class="btn btn-sm" onclick="resetAccentColor()">恢复默认</button>
+      </div>
+    </div>
+    <button class="btn btn-primary" onclick="saveSkinSettings()">💾 保存皮肤设置</button>
+  </div>
       <div class="form-group">
         <label>当前用户名：<b id="currentUsername" style="color:var(--accent)">-</b></label>
         <label style="margin-top:8px">新用户名（2-32位字母数字_-）</label>
@@ -639,25 +806,173 @@ tbody tr:hover { background: var(--accent-soft); }
 // ============ State ============
 let state = { subscriptions: [], nodes: [], currentPage: 'dashboard', authenticated: false };
 
-// ============ Theme ============
-const themes = ['light', 'dark'];
-let themeIdx = 0;
-function applyTheme(t) {
-  document.documentElement.dataset.theme = t;
-  document.getElementById('themeBtn').textContent = t === 'dark' ? '☀️' : '🌙';
-  try { localStorage.setItem('subnext-theme', t); } catch (e) {}
+// ============ Skin & Theme System (v2.20.0) ============
+const SKIN_VARIANTS = {
+  glass:      'glass',
+  editorial:  'editorial',
+  terminal:   'terminal',
+  default:    'default',
+};
+const skinColors = {
+  glass:      '#7c5cff',
+  editorial:  '#1d4ed8',
+  terminal:   '#10b981',
+  default:    '#6366f1',
+};
+let currentSkin     = 'glass';
+let currentMode     = 'dark'; // light | dark | auto
+let currentAccent   = null;   // null = 使用皮肤默认值
+
+function applySkin(skinId) {
+  currentSkin = skinId;
+  const accent = currentAccent ?? skinColors[skinId];
+  document.documentElement.dataset.skin = skinId;
+  // 高亮当前选中皮肤按钮
+  document.querySelectorAll('[data-skin-btn]').forEach(btn => {
+    btn.classList.toggle('active', btn.dataset.skinBtn === skinId);
+  });
+  // 同步 picker 颜色
+  const picker = document.getElementById('accentColorPicker');
+  if (picker) picker.value = accent;
+  const hexVal = document.getElementById('accentHexVal');
+  if (hexVal) hexVal.textContent = accent;
 }
-function cycleTheme() {
-  themeIdx = (themeIdx + 1) % themes.length;
-  applyTheme(themes[themeIdx]);
+
+function applyMode(mode) {
+  currentMode = mode;
+  const html = document.documentElement;
+  html.removeAttribute('data-skin-mode');
+  if (mode !== 'auto') {
+    html.dataset.skinMode = mode;
+  }
+  document.querySelectorAll('input[name="colorMode"]').forEach(r => {
+    r.checked = r.value === mode;
+  });
+  // 同步旧 themeBtn 图标
+  const themeBtn = document.getElementById('themeBtn');
+  if (themeBtn) themeBtn.textContent = (mode === 'dark' || (mode === 'auto' && !window.matchMedia('(prefers-color-scheme: light)').matches)) ? '☀️' : '🌙';
 }
-(function initTheme() {
-  let saved = null;
-  try { saved = localStorage.getItem('subnext-theme'); } catch (e) {}
-  if (!saved && window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) saved = 'dark';
-  if (saved === 'dark') { themeIdx = 1; }
-  applyTheme(saved || themes[themeIdx]);
+
+function applyAccent(hex) {
+  currentAccent = hex || null;
+  const color = currentAccent ?? skinColors[currentSkin];
+  document.documentElement.style.setProperty('--accent', color);
+  document.documentElement.style.setProperty('--accent-soft', color + '20');
+  document.documentElement.style.setProperty('--accent-soft2', color + '10');
+  document.documentElement.style.setProperty('--accent-text', 'white');
+  // 更新显示
+  const picker = document.getElementById('accentColorPicker');
+  if (picker) picker.value = color;
+  const hexVal = document.getElementById('accentHexVal');
+  if (hexVal) hexVal.textContent = color;
+}
+
+function selectSkin(id) {
+  applySkin(id);
+}
+
+function selectMode(mode) {
+  applyMode(mode);
+}
+
+function selectAccent(hex) {
+  applyAccent(hex);
+}
+
+function resetAccentColor() {
+  currentAccent = null;
+  applyAccent(null);
+}
+
+async function saveSkinSettings() {
+  try {
+    await api('/settings', {
+      method: 'PUT',
+      body: JSON.stringify({
+        skin_id: currentSkin,
+        color_mode: currentMode,
+        accent_color: currentAccent,
+      }),
+    });
+    toast('皮肤设置已保存');
+  } catch (e) {
+    toast('保存失败: ' + e.message, 'error');
+  }
+}
+
+(function initSkinSystem() {
+  try {
+    const saved = localStorage.getItem('subnext-skin');
+    if (saved) {
+      const p = JSON.parse(saved);
+      if (p.skinId)     currentSkin     = p.skinId;
+      if (p.colorMode)  currentMode     = p.colorMode;
+      if (p.accent)     currentAccent   = p.accent;
+    }
+  } catch (e) {}
+
+  // 启动时应用
+  applySkin(currentSkin);
+  applyMode(currentMode);
+  applyAccent(currentAccent);
+
+  // 同时加载后端保存的设置（优先于 localStorage）
+  try {
+    const data = await api('/settings');
+    const skinId = data.data?.skin_id;
+    const colorMode = data.data?.color_mode;
+    const accentColor = data.data?.accent_color;
+    if (skinId && SKIN_VARIANTS[skinId]) { currentSkin = skinId; applySkin(skinId); }
+    if (colorMode && ['light', 'dark', 'auto'].includes(colorMode)) { currentMode = colorMode; applyMode(colorMode); }
+    if (accentColor) { currentAccent = accentColor; applyAccent(accentColor); }
+  } catch (e) {
+    // 未登录或网络错误，用 localStorage
+    try { localStorage.setItem('subnext-skin', JSON.stringify({
+      skinId: currentSkin,
+      colorMode: currentMode,
+      accent: currentAccent,
+    })); } catch (e2) {}
+  }
+
+  // 监听 storage 事件（多标签页同步）
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'subnext-skin' && e.newValue) {
+      try {
+        const p = JSON.parse(e.newValue);
+        if (p.skinId)     { currentSkin = p.skinId; applySkin(p.skinId); }
+        if (p.colorMode)  { currentMode = p.colorMode; applyMode(p.colorMode); }
+        if (p.accent)     { currentAccent = p.accent; applyAccent(p.accent); }
+      } catch (e2) {}
+    }
+  });
+  // 每次切换时同步 localStorage（供多标签页 storage 事件触发）
+  const syncLocal = () => {
+    try { localStorage.setItem('subnext-skin', JSON.stringify({
+      skinId: currentSkin, colorMode: currentMode, accent: currentAccent,
+    })); } catch (e) {}
+  };
+  // 保存皮肤设置时也写 localStorage
+  const origSave = saveSkinSettings;
+  window.saveSkinSettings = async function() {
+    try {
+      await api('/settings', {
+        method: 'PUT',
+        body: JSON.stringify({
+          skin_id: currentSkin,
+          color_mode: currentMode,
+          accent_color: currentAccent,
+        }),
+      });
+      syncLocal();
+      toast('皮肤设置已保存');
+    } catch (e) {
+      toast('保存失败: ' + e.message, 'error');
+    }
+  };
+  // 初始化时立即写入 localStorage
+  syncLocal();
 })();
+
 
 // ============ Toast ============
 function toast(msg, type = 'success') {
@@ -1686,6 +2001,13 @@ async function loadSettings() {
     const data = await api('/settings');
     document.getElementById('settingAppName').value = data.data?.app_name || '';
     document.getElementById('settingSubUpdateHour').value = data.data?.sub_auto_update_hour ?? 7;
+    // 皮肤设置（优先后端，兜底 localStorage）
+    const skinId = data.data?.skin_id;
+    const colorMode = data.data?.color_mode;
+    const accentColor = data.data?.accent_color;
+    if (skinId && SKIN_VARIANTS[skinId]) { currentSkin = skinId; applySkin(skinId); }
+    if (colorMode && ['light', 'dark', 'auto'].includes(colorMode)) { currentMode = colorMode; applyMode(colorMode); }
+    if (accentColor) { currentAccent = accentColor; applyAccent(accentColor); } else if (!currentAccent) { applyAccent(skinColors[currentSkin]); }
   } catch {}
   loadCatalogStatus();
   loadCFAccounts();
