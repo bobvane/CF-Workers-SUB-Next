@@ -13,11 +13,19 @@ coverage/
 # ===== 开发文档（仅保留在工作目录，不上传 GitHub）=====
 # 项目内部开发文档：0X_* 规划/规格/架构文档 与 安装工具清单
 [0-1][0-9]_*.md
+20_RULE_CATALOG_DYNAMIC.md
+项目前要求安装的Skill和工具.md
 
 # Hermes 本地开发计划（.hermes/，仅本地使用）
 .hermes/
-项目前要求安装的Skill和工具.md
+
+# OMH 本地开发计划（.omh/，仅本地使用）
+.omh/
 
 # 会话固化文档（Hermes 本地项目记忆，不上传 GitHub）
 PROJECT_CONTEXT.md
 CURRENT_TASK.md
+PLAN.md
+
+# 评审报告（仅本地使用）
+review-report.json
