@@ -349,7 +349,7 @@ export async function generateProxyGroups(
     proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
   });
 
-  // 4. 自动选择（url-test：具体节点，自动测速最优）
+  // 4. 自动选择（url-test：按地理组测速，挑最优地区）——v2.19.4 改：proxies 从扁平节点名改为地理组名
   groups.push({
     name: '自动选择',
     type: 'url-test',
@@ -357,7 +357,8 @@ export async function generateProxyGroups(
     url: 'http://www.gstatic.com/generate_204',
     interval: 300,
     tolerance: 50,
-    proxies: allGeoNodes.length > 0 ? allGeoNodes : ['DIRECT'],
+    // 测速对象从「具体节点」改为「有节点的国家地理组」——geoGroupNames 本身就是 groupNodesByGeo 筛选后的结果
+    proxies: geoGroupNames.length > 0 ? geoGroupNames : ['DIRECT'],
   });
 
   // 5. 国外媒体（流媒体 PROXY，默认自动选择）——固化策略组

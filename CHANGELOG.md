@@ -2,6 +2,16 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.19.4] - 2026-09-03
+
+### 修改：自动选择组 proxies 从扁平节点名改为国家地理组名
+
+- `src/generator/mihomo.ts` 的「自动选择」策略组（url-test 类型）`proxies` 由 `allGeoNodes`（扁平节点名数组）改为 `geoGroupNames`（地理组名数组）
+- 效果：url-test 测速对象从「具体节点」变为「有节点的国家地理组」——自动选择会按地理组（🇭🇰 香港 / 🇯🇵 日本 / 🇸🇬 新加坡 等）整体测速并选出最优地区，而不是在所有节点里挑最快单节点
+- 兜底逻辑保留：无节点时 `proxies: ['DIRECT']`
+- 不影响「节点选择」组（其 proxies 本来就是 `['自动选择', ...geoGroupNames, ...]`，已经按地理组划分）
+- 现有 404 测试仅断言「自动选择」组存在性，未断言具体 proxies 内容，回归全绿，lint/tsc/build 全绿
+
 ## [2.19.3] - 2026-09-03
 
 ### 修改：Mihomo 配置输出 mixed-port 改 7893
