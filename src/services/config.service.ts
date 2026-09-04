@@ -321,13 +321,13 @@ export function createConfigService(repos: Repositories): ConfigService {
             })
           );
         case 'singbox':
-          return generateSingboxConfig(nodes, undefined, await this.getSelectedRules(), await this.getMergedGroups());
+          return generateSingboxConfig(nodes);
         case 'surge':
           return generateSurgeConfig(nodes, await this.getSelectedRules(), await this.getMergedGroups());
         case 'quantumultx':
           return generateQuantumultXConfig(nodes, await this.getSelectedRules(), await this.getMergedGroups());
         case 'shadowrocket':
-          return generateShadowrocketConfig(nodes, await this.getSelectedRules(), await this.getMergedGroups());
+          return generateShadowrocketConfig(nodes);
         case 'loon':
           return generateLoonConfig(nodes, await this.getSelectedRules(), await this.getMergedGroups());
         case 'v2ray':

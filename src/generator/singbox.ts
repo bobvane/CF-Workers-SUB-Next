@@ -2,14 +2,11 @@
  * Sing-box 配置生成器
  * TASK 5.2 - Sing-box Generator
  * 09_CONFIG_GENERATOR_SPEC.md §8：输出 JSON，outbounds 映射
+ * v2.24.0: 全面补全所有协议字段（Hysteria2/TUIC/WireGuard/AnyTLS/VMess/VLESS/SS/Trojan）
  */
 
 import { Node } from '@/models/node';
-import { MetaCubeXRule } from '@/data/metacubex-rules';
 import { makeUniqueNames } from './mihomo';
-import { providerName, ruleActionTarget } from './rule-providers';
-import { RuleGroup } from '@/data/metacubex-rules';
-import { metacubexSrsUrl } from '@/data/rule-format-mapping';
 
 export interface SingboxTemplate {
   logLevel?: string;
@@ -21,98 +18,226 @@ export const DEFAULT_SINGBOX_TEMPLATE: SingboxTemplate = {
 
 /**
  * 将 Node 转换为 Sing-box outbound 配置对象
+ * 有参数则输出，无参数则跳过
  */
-export function nodeToSingboxOutbound(node: Node): Record<string, unknown> {
-  const outbound: Record<string, unknown> = {
-    type: node.protocol,
-    tag: node.name,
-    server: node.server,
-    server_port: node.port,
-  };
-
+export function nodeToSingboxOutbound(node: Node): Record<string, unknown> | null {
   switch (node.protocol) {
     case 'vmess':
-      outbound.uuid = node.uuid;
-      outbound.security = 'auto';
-      if (node.transport?.type === 'ws') {
-        outbound.transport = {
-          type: 'ws',
-          path: node.transport.path,
-          headers: node.transport.host ? { Host: node.transport.host } : undefined,
-        };
-      }
-      if (node.transport?.type === 'grpc') {
-        outbound.transport = {
-          type: 'grpc',
-          service_name: node.transport.path?.replace(/^\//, '') || '',
-        };
-      }
-      if (node.tls) {
-        outbound.tls = { enabled: true, server_name: node.sni ?? node.server };
-      }
-      break;
-
+      return buildVmess(node);
     case 'vless':
-      outbound.uuid = node.uuid;
-      if (node.flow) outbound.flow = node.flow;
-      if (node.transport?.type === 'ws') {
-        outbound.transport = {
-          type: 'ws',
-          path: node.transport.path,
-          headers: node.transport.host ? { Host: node.transport.host } : undefined,
-        };
-      }
-      if (node.transport?.type === 'grpc') {
-        outbound.transport = {
-          type: 'grpc',
-          service_name: node.transport.path?.replace(/^\//, '') || '',
-        };
-      }
-      if (node.tls) {
-        outbound.tls = {
-          enabled: true,
-          server_name: node.sni ?? node.server,
-          utls: node.metadata?.fingerprint ? { enabled: true, fingerprint: node.metadata.fingerprint } : undefined,
-          reality: node.pbk
-            ? { enabled: true, public_key: node.pbk, short_id: node.sid ?? '' }
-            : undefined,
-        };
-      }
-      break;
-
+      return buildVless(node);
     case 'trojan':
-      outbound.password = node.password;
-      if (node.tls) {
-        outbound.tls = {
-          enabled: true,
-          server_name: node.sni ?? node.server,
-          insecure: node.allowInsecure ?? false,
-        };
-      }
-      break;
-
+      return buildTrojan(node);
     case 'ss':
-      outbound.method = node.metadata.tags[0] ?? node.username ?? 'aes-256-gcm';
-      outbound.password = node.password;
-      if (node.plugin) {
-        const pluginParts = node.plugin.split(';');
-        outbound.plugin = pluginParts[0];
-        const opts: Record<string, string> = {};
-        for (const part of pluginParts.slice(1)) {
-          if (part.includes('=')) {
-            const [k, v] = part.split('=');
-            opts[k] = v;
-          } else {
-            opts.mode = part;
-          }
-        }
-        if (Object.keys(opts).length > 0) outbound.plugin_opts = formatPluginOpts(opts);
-      }
-      break;
+      return buildShadowsocks(node);
+    case 'hysteria2':
+      return buildHysteria2(node);
+    case 'tuic':
+      return buildTuic(node);
+    case 'wireguard':
+      return buildWireguard(node);
+    case 'anytls':
+      return buildAnytls(node);
+    default:
+      return null;
   }
-
-  return outbound;
 }
+
+// ── VMess ───────────────────────────────────────────────────────────────────
+
+function buildVmess(n: Node): Record<string, unknown> {
+  const out: Record<string, unknown> = { type: 'vmess', tag: n.name, server: n.server, server_port: n.port };
+  if (n.uuid) out.uuid = n.uuid;
+  // method: tags[0] 是解析器写入的加密方式；无则留空让客户端 auto
+  if (n.metadata?.tags?.[0]) out.method = n.metadata.tags[0];
+  if (n.transport?.type) {
+    const tr: Record<string, unknown> = { type: n.transport.type };
+    if (n.transport.path) tr.path = n.transport.path;
+    if (n.transport.host) tr.headers = { Host: n.transport.host };
+    out.transport = tr;
+  }
+  if (n.tls) {
+    const tls: Record<string, unknown> = { enabled: true, server_name: n.sni ?? n.server };
+    if (n.alpn?.length) tls.alpn = n.alpn;
+    if (n.metadata?.fingerprint) tls.utls = { enabled: true, fingerprint: n.metadata.fingerprint };
+    out.tls = tls;
+  }
+  // fast_open、packet_encoding 等可选字段
+  if (n.fastOpen) out.fast_open = true;
+  if (n.metadata?.extra?.['packet-encoding']) out.packet_encoding = n.metadata.extra['packet-encoding'];
+  if (n.metadata?.extra?.['global-padding']) out.global_padding = true;
+  if (n.metadata?.extra?.['authenticated-noise']) out.authenticated_noise = true;
+  if (n.metadata?.extra?.['multi-server']) out.multi_server = true;
+  return out;
+}
+
+// ── VLESS ───────────────────────────────────────────────────────────────────
+
+function buildVless(n: Node): Record<string, unknown> {
+  const out: Record<string, unknown> = { type: 'vless', tag: n.name, server: n.server, server_port: n.port };
+  if (n.uuid) out.uuid = n.uuid;
+  if (n.flow) out.flow = n.flow;
+  if (n.transport?.type) {
+    const tr: Record<string, unknown> = { type: n.transport.type };
+    if (n.transport.path) tr.path = n.transport.path;
+    if (n.transport.host) tr.headers = { Host: n.transport.host };
+    if (n.transport.mode) tr.mode = n.transport.mode;
+    out.transport = tr;
+  }
+  if (n.tls) {
+    const tls: Record<string, unknown> = {
+      enabled: true,
+      server_name: n.sni ?? n.server,
+    };
+    if (n.alpn?.length) tls.alpn = n.alpn;
+    if (n.metadata?.fingerprint) tls.utls = { enabled: true, fingerprint: n.metadata.fingerprint };
+    if (n.pbk || n.sid) {
+      const reality: Record<string, unknown> = { enabled: true };
+      if (n.pbk) reality.public_key = n.pbk;
+      if (n.sid) reality.short_id = n.sid;
+      tls.reality = reality;
+    }
+    out.tls = tls;
+  }
+  if (n.fastOpen) out.fast_open = true;
+  if (n.metadata?.extra?.['packet-encoding']) out.packet_encoding = n.metadata.extra['packet-encoding'];
+  return out;
+}
+
+// ── Trojan ──────────────────────────────────────────────────────────────────
+
+function buildTrojan(n: Node): Record<string, unknown> {
+  const out: Record<string, unknown> = { type: 'trojan', tag: n.name, server: n.server, server_port: n.port };
+  if (n.password) out.password = n.password;
+  if (n.tls) {
+    const tls: Record<string, unknown> = {
+      enabled: true,
+      server_name: n.sni ?? n.server,
+    };
+    if (n.allowInsecure) tls.insecure = true;
+    if (n.alpn?.length) tls.alpn = n.alpn;
+    if (n.metadata?.fingerprint) tls.utls = { enabled: true, fingerprint: n.metadata.fingerprint };
+    out.tls = tls;
+  }
+  if (n.fastOpen) out.fast_open = true;
+  return out;
+}
+
+// ── Shadowsocks ─────────────────────────────────────────────────────────────
+
+function buildShadowsocks(n: Node): Record<string, unknown> {
+  const method = n.metadata?.tags?.[0] || n.username || 'aes-256-gcm';
+  const out: Record<string, unknown> = { type: 'ss', tag: n.name, server: n.server, server_port: n.port, method, password: n.password };
+  if (n.plugin) {
+    const pluginParts = n.plugin.split(';');
+    out.plugin = pluginParts[0];
+    const opts: Record<string, string> = {};
+    for (const part of pluginParts.slice(1)) {
+      if (part.includes('=')) {
+        const [k, v] = part.split('=');
+        opts[k] = v;
+      } else {
+        opts.mode = part;
+      }
+    }
+    if (Object.keys(opts).length > 0) out.plugin_opts = formatPluginOpts(opts);
+  }
+  if (n.fastOpen) out.fast_open = true;
+  return out;
+}
+
+// ── Hysteria2 ───────────────────────────────────────────────────────────────
+
+function buildHysteria2(n: Node): Record<string, unknown> {
+  const out: Record<string, unknown> = { type: 'hysteria2', tag: n.name, server: n.server, server_port: n.port, password: n.password };
+  if (n.ports) out.ports = n.ports;
+  if (n.sni) out.sni = n.sni;
+  if (n.allowInsecure) out.insecure = true;
+  if (n.obfs) {
+    const obfs: Record<string, unknown> = { type: n.obfs };
+    if (n.obfsPassword) obfs.password = n.obfsPassword;
+    out.obfs = obfs;
+  }
+  if (n.up) out.up = n.up;
+  if (n.down) out.down = n.down;
+  if (n.alpn?.length) out.alpn = n.alpn;
+  if (n.fastOpen) out.fast_open = true;
+  if (n.metadata?.extra?.['disable-mtu-discovery']) out.disable_mtu_discovery = true;
+  // socks64: 当节点为 SSR 类时使用（通常来自 metadata.extra）
+  if (n.metadata?.extra?.['socks64']) out.socks64 = true;
+  return out;
+}
+
+// ── TUIC ────────────────────────────────────────────────────────────────────
+
+function buildTuic(n: Node): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    type: 'tuic', tag: n.name, server: n.server, server_port: n.port,
+    uuid: n.uuid,
+  };
+  // V4 用 token，V5 用 password
+  if (n.token) out.token = n.token;
+  if (n.password && !n.token) out.password = n.password;
+  if (n.sni) out.sni = n.sni;
+  if (n.allowInsecure) out.insecure = true;
+  if (n.congestionController) out.congestion_control = n.congestionController;
+  if (n.udpRelayMode) out.udp_relay_mode = n.udpRelayMode;
+  if (n.disableSni) out.disable_sni = true;
+  if (n.reduceRtt) out.reduce_rtt = true;
+  if (n.fastOpen) out.fast_open = true;
+  if (n.alpn?.length) out.alpn = n.alpn;
+  if (n.metadata?.extra?.['heartbeat-interval']) out.heartbeat_interval = parseInt(n.metadata.extra['heartbeat-interval'], 10);
+  return out;
+}
+
+// ── WireGuard ───────────────────────────────────────────────────────────────
+
+function buildWireguard(n: Node): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    type: 'wireguard', tag: n.name, server: n.server, server_port: n.port,
+  };
+  if (n.wgPrivateKey) out.private_key = n.wgPrivateKey;
+  if (n.wgPublicKey) out.peer_public_key = n.wgPublicKey;
+  if (n.wgPreSharedKey) out.pre_shared_key = n.wgPreSharedKey;
+  if (n.wgIp) {
+    const ips: string[] = [n.wgIp];
+    if (n.wgIpv6) ips.push(n.wgIpv6);
+    out.local_address = ips;
+  }
+  if (n.wgAllowedIps) {
+    // allowed-ips 可以是逗号分隔或单个 IP/mask
+    out.allowed_ips = n.wgAllowedIps.split(',').map((s) => s.trim());
+  } else {
+    // 默认路由全部流量
+    out.allowed_ips = ['0.0.0.0/0', '::/0'];
+  }
+  if (n.wgReserved?.length) out.reserved = n.wgReserved;
+  if (n.wgMtu) out.mtu = n.wgMtu;
+  // persistent_keepalive 来自 extra（标准链接用 keepalive 参数）
+  if (n.metadata?.extra?.['persistent-keepalive']) {
+    out.persistent_keepalive_period = parseInt(n.metadata.extra['persistent-keepalive'], 10);
+  }
+  return out;
+}
+
+// ── AnyTLS ──────────────────────────────────────────────────────────────────
+
+function buildAnytls(n: Node): Record<string, unknown> {
+  const out: Record<string, unknown> = {
+    type: 'anytls', tag: n.name, server: n.server, server_port: n.port,
+    password: n.password,
+  };
+  if (n.sni) out.sni = n.sni;
+  if (n.clientMetadata) out.client_metadata = n.clientMetadata;
+  if (n.idleSessionCheckInterval) out.idle_session_check_interval = n.idleSessionCheckInterval;
+  if (n.idleSessionTimeout) out.idle_session_timeout = n.idleSessionTimeout;
+  if (n.minIdleSession) out.min_idle_session = n.minIdleSession;
+  if (n.allowInsecure) out.insecure = true;
+  if (n.alpn?.length) out.alpn = n.alpn;
+  return out;
+}
+
+// ── 工具函数 ────────────────────────────────────────────────────────────────
 
 function formatPluginOpts(opts: Record<string, string>): string {
   return Object.entries(opts)
@@ -121,19 +246,14 @@ function formatPluginOpts(opts: Record<string, string>): string {
 }
 
 /**
- * 生成 Sing-box JSON 配置
+ * 生成 Sing-box JSON 配置（不含分流规则 — 仅节点聚合）
  */
-export function generateSingboxConfig(
-  nodes: Node[],
-  template: SingboxTemplate = DEFAULT_SINGBOX_TEMPLATE,
-  selectedRules: MetaCubeXRule[] = [],
-  ruleGroups: RuleGroup[] = []
-): string {
+export function generateSingboxConfig(nodes: Node[], template: SingboxTemplate = DEFAULT_SINGBOX_TEMPLATE): string {
   const uniqueNodes = makeUniqueNames(nodes).filter((n) => n.protocol !== 'ssr');
   const nodeTags = uniqueNodes.map((n) => n.name);
   const outbounds: Record<string, unknown>[] = [
     { type: 'direct', tag: 'direct' },
-    ...uniqueNodes.map(nodeToSingboxOutbound),
+    ...uniqueNodes.map(nodeToSingboxOutbound).filter((o): o is Record<string, unknown> => o !== null),
     {
       type: 'selector',
       tag: 'proxy',
@@ -150,42 +270,6 @@ export function generateSingboxConfig(
     },
   ];
 
-  // 构建 rule_set 引用列表 + route rules
-  const ruleSetRefs: Record<string, unknown>[] = [];
-  const routeRules: Record<string, unknown>[] = [];
-
-  // DNS 劫持（1.11+ 写法：rule action 替代已废弃的 dns outbound）
-  routeRules.push({ action: 'sniff' });
-  routeRules.push({ protocol: 'dns', action: 'hijack-dns' });
-
-  // 用户勾选的规则
-  if (selectedRules.length > 0) {
-    for (const rule of selectedRules) {
-      const name = providerName(rule.id);
-      // .srs 是二进制格式，必须用 format: 'binary'
-      ruleSetRefs.push({
-        tag: name,
-        type: 'remote',
-        format: 'binary',
-        url: metacubexSrsUrl(rule.id),
-        download_detour: 'direct',
-      });
-      const target = ruleActionTarget(rule, ruleGroups);
-      if (target === 'REJECT') {
-        // 广告拦截：1.11+ 用 rule action 替代已废弃的 block outbound
-        routeRules.push({ rule_set: [name], action: 'reject' });
-      } else {
-        const outbound = mapTargetToOutbound(target);
-        routeRules.push({ rule_set: [name], outbound });
-      }
-    }
-  }
-
-  // 兜底规则
-  routeRules.push({ ip_is_private: true, outbound: 'direct' });
-  routeRules.push({ clash_mode: 'Direct', outbound: 'direct' });
-  routeRules.push({ clash_mode: 'Global', outbound: 'proxy' });
-
   const config: Record<string, unknown> = {
     log: { level: template.logLevel ?? 'info' },
     dns: {
@@ -194,9 +278,6 @@ export function generateSingboxConfig(
         { tag: 'dns-direct', address: 'https://223.5.5.5/dns-query', detour: 'direct' },
         { tag: 'dns-local', address: 'local' },
       ],
-      rules: [
-        { rule_set: ruleSetRefs.map((r) => r.tag), server: 'dns-direct' },
-      ].filter((r) => (r.rule_set as string[]).length > 0),
       final: 'dns-proxy',
       independent_cache: true,
     },
@@ -208,30 +289,18 @@ export function generateSingboxConfig(
     route: {
       final: 'proxy',
       auto_detect_interface: true,
-      rules: routeRules,
+      rules: [
+        { action: 'sniff' },
+        { protocol: 'dns', action: 'hijack-dns' },
+        { ip_is_private: true, outbound: 'direct' },
+        { clash_mode: 'Direct', outbound: 'direct' },
+        { clash_mode: 'Global', outbound: 'proxy' },
+      ],
     },
     experimental: { cache_file: { enabled: true } },
   };
 
-  if (ruleSetRefs.length > 0) {
-    (config.route as Record<string, unknown>).rule_set = ruleSetRefs;
-  }
-
   return JSON.stringify(config, null, 2);
-}
-
-/**
- * 将 Mihomo 策略组名映射到 Sing-box outbound tag
- */
-function mapTargetToOutbound(target: string): string {
-  switch (target) {
-    case 'DIRECT':
-    case '国内直连':
-      return 'direct';
-    default:
-      // PROXY、国外媒体、AI服务、加密货币等 → proxy 组
-      return 'proxy';
-  }
 }
 
 /**

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { generateBase64Config, validateBase64 } from '@/generator/base64-generator';
 import { generateSurgeConfig, nodeToSurgeProxy } from '@/generator/surge';
 import { generateQuantumultXConfig, nodeToQXServer } from '@/generator/quantumultx';
+import { generateShadowrocketConfig } from '@/generator/shadowrocket';
 import { nodeToUrl } from '@/generator/node-to-url';
 import { Node } from '@/models/node';
 import { safeBase64Decode } from '@/generator/base64';
@@ -136,5 +137,15 @@ describe('generateQuantumultXConfig', () => {
     const line = nodeToQXServer(node);
     expect(line).toContain('ss=');
     expect(line).toContain('method=chacha20-ietf-poly1305');
+  });
+});
+
+describe('generateShadowrocketConfig', () => {
+  it('should generate valid shadowrocket config (node-only, no rules)', () => {
+    const config = generateShadowrocketConfig([makeNode()]);
+    expect(config).toContain('[Proxy]');
+    expect(config).toContain('JP-01');
+    expect(config).not.toContain('[Rule]');
+    expect(config).not.toContain('RULE-SET');
   });
 });

@@ -2,7 +2,22 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
-## [2.23.0] - 2026-09-04
+## [2.24.0] - 2026-09-04
+
+### 节点聚合格式全面补全
+
+> 无分流规则格式（Sing-box / Shadowrocket / Base64）按官方参数表全面补全，
+> 覆盖全部协议（Hysteria2 / TUIC / WireGuard / AnyTLS / VMess / VLESS / Trojan / SS），
+> 有参数输出，无参数跳过。测试基线：428 → **446**。
+
+#### 变更
+- `singbox.ts`：重写全部协议生成逻辑，新增 Hysteria2 / TUIC / WireGuard / AnyTLS / Shadowsocks 完整字段
+- `shadowrocket.ts`：重写，独立实现所有协议（不再依赖 Surge），新增 Hysteria2 / TUIC / WireGuard
+- `config.service.ts`：singbox/shadowrocket 调用去掉 rules/groups 参数（纯节点聚合）
+- 新增测试：singbox 9 个新用例 + shadowrocket 10 个新用例
+
+### UI
+- 输出配置页面增加分组标签：分流配置（含策略组+规则）/ 节点聚合（无分流规则）
 
 ### 安全加固（Perplexity 审查修复）
 
