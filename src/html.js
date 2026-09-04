@@ -190,6 +190,12 @@ tbody tr:hover { background: var(--accent-soft); }
 .sub-item .name { font-weight: 600; min-width: 120px; font-size: 16px; }
 .sub-item .desc { color: var(--text2); font-size: 14px; min-width: 150px; }
 .sub-item input { flex: 1; font-size: 14px; padding: 6px 10px; border: none; border-radius: var(--radius-sm); background: var(--bg3); color: var(--text); }
+.sub-group-label {
+  font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--text2); margin: 18px 0 8px; padding: 0 4px;
+  border-bottom: 1px solid var(--border); line-height: 1;
+}
+.sub-group-label:first-child { margin-top: 0; }
 /* ===== Login ===== */
 .login-page { display: flex; align-items: center; justify-content: center; min-height: 100vh; padding: 20px; position: relative; overflow: hidden; background: linear-gradient(135deg, #0a0e35 0%, #2e2b8c 50%, #533afd 100%); }
 .login-page::before { content:''; position:absolute; width:480px; height:480px; border-radius:50%; background:radial-gradient(circle,rgba(249,107,238,0.18),transparent 70%); top:-160px; right:-100px; }
@@ -1510,28 +1516,40 @@ async function refreshNodeCount() {
 
 function renderOutputUrls() {
   const baseUrl = window.location.origin + '/sub';
-  const formats = [
-    { key: 'mihomo', name: '🐱 Mihomo', desc: 'Mihomo / Clash Meta / OpenClash / Stash' },
-    { key: 'singbox', name: '📦 Sing-box', desc: 'Sing-box 原生格式' },
-    { key: 'v2ray', name: '📄 V2ray', desc: 'V2ray 标准订阅 (Base64)' },
-    { key: 'v2rayn', name: '📱 V2RayNG', desc: 'V2RayNG Android' },
-    { key: 'nekoray', name: '🪐 NekoRay', desc: 'NekoRay / NekoBox' },
-    { key: 'shadowrocket', name: '🚀 Shadowrocket', desc: 'Shadowrocket iOS' },
-    { key: 'loon', name: '🌙 Loon', desc: 'Loon iOS' },
-    { key: 'surge', name: '⚡ Surge', desc: 'Surge iOS / Mac' },
-    { key: 'quantumultx', name: '🍁 Quantumult X', desc: 'Quantumult X iOS' },
+  // 分组：带分流规则输出 / 纯节点输出（无分流规则）
+  const groups = [
+    { label: '分流配置（含策略组 + 规则）',
+      formats: [
+        { key: 'mihomo',    name: '🐱 Mihomo',       desc: 'Mihomo / Clash Meta / OpenClash / Stash' },
+        { key: 'surge',     name: '⚡ Surge',         desc: 'Surge iOS / Mac' },
+        { key: 'loon',      name: '🌙 Loon',          desc: 'Loon iOS' },
+        { key: 'quantumultx', name: '🍁 Quantumult X', desc: 'Quantumult X iOS' },
+      ]},
+    { label: '节点聚合（纯链接，无分流规则）',
+      formats: [
+        { key: 'singbox',   name: '📦 Sing-box',      desc: 'Sing-box 原生格式' },
+        { key: 'v2ray',     name: '📄 V2ray',         desc: 'V2ray 标准订阅 (Base64)' },
+        { key: 'v2rayn',    name: '📱 V2RayNG',       desc: 'V2RayNG Android' },
+        { key: 'nekoray',   name: '🪐 NekoRay',       desc: 'NekoRay / NekoBox' },
+        { key: 'shadowrocket', name: '🚀 Shadowrocket', desc: 'Shadowrocket iOS' },
+      ]},
   ];
-  document.getElementById('outputLinks').innerHTML = formats.map(f => {
-    const url = \`\${baseUrl}/\${f.key}/{key}\`;
-    return \`<div class="sub-item" onclick="showConfigModal('\${f.key}', '\${f.name}')">
-      <span class="name">\${f.name}</span>
-      <span class="desc">\${f.desc}</span>
-      <input value="\${url}" readonly onclick="event.stopPropagation();this.select()">
-      <span class="sub-actions">
-        <button class="btn btn-sm" onclick="event.stopPropagation();showQrModal('\${f.key}', '\${f.name}')">📱 二维码</button>
-        <button class="btn btn-sm" onclick="event.stopPropagation();copyFormatUrl('\${f.key}')">📋 复制</button>
-      </span>
-    </div>\`;
+  document.getElementById('outputLinks').innerHTML = groups.flatMap(g => {
+    return [
+      \`<div class="sub-group-label">\${g.label}</div>\`,
+      ...g.formats.map(f => {
+        const url = \`\${baseUrl}/\${f.key}/{key}\`;
+        return \`<div class="sub-item" onclick="showConfigModal('\${f.key}', '\${f.name}')">
+          <span class="name">\${f.name}</span>
+          <span class="desc">\${f.desc}</span>
+          <input value="\${url}" readonly onclick="event.stopPropagation();this.select()">
+          <span class="sub-actions">
+            <button class="btn btn-sm" onclick="event.stopPropagation();showQrModal('\${f.key}', '\${f.name}')">📱 二维码</button>
+            <button class="btn btn-sm" onclick="event.stopPropagation();copyFormatUrl('\${f.key}')">📋 复制</button>
+          </span>
+        </div>\`;
+      }),
+    ];
   }).join('');
   // 异步获取订阅 key 后替换占位符
   loadSubKey();
