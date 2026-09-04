@@ -62,8 +62,14 @@ export class KvAdapter implements KVStorage {
 
   async list(prefix: string): Promise<{ key: string }[]> {
     try {
-      const list = await this.ns.list({ prefix });
-      return list.keys.map((k) => ({ key: k.name }));
+      const keys: { key: string }[] = [];
+      let cursor: string | undefined;
+      do {
+        const page = await this.ns.list({ prefix, cursor });
+        for (const k of page.keys) keys.push({ key: k.name });
+        cursor = page.list_complete ? undefined : page.cursor;
+      } while (cursor);
+      return keys;
     } catch (err) {
       throw new Error(`KV list failed for prefix ${prefix}: ${(err as Error).message}`);
     }

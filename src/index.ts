@@ -97,6 +97,7 @@ async function buildApp(env: Env): Promise<Hono> {
     fetchRaw: fetchSubscription,
     parseContent: async () => [],
     catalogSync,
+    storage: kv,
   });
 }
 

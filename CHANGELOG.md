@@ -2,6 +2,39 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.22.0] - 2026-09-04
+
+### 安全加固 + KV 分页（Codex 审查修复）
+
+> 依据 Codex 对项目安全审查结论修复。测试基线：404 → 407 → **423**。
+
+**KV `list()` 分页（🔴 关键修复）**
+- `KvAdapter.list()` 改用 cursor 循环拉全量，不再只读第一页（limit 1000）
+- 修复 >1000 条节点/订阅/规则时静默漏数据的问题（直接导致「1000+ 节点后生成配置不全」）
+- 影响：`nodes.getAll()`、`subscriptions.list()`、`sessions.listAll()` 等所有依赖 `list()` 的仓储
+
+**登录/敏感接口限流切到 KV（跨实例共享）**
+- 登录（10 次/分）、改密/改用户名（5 次/分）由单实例内存计数器改为 KV 限流
+- `createKvRateLimit` 已存在但未启用，现在 `createApp` 注入 `storage` 后自动启用
+- 未注入 storage（如测试）时自动回退到内存限流，保持测试简单
+- 生产环境多实例并发下限流不再形同虚设
+
+**订阅令牌恒定时间比较**
+- `/sub/:format/:token` 的 `sub_key` 比较由 `===` 改为 `constantTimeEqual`（逐字节异或）
+- 防时序侧信道（Cloudflare Workers 无 crypto.subtle，自实现）
+
+**executionCtx 空值防御**
+- 订阅更新后的 `c.executionCtx?.waitUntil(...)` 加空值防御，防 Hono 未传第三参时抛 `'This context has no ExecutionContext'` 致 update 502
+
+**升级检测加缓存**
+- `/api/meta/check-upgrade` 加 6h 内存缓存，避免每次请求外呼 GitHub API（无鉴权端点防被作匿名流量放大器）
+
+**新增鉴权矩阵测试（16 个用例）**
+- 未登录访问受保护端点（订阅/节点/规则/仪表盘/设置/密码/用户名）→ 应 401
+- 公开端点（health/meta/login）→ 不应 401
+- 正常登录后访问受保护端点 → 200
+- /sub 订阅令牌校验正反用例
+
 ## [2.21.0] - 2026-09-04
 
 ### 安全：密码改密后会话吊销机制（passwordVersion）

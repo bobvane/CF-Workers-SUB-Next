@@ -5,7 +5,6 @@
  */
 
 import { Context, Next } from 'hono';
-import { KVStorage } from '@/storage/kv';
 
 interface CounterEntry {
   count: number;
@@ -45,10 +44,11 @@ export function rateLimit(options: { windowSeconds: number; maxRequests: number 
 
 /**
  * KV 速率限制中间件（跨实例，生产可用）
- * 需要 KVStorage 接口
+ * 需要 KV get/put。注意：KV 为最终一致性，count 在极端并发下可能短暂低估，
+ * 但相比单实例内存计数器，跨实例共享已大幅提升限流可靠性。
  */
 export function createKvRateLimit(
-  kv: KVStorage,
+  kv: { get(key: string): Promise<string | null>; put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void> },
   options: { windowSeconds: number; maxRequests: number }
 ) {
   return async (c: Context, next: Next) => {

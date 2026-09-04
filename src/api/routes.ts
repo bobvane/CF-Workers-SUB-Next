@@ -5,7 +5,7 @@
  */
 
 import { Hono } from 'hono';
-import { Repositories } from '@/storage/kv';
+import { Repositories, KVStorage } from '@/storage/kv';
 import { AuthService } from '@/services/auth.service';
 import {
   createSessionCookie,
@@ -14,7 +14,7 @@ import {
 import { SubscriptionService } from '@/services/subscription.service';
 import { ConfigService } from '@/services/config.service';
 import { requireAuth, errorHandler, readBody, AppError, ERRORS, getToken } from './middleware';
-import { rateLimit } from './rate-limit';
+import { rateLimit, createKvRateLimit } from './rate-limit';
 import { nodeToLink } from '@/services/config.service';
 import { nodeFingerprint } from '@/models/node';
 import { deduplicateNodes } from '@/parser';
@@ -22,6 +22,21 @@ import { prewarmIpGeo } from '@/services/ip-geo.service';
 import { APP_META, isNewerVersion } from '@/meta';
 import { createCatalogSyncService, CatalogSyncService } from '@/services/catalog-sync.service';
 import { RuleCatalogMeta } from '@/models/rule-catalog';
+
+/**
+ * 恒定时间字符串比较（防时序侧信道）。
+ * Cloudflare Workers 无 crypto.subtle（仅 CryptoJS/HMAC），
+ * 自实现：先比对长度避免泄漏，再逐字节异或累加，时间与内容无关。
+ * 用于比较长期有效的订阅访问密钥。
+ */
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) {
+    diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return diff === 0;
+}
 
 export interface AppDeps {
   repos: Repositories;
@@ -35,6 +50,8 @@ export interface AppDeps {
   parseContent: (content: string, source: string) => Promise<unknown[]>;
   /** 规则目录同步服务（可选注入，默认内部构造） */
   catalogSync?: CatalogSyncService;
+  /** KV 存储（可选）：提供时可启用跨实例 KV 限流（生产建议注入） */
+  storage?: KVStorage;
 }
 
 export function createApp(deps: AppDeps): Hono {
@@ -65,43 +82,61 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   // 升级检测：查 GitHub releases 最新版本（服务端代理，避免前端 CORS/限流）
+  // v2.21.0：加内存缓存（TTL 6h），避免每次请求都外呼 GitHub API（无鉴权端点，防被当匿名流量放大器）
+  let upgradeCheckCache: { at: number; body: unknown } | null = null;
   app.get('/api/meta/check-upgrade', async (c) => {
     const GITHUB_REPO = 'bobvane/CF-Workers-SUB-Next';
+    const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+    const now = Date.now();
+    if (upgradeCheckCache && now - upgradeCheckCache.at < CACHE_TTL_MS) {
+      return c.json(upgradeCheckCache.body);
+    }
+    let payload: unknown;
     try {
       const res = await fetch(
         `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
         { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'cf-workers-sub-next' } }
       );
       if (!res.ok) {
-        return c.json({
+        payload = {
           success: true,
           data: { current: APP_META.version, latest: APP_META.version, hasUpdate: false, checked: true },
-        });
+        };
+      } else {
+        const release = (await res.json()) as { tag_name?: string; html_url?: string };
+        const latest = (release.tag_name || APP_META.version).replace(/^v/, '');
+        const hasUpdate = isNewerVersion(latest, APP_META.version);
+        payload = {
+          success: true,
+          data: {
+            current: APP_META.version,
+            latest,
+            hasUpdate,
+            releaseUrl: release.html_url || APP_META.repo,
+            checked: true,
+          },
+        };
       }
-      const release = (await res.json()) as { tag_name?: string; html_url?: string };
-      const latest = (release.tag_name || APP_META.version).replace(/^v/, '');
-      const hasUpdate = isNewerVersion(latest, APP_META.version);
-      return c.json({
-        success: true,
-        data: {
-          current: APP_META.version,
-          latest,
-          hasUpdate,
-          releaseUrl: release.html_url || APP_META.repo,
-          checked: true,
-        },
-      });
     } catch {
-      return c.json({
+      payload = {
         success: true,
         data: { current: APP_META.version, latest: APP_META.version, hasUpdate: false, checked: false },
-      });
+      };
     }
+    upgradeCheckCache = { at: Date.now(), body: payload };
+    return c.json(payload);
   });
 
   // ============ Auth ============
-  // 登录接口限流：防暴力破解（10 次/分钟/IP）
-  app.post('/api/auth/login', rateLimit({ windowSeconds: 60, maxRequests: 10 }), async (c) => {
+  // 敏感操作（登录/改密/改用户名）限流：防暴力破解
+  // 优先用 KV 限流（跨实例共享，生产生效）；未注入 storage 时退回单实例内存限流
+  const buildRateLimit = (maxRequests: number) =>
+    deps.storage
+      ? createKvRateLimit(deps.storage, { windowSeconds: 60, maxRequests })
+      : rateLimit({ windowSeconds: 60, maxRequests });
+  const loginRateLimit = buildRateLimit(10);
+  const sensitiveOpRateLimit = buildRateLimit(5);
+  app.post('/api/auth/login', loginRateLimit, async (c) => {
     const body = await readBody<{ username?: string; password?: string }>(c);
     if (!body.password || typeof body.password !== 'string') {
       throw ERRORS.INVALID_PARAMETER('password is required');
@@ -196,7 +231,9 @@ export function createApp(deps: AppDeps): Hono {
       const { nodeCount } = await subscriptions.update(id, deps.fetchRaw);
       // v2.16.0：IP 地理预填充改为后台执行（waitUntil），不再同步阻塞订阅更新响应
       // 之前同步 prewarmIpGeo 会让手动更新在节点多/未识别多时拖到 >15s，被前端 AbortController 掐断报「signal is aborted without reason」
-      c.executionCtx.waitUntil(
+      // v2.21.0：executionCtx 空值防御——Hono 未传第三参时（某些调用路径），
+      // c.executionCtx 为 undefined，直接 waitUntil 会抛 'This context has no ExecutionContext'
+      c.executionCtx?.waitUntil(
         (async () => {
           try {
             const nodes = deduplicateNodes(await repos.nodes.getAll());
@@ -481,7 +518,7 @@ export function createApp(deps: AppDeps): Hono {
   async function validateSubToken(token: string): Promise<boolean> {
     if (!token) return false;
     const subKey = await repos.settings.get('sub_key');
-    if (subKey && token === subKey) return true;
+    if (subKey && constantTimeEqual(token, subKey)) return true;
     // 兼容旧版 session token
     return auth.validateSession(token);
   }
@@ -721,7 +758,7 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   // 修改用户名（需当前密码）
-  app.post('/api/auth/username', requireAuth(auth), rateLimit({ windowSeconds: 60, maxRequests: 5 }), async (c) => {
+  app.post('/api/auth/username', requireAuth(auth), sensitiveOpRateLimit, async (c) => {
     const body = await readBody<{ currentPassword?: string; newUsername?: string }>(c);
     if (!body.currentPassword || !body.newUsername) {
       return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'currentPassword 和 newUsername 必填' } }, 400);
@@ -734,7 +771,7 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   // 修改密码（需旧密码；成功后建议前端重新登录）
-  app.post('/api/auth/password', requireAuth(auth), rateLimit({ windowSeconds: 60, maxRequests: 5 }), async (c) => {
+  app.post('/api/auth/password', requireAuth(auth), sensitiveOpRateLimit, async (c) => {
     const body = await readBody<{ currentPassword?: string; newPassword?: string }>(c);
     if (!body.currentPassword || !body.newPassword) {
       return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'currentPassword 和 newPassword 必填' } }, 400);
