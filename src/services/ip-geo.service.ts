@@ -14,6 +14,11 @@ import { countryDisplayName } from '@/data/country-codes';
 const IP_GEO_KEY_PREFIX = 'ip_geo:';
 const IP_API_URL = 'http://ip-api.com/batch';
 const IP_API_JSON_URL = 'http://ip-api.com/json/';
+// GeoRetry 任务门闩状态 key（v2.25.0：active 门闩哨兵，正常态 0 KV 写）
+// 存 { ts, count, active }：active=true 时 cron 每分钟重试；false 时 cron 直接短路不写 KV
+export const GEO_PENDING_RETRY_KEY = 'geo_pending_retry';
+// 连续重试上限：超过则停止并置 active=false，提示检查节点正确性
+export const GEO_RETRY_MAX = 10;
 // Batch 限额：一次最多 100 个 IP，15 次/分钟滑动窗口
 const BATCH_LIMIT = 100;
 const MAX_BATCHES = 5; // 单次触发最多 5 批（500 个 IP）
@@ -383,6 +388,72 @@ export async function countUnlocatedGeo(
   cache: IpGeoCache,
 ): Promise<number> {
   return (await filterUnlocatedServers(servers, cache)).length;
+}
+
+/**
+ * GeoRetry 门闩状态（active 哨兵，v2.25.0）
+ * 结构：{ ts, count, active }
+ * - active=true  → cron 每分钟重试
+ * - active=false → cron 直接短路（0 KV 写）——正常态，不再每分钟写归零状态
+ */
+export interface GeoRetryGate {
+  ts: number;
+  count: number;
+  active: boolean;
+}
+
+const GEO_DEFAULT: GeoRetryGate = { ts: 0, count: 0, active: false };
+
+/**
+ * 读取 GeoRetry 门闩状态。通过 settings 仓储读写（`setting:` 前缀，前端同口径）。
+ */
+export async function getGeoRetryGate(
+  settings: { get(key: string): Promise<string | null> }
+): Promise<GeoRetryGate> {
+  try {
+    const raw = await settings.get(GEO_PENDING_RETRY_KEY);
+    if (!raw) return { ...GEO_DEFAULT };
+    const p = JSON.parse(raw) as Partial<GeoRetryGate>;
+    return {
+      ts: typeof p.ts === 'number' ? p.ts : 0,
+      count: typeof p.count === 'number' ? p.count : 0,
+      active: typeof p.active === 'boolean' ? p.active : false,
+    };
+  } catch {
+    return { ...GEO_DEFAULT };
+  }
+}
+
+/**
+ * 写入 GeoRetry 门闩状态。
+ */
+export async function setGeoRetryGate(
+  settings: { set(key: string, value: string): Promise<void> },
+  gate: GeoRetryGate
+): Promise<void> {
+  await settings.set(GEO_PENDING_RETRY_KEY, JSON.stringify(gate));
+}
+
+/**
+ * 激活 GeoRetry（发现未识别 IP 时调用）。返回是否真的有未识别 IP 被激活。
+ * 供订阅更新 / 手动 geo-redetect / 每日预热等入口把门闩拨到 active，唤醒 cron 重试。
+ */
+export async function activateGeoRetry(
+  unlocatedCount: number,
+  settings: { get(key: string): Promise<string | null>; set(key: string, value: string): Promise<void> }
+): Promise<boolean> {
+  if (unlocatedCount <= 0) return false;
+  await setGeoRetryGate(settings, { ts: Date.now(), count: 0, active: true });
+  return true;
+}
+
+/**
+ * 关闭 GeoRetry（全部识别成功后调用），恢复 0 KV 写睡眠态。
+ */
+export async function deactivateGeoRetry(
+  settings: { get(key: string): Promise<string | null>; set(key: string, value: string): Promise<void> }
+): Promise<void> {
+  await setGeoRetryGate(settings, { ts: Date.now(), count: 0, active: false });
 }
 
 /** 创建纯 IP 地理定位 resolver */

@@ -240,9 +240,13 @@ export function createApp(deps: AppDeps): Hono {
             const nodes = deduplicateNodes(await repos.nodes.getAll());
             const servers = [...new Set(nodes.map((n) => n.server).filter((v): v is string => typeof v === 'string'))];
             if (servers.length > 0) {
+              const geoService = await import('@/services/ip-geo.service');
               const ipGeoCache = { get: (k: string) => repos.settings.get(k), set: (k: string, v: string) => repos.settings.set(k, v) };
-              const geoResult = await import('@/services/ip-geo.service').then(m => m.prewarmIpGeo(servers, ipGeoCache));
-              console.warn(`[SubscriptionUpdate:${id}] IP地理预填充完成(后台): 总数 ${geoResult.total}，已缓存 ${geoResult.cached}，新查 ${geoResult.queried}，解析成功 ${geoResult.resolved}，失败 ${geoResult.failed}`);
+              const geoResult = await geoService.prewarmIpGeo(servers, ipGeoCache);
+              // v2.25.0：预热后若有未识别 IP 则激活 GeoRetry 门闩，唤醒每分钟 cron 继续重查
+              const unlocated = await geoService.filterUnlocatedServers(servers, ipGeoCache);
+              await geoService.activateGeoRetry(unlocated.length, repos.settings);
+              console.warn(`[SubscriptionUpdate:${id}] IP地理预填充完成(后台): 总数 ${geoResult.total}，已缓存 ${geoResult.cached}，新查 ${geoResult.queried}，解析成功 ${geoResult.resolved}，失败 ${geoResult.failed}，剩余未识别 ${unlocated.length}`);
             }
           } catch (e) {
             console.warn(`[SubscriptionUpdate:${id}] IP地理预填充失败(后台,不阻塞): ${(e as Error).message}`);
@@ -373,6 +377,12 @@ export function createApp(deps: AppDeps): Hono {
     // 4. 统计重检后未识别数 + 列出仍未识别的 server（诊断用：域名/IP/保留段形态一眼可辨）
     const unlocatedAfter = await config.countUnlocatedGeo(servers);
     const unlocatedServers = (await config.getUnlocatedServers(servers)).slice(0, 50);
+    // v2.25.0：重检后仍有未识别 IP → 激活 GeoRetry 门闩，由每分钟 cron 继续兜底重查
+    try {
+      await (await import('@/services/ip-geo.service')).activateGeoRetry(unlocatedAfter, repos.settings);
+    } catch {
+      // 激活失败不阻塞正常响应
+    }
     return c.json({
       success: true,
       data: {

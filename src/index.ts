@@ -142,32 +142,34 @@ export default {
     }
 
     // 每分钟未识别国家码自动重试（v2.19.1）：发现未识别 IP 全量批量重查，连续重试 10 次后停止并提示检查节点
+    // v2.25.0：任务门闩（active 哨兵）——正常态（无未识别 IP）直接短路，0 KV 写，不再每分钟跑全量/写归零状态
     if (cron === '* * * * *') {
       try {
+        const { prewarmIpGeo, filterUnlocatedServers, getGeoRetryGate, setGeoRetryGate, deactivateGeoRetry, GEO_RETRY_MAX } = await import('@/services/ip-geo.service');
+        const ipGeoCache = { get: (k: string): Promise<string | null> => repos.settings.get(k), set: (k: string, v: string) => repos.settings.set(k, v) };
+
+        // ① 门闩短路：无激活重试任务 → 直接 return（0 KV 写，不跑 getAll、不查 IP）
+        const gate = await getGeoRetryGate(repos.settings);
+        if (!gate.active) return;
+
         const allNodes = deduplicateNodes(await repos.nodes.getAll());
         const servers = [...new Set(allNodes.map((n) => n.server).filter((v): v is string => typeof v === 'string'))];
-        if (servers.length === 0) return;
-        // 与 geo-redetect 锁/统计口径一致：走 repos.settings 的 setting: 前缀
-        const ipGeoCache = { get: (k: string): Promise<string | null> => repos.settings.get(k), set: (k: string, v: string) => repos.settings.set(k, v) };
-        const { prewarmIpGeo, filterUnlocatedServers } = await import('@/services/ip-geo.service');
+        if (servers.length === 0) {
+          await deactivateGeoRetry(repos.settings);
+          return;
+        }
         const unlocated = await filterUnlocatedServers(servers, ipGeoCache);
 
-        // 读连续重试计数
-        const pendingRaw = await repos.settings.get('geo_pending_retry');
-        let count = 0;
-        try {
-          if (pendingRaw) count = (JSON.parse(pendingRaw) as { count: number }).count || 0;
-        } catch {}
-
         if (unlocated.length === 0) {
-          // 全部已识别：重置计数 + 清空提示结果
-          await repos.settings.set('geo_pending_retry', JSON.stringify({ ts: Date.now(), count: 0 }));
+          // 全部已识别：关闭门闩，回到 0 KV 写睡眠态
+          await deactivateGeoRetry(repos.settings);
           await repos.settings.set('geo_pending_result', JSON.stringify({ ts: Date.now(), unlocatedServers: [] }));
           return;
         }
 
-        if (count >= 10) {
-          // 连续 10 次仍有未识别：停止重试，记录剩余 IP 供界面提示「建议检查节点正确性」
+        if (gate.count >= GEO_RETRY_MAX) {
+          // 连续 N 次仍有未识别：关闭门闩停止重试，记录剩余 IP 供界面提示「建议检查节点正确性」
+          await deactivateGeoRetry(repos.settings);
           await repos.settings.set('geo_pending_result', JSON.stringify({ ts: Date.now(), unlocatedServers: unlocated }));
           return;
         }
@@ -175,16 +177,16 @@ export default {
         // 全量批量重查（batchQuery 内部 15 次/分钟限流兜底，未识别 IP 全在池子里一次查完）
         const res = await prewarmIpGeo(unlocated, ipGeoCache);
         const after = await filterUnlocatedServers(servers, ipGeoCache);
-        await repos.settings.set('geo_pending_retry', JSON.stringify({ ts: Date.now(), count: count + 1 }));
+        await setGeoRetryGate(repos.settings, { ts: Date.now(), count: gate.count + 1, active: true });
         if (after.length === 0) {
-          // 本次查完清零
-          await repos.settings.set('geo_pending_retry', JSON.stringify({ ts: Date.now(), count: 0 }));
+          // 本次查完清零并关闭门闩
+          await deactivateGeoRetry(repos.settings);
           await repos.settings.set('geo_pending_result', JSON.stringify({ ts: Date.now(), unlocatedServers: [] }));
-        } else {
-          // 仍有残留：更新提示结果（界面实时可见剩余 IP）
-          await repos.settings.set('geo_pending_result', JSON.stringify({ ts: Date.now(), unlocatedServers: after }));
+          return;
         }
-        console.warn(`[GeoRetry] 第${count + 1}次重试: 查${res.queried} 剩${after.length}`);
+        // 仍有残留：更新提示结果（界面实时可见剩余 IP），保持 active 继续下一分钟重试
+        await repos.settings.set('geo_pending_result', JSON.stringify({ ts: Date.now(), unlocatedServers: after }));
+        console.warn(`[GeoRetry] 第${gate.count + 1}次重试: 查${res.queried} 剩${after.length}`);
       } catch (e) {
         console.warn(`[GeoRetry] 重试失败(不阻塞): ${(e as Error).message}`);
       }
@@ -219,13 +221,18 @@ export default {
       }
     }
     // 主动预填充 IP 地理缓存：全部订阅更新后，批量查一遍 server 归属地
+    // v2.25.0：cache 统一走 repos.settings（setting: 前缀，与手动更新/前端统计同口径）；
+    //          预热后若有未识别 IP 则激活 GeoRetry 门闩，唤醒每分钟 cron 继续重查
     try {
+      const { prewarmIpGeo, filterUnlocatedServers, activateGeoRetry } = await import('@/services/ip-geo.service');
       const allNodes = deduplicateNodes(await repos.nodes.getAll());
       const servers = [...new Set(allNodes.map((n) => n.server).filter((v): v is string => typeof v === 'string'))];
       if (servers.length > 0) {
-        const ipGeoCache = { get: (k: string) => kv.get(k), set: (k: string, v: string) => kv.put(k, v) };
-        const geoResult = await import('@/services/ip-geo.service').then(m => m.prewarmIpGeo(servers, ipGeoCache));
-        console.warn(`[SubAutoUpdate] IP地理预填充完成: 总数 ${geoResult.total}，已缓存 ${geoResult.cached}，新查 ${geoResult.queried}，解析成功 ${geoResult.resolved}，失败 ${geoResult.failed}`);
+        const ipGeoCache = { get: (k: string) => repos.settings.get(k), set: (k: string, v: string) => repos.settings.set(k, v) };
+        const geoResult = await prewarmIpGeo(servers, ipGeoCache);
+        const unlocated = await filterUnlocatedServers(servers, ipGeoCache);
+        await activateGeoRetry(unlocated.length, repos.settings);
+        console.warn(`[SubAutoUpdate] IP地理预填充完成: 总数 ${geoResult.total}，已缓存 ${geoResult.cached}，新查 ${geoResult.queried}，解析成功 ${geoResult.resolved}，失败 ${geoResult.failed}，剩余未识别 ${unlocated.length}`);
       }
     } catch (e) {
       console.warn(`[SubAutoUpdate] IP地理预填充失败(不阻塞): ${(e as Error).message}`);

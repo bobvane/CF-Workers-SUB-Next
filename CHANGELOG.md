@@ -2,6 +2,31 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.25.0] - 2026-09-05
+
+### 修复 GeoRetry 每天耗尽 KV 免费写额度（用户实测「登录不了、KV 写次数不够」）
+
+> **根因**：`* * * * *` 每分钟 cron 永久跑 GeoRetry，即使**所有 IP 已全部识别**，
+> 依然全量 `getAll()` + `filterUnlocatedServers`，发现 `unlocated.length===0` 后
+> 仍写 `geo_pending_retry={count:0}` + `geo_pending_result=[]` 两个 setting，
+> 每天 **1440 分钟 × 2 次写 ≈ 2880 次无意义 KV 写**，再加登录限流 `createKvRateLimit`
+> 也写 KV，直接吃光 CF 免费每天 1000 次写额度 → 登录/限流全挂。
+
+#### 核心改动：任务门闩（active 哨兵）
+- `geo_pending_retry` 结构升级为 `{ ts, count, active }`，新增 `active` 布尔门闩
+- **正常态（无未识别 IP）**：cron 读一次 `active=false` → **直接 return，0 KV 写、不跑 getAll、不查 IP**
+- **发现未识别 IP**（订阅更新/每日预热/手动 geo-redetect 三入口）→ `activateGeoRetry` 拨 `active=true` 唤醒 cron
+- 每分钟重试；全部识别成功 → `deactivateGeoRetry` 置 `active=false` 回到睡眠
+- 连续重试 ≥10 次仍未识别 → 置 `active=false` 停止，保留剩 IP 供前端提示「建议检查节点正确性」
+
+#### 效果
+- 健康态 KV 写：**≈0/天**（原来 ~2880/天）；读=每分钟 1 次 gate（1440/天，读额度宽松）
+- 前向兼容：旧格式 `{ts,count}` 无 active 字段 → 视为 active=false（升级后门闩默认闭合）
+
+#### 其他
+- 每日订阅自动更新 IP 地理预热的 cache 统一走 `repos.settings`（`setting:` 前缀，与手动更新/前端统计同口径），修正此前裸 `kv.get/put` 前缀不一致
+- 新增 `tests/services/ip-geo-gate.test.ts` 6 用例。测试基线：446 → **452**
+
 ## [2.24.0] - 2026-09-04
 
 ### 节点聚合格式全面补全
