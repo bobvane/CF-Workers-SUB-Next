@@ -11,24 +11,6 @@ import {
 } from '@/services/auth.service';
 import { KvSessionRepository, MemoryKvAdapter } from '@/storage/kv';
 
-/** 辅助：创建带密码版本管理的 auth service（mock kv） */
-function createAuthWithVersion(sessions: KvSessionRepository) {
-  let version = 0;
-  return {
-    service: createAuthService(sessions, async () => null, {
-      get: async (key: string) => {
-        if (key === 'admin:username') return 'admin';
-        if (key === 'setting:password_version') return String(version);
-        return null;
-      },
-      put: async (key: string, value: string) => {
-        if (key === 'setting:password_version') version = parseInt(value, 10) || 0;
-      },
-    }),
-    get version() { return version; },
-  };
-}
-
 describe('password hashing', () => {
   it('should hash password with salt', async () => {
     const { hash, salt } = await createPasswordHash('secret123');

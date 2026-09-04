@@ -114,7 +114,6 @@ export function createAuthService(
   getAdminHash: () => Promise<{ hash: string; salt: string } | null>,
   kv?: { get(key: string): Promise<string | null>; put(key: string, value: string): Promise<void> }
 ): AuthService {
-  const USERNAME_KEY = 'admin:username';
   const VERSION_KEY = 'setting:password_version';
 
   const getLatestPasswordVersion = async (): Promise<number> => {
