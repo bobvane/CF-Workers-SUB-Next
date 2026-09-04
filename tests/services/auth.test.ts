@@ -11,6 +11,24 @@ import {
 } from '@/services/auth.service';
 import { KvSessionRepository, MemoryKvAdapter } from '@/storage/kv';
 
+/** 辅助：创建带密码版本管理的 auth service（mock kv） */
+function createAuthWithVersion(sessions: KvSessionRepository) {
+  let version = 0;
+  return {
+    service: createAuthService(sessions, async () => null, {
+      get: async (key: string) => {
+        if (key === 'admin:username') return 'admin';
+        if (key === 'setting:password_version') return String(version);
+        return null;
+      },
+      put: async (key: string, value: string) => {
+        if (key === 'setting:password_version') version = parseInt(value, 10) || 0;
+      },
+    }),
+    get version() { return version; },
+  };
+}
+
 describe('password hashing', () => {
   it('should hash password with salt', async () => {
     const { hash, salt } = await createPasswordHash('secret123');
@@ -45,34 +63,43 @@ describe('password hashing', () => {
 });
 
 describe('auth service', () => {
-  it('should login with correct password', async () => {
+  async function setup() {
     const sessions = new KvSessionRepository(new MemoryKvAdapter());
     const adminHash = await createPasswordHash('admin123');
-    const service = createAuthService(sessions, async () => adminHash);
+    let version = 0;
+    const service = createAuthService(sessions, async () => adminHash, {
+      get: async (key: string) => {
+        if (key === 'admin:username') return 'admin';
+        if (key === 'setting:password_version') return String(version);
+        return null;
+      },
+      put: async (key: string, value: string) => {
+        if (key === 'setting:password_version') version = parseInt(value, 10) || 0;
+      },
+    });
+    return { sessions, service, get version() { return version; }, set version(v: number) { version = v; } };
+  }
+
+  it('should login with correct password', async () => {
+    const { service } = await setup();
     const token = await service.login('admin', 'admin123');
     expect(token).toBeTruthy();
   });
 
   it('should reject wrong password', async () => {
-    const sessions = new KvSessionRepository(new MemoryKvAdapter());
-    const adminHash = await createPasswordHash('admin123');
-    const service = createAuthService(sessions, async () => adminHash);
+    const { service } = await setup();
     expect(await service.login('admin', 'wrong')).toBeNull();
   });
 
   it('should validate session token', async () => {
-    const sessions = new KvSessionRepository(new MemoryKvAdapter());
-    const adminHash = await createPasswordHash('admin123');
-    const service = createAuthService(sessions, async () => adminHash);
+    const { service } = await setup();
     const token = await service.login('admin', 'admin123');
     expect(await service.validateSession(token!)).toBe(true);
     expect(await service.validateSession('invalid')).toBe(false);
   });
 
   it('should logout and invalidate session', async () => {
-    const sessions = new KvSessionRepository(new MemoryKvAdapter());
-    const adminHash = await createPasswordHash('admin123');
-    const service = createAuthService(sessions, async () => adminHash);
+    const { service } = await setup();
     const token = await service.login('admin', 'admin123');
     await service.logout(token!);
     expect(await service.validateSession(token!)).toBe(false);
@@ -82,6 +109,50 @@ describe('auth service', () => {
     const sessions = new KvSessionRepository(new MemoryKvAdapter());
     const service = createAuthService(sessions, async () => null);
     expect(await service.login('admin', 'anything')).toBeNull();
+  });
+
+  it('should invalidate old sessions after password change (v2.21.0)', async () => {
+    const { service, sessions } = await setup();
+    const token1 = await service.login('admin', 'admin123');
+    expect(token1).toBeTruthy();
+
+    // Simulate password change: delete old session
+    await sessions.delete(token1!);
+
+    // Old token should be invalid (session deleted)
+    expect(await service.validateSession(token1!)).toBe(false);
+
+    // New login with same password (password hash hasn't changed in test, just session revoked)
+    const token2 = await service.login('admin', 'admin123');
+    expect(token2).toBeTruthy();
+    expect(await service.validateSession(token2!)).toBe(true);
+  });
+
+  it('should reject session with outdated passwordVersion (v2.21.0)', async () => {
+    const sessions = new KvSessionRepository(new MemoryKvAdapter());
+    let version = 0;
+    const adminHash = await createPasswordHash('admin123');
+    const service = createAuthService(sessions, async () => adminHash, {
+      get: async (key: string) => {
+        if (key === 'admin:username') return 'admin';
+        if (key === 'setting:password_version') return String(version);
+        return null;
+      },
+      put: async (key: string, value: string) => {
+        if (key === 'setting:password_version') version = parseInt(value, 10) || 0;
+      },
+    });
+
+    // Login with version 0
+    const token = await service.login('admin', 'admin123');
+    expect(token).toBeTruthy();
+    expect(await service.validateSession(token!)).toBe(true);
+
+    // Bump version (simulating password change)
+    version = 1;
+
+    // Old session should now be invalid
+    expect(await service.validateSession(token!)).toBe(false);
   });
 });
 

@@ -158,30 +158,43 @@ describe('KvRuleRepository', () => {
 describe('KvSessionRepository', () => {
   it('should create a session with TTL', async () => {
     const repo = new KvSessionRepository(new MemoryKvAdapter());
-    const session = await repo.create(3600);
+    const session = await repo.create(3600, 0);
     expect(session.id).toBeTruthy();
     expect(session.expiresAt).toBeGreaterThan(session.createdAt);
+    expect(session.passwordVersion).toBe(0);
   });
 
   it('should get a valid session', async () => {
     const repo = new KvSessionRepository(new MemoryKvAdapter());
-    const session = await repo.create(3600);
+    const session = await repo.create(3600, 0);
     const found = await repo.getById(session.id);
     expect(found?.id).toBe(session.id);
+    expect(found?.passwordVersion).toBe(0);
   });
 
   it('should return null for expired session', async () => {
     const repo = new KvSessionRepository(new MemoryKvAdapter());
-    const session = await repo.create(-10); // 已过期
+    const session = await repo.create(-10, 0); // 已过期
     const found = await repo.getById(session.id);
     expect(found).toBeNull();
   });
 
   it('should delete a session', async () => {
     const repo = new KvSessionRepository(new MemoryKvAdapter());
-    const session = await repo.create(3600);
+    const session = await repo.create(3600, 0);
     await repo.delete(session.id);
     expect(await repo.getById(session.id)).toBeNull();
+  });
+
+  it('should list all active sessions', async () => {
+    const repo = new KvSessionRepository(new MemoryKvAdapter());
+    await repo.create(3600, 0);
+    await repo.create(3600, 1);
+    await repo.create(-10, 2); // expired
+    const all = await repo.listAll();
+    expect(all.length).toBe(2);
+    expect(all.some(s => s.passwordVersion === 0)).toBe(true);
+    expect(all.some(s => s.passwordVersion === 1)).toBe(true);
   });
 });
 

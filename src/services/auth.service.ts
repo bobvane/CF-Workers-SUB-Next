@@ -114,6 +114,23 @@ export function createAuthService(
   getAdminHash: () => Promise<{ hash: string; salt: string } | null>,
   kv?: { get(key: string): Promise<string | null>; put(key: string, value: string): Promise<void> }
 ): AuthService {
+  const USERNAME_KEY = 'admin:username';
+  const VERSION_KEY = 'setting:password_version';
+
+  const getLatestPasswordVersion = async (): Promise<number> => {
+    if (!kv) return 0;
+    const raw = await kv.get(VERSION_KEY);
+    if (!raw) return 0;
+    const n = parseInt(raw, 10);
+    return Number.isNaN(n) ? 0 : n;
+  };
+
+  const bumpPasswordVersion = async (): Promise<void> => {
+    if (!kv) return;
+    const cur = await getLatestPasswordVersion();
+    await kv.put(VERSION_KEY, String(cur + 1));
+  };
+
   const getUsernameInner = async (): Promise<string> => {
     if (!kv) return DEFAULT_USERNAME;
     const raw = await kv.get(ADMIN_USERNAME_KEY);
@@ -132,14 +149,23 @@ export function createAuthService(
       if (!admin) return null;
       const valid = await verifyPassword(password, admin.salt, admin.hash);
       if (!valid) return null;
-      const session = await sessions.create(SESSION_TTL_SECONDS);
+      const version = await getLatestPasswordVersion();
+      const session = await sessions.create(SESSION_TTL_SECONDS, version);
       return session.id;
     },
 
     async validateSession(token: string): Promise<boolean> {
       if (!token) return false;
       const session = await sessions.getById(token);
-      return session !== null;
+      if (!session) return false;
+      // 检查密码版本是否一致：改密后旧 session 立即失效
+      const currentVersion = await getLatestPasswordVersion();
+      if (session.passwordVersion < currentVersion) {
+        // 版本号落后，销毁该 session 避免残留 KV 空间
+        await sessions.delete(session.id);
+        return false;
+      }
+      return true;
     },
 
     async logout(token: string): Promise<void> {
@@ -173,6 +199,11 @@ export function createAuthService(
       if (!valid) return false;
       const { hash, salt } = await createPasswordHash(newPassword);
       await setAdminHash(hash, salt);
+      // 递增版本号并吊销全部旧 session（新 session 已在新版本号下签发，旧 session 通过 validateSession 自动失效）
+      await bumpPasswordVersion();
+      // 立即销毁所有旧 session（主动清理 KV，避免旧 token 残留直到 expire）
+      const oldSessions = await sessions.listAll();
+      await Promise.all(oldSessions.map(s => sessions.delete(s.id)));
       return true;
     },
   };

@@ -296,20 +296,23 @@ export class KvRuleRepository implements RuleRepository {
 // ============ 会话仓储 ============
 
 export interface SessionRepository {
-  create(ttlSeconds: number): Promise<Session>;
+  create(ttlSeconds: number, passwordVersion: number): Promise<Session>;
   getById(id: string): Promise<Session | null>;
   delete(id: string): Promise<void>;
+  /** 列出所有活跃 session（由 changePassword 批量吊销旧版本） */
+  listAll(): Promise<Session[]>;
 }
 
 export class KvSessionRepository implements SessionRepository {
   constructor(private readonly kv: KVStorage) {}
 
-  async create(ttlSeconds: number): Promise<Session> {
+  async create(ttlSeconds: number, passwordVersion: number): Promise<Session> {
     const now = Date.now();
     const session: Session = {
       id: crypto.randomUUID(),
       createdAt: now,
       expiresAt: now + ttlSeconds * 1000,
+      passwordVersion,
     };
     await this.kv.put(KV_KEYS.session(session.id), JSON.stringify(session), {
       expirationTtl: ttlSeconds,
@@ -334,6 +337,21 @@ export class KvSessionRepository implements SessionRepository {
 
   async delete(id: string): Promise<void> {
     await this.kv.delete(KV_KEYS.session(id));
+  }
+
+  async listAll(): Promise<Session[]> {
+    const entries = await this.kv.list('session:');
+    const sessions: Session[] = [];
+    for (const entry of entries) {
+      const raw = await this.kv.get(entry.key);
+      if (!raw) continue;
+      try {
+        const s = JSON.parse(raw) as Session;
+        if (s.expiresAt >= Date.now()) sessions.push(s);
+        else await this.delete(s.id);
+      } catch { /* skip corrupt */ }
+    }
+    return sessions;
   }
 }
 

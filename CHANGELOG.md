@@ -2,6 +2,19 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.21.0] - 2026-09-04
+
+### 安全：密码改密后会话吊销机制（passwordVersion）
+
+**修复：** v2.21.0 之前的版本，修改管理密码后旧登录会话仍然有效（无法吊销）。
+
+- **Session 模型**新增 `passwordVersion` 字段（签发时携带当前密码版本号）
+- **`setting:password_version`** 新 KV 键：存储当前密码哈希的版本号，初始化为 `0`
+- **`changePassword`** 行为：改密时递增版本号 + 主动删除所有旧 session，旧 token 立即失效
+- **`validateSession`** 行为：检查 session 的 `passwordVersion` 是否与当前版本一致，不一致则自动清理并返回 false
+- **向后兼容**：首次启动若 `setting:password_version` 不存在，自动写入 `0`，不破坏现有部署
+- **测试**：新增 3 个测试用例验证密码版本失效逻辑；全部 407 测试通过
+
 ## [2.19.5] - 2026-09-03
 
 ### 修改：三组策略组 default-selected 调整

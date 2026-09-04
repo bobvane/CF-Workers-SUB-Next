@@ -58,6 +58,11 @@ async function buildApp(env: Env): Promise<Hono> {
     if (!existingUsername) {
       await kv.put(ADMIN_USERNAME_KEY, DEFAULT_USERNAME);
     }
+    // 密码版本号初始化（v2.21.0）：旧部署若无记录则写入版本 0
+    const versionRaw = await kv.get('setting:password_version');
+    if (!versionRaw) {
+      await kv.put('setting:password_version', '0');
+    }
   } catch (err) {
     console.error('Failed to initialize admin password:', (err as Error).message);
   }

@@ -19,6 +19,8 @@ export interface Session {
   id: string;
   createdAt: number;
   expiresAt: number;
+  /** 签发时对应的密码哈希版本；改密后此值 < 当前版本则会话失效 */
+  passwordVersion: number;
 }
 
 /**
