@@ -225,7 +225,8 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   // 更新订阅（重新抓取解析）
-  app.post('/api/subscriptions/:id/update', async (c) => {
+  // 更新订阅（重新抓取解析）。加 KV 限流防资源滥用（v2.23.0）
+  app.post('/api/subscriptions/:id/update', sensitiveOpRateLimit, async (c) => {
     const id = c.req.param('id') as string;
     try {
       const { nodeCount } = await subscriptions.update(id, deps.fetchRaw);
@@ -267,12 +268,16 @@ export function createApp(deps: AppDeps): Hono {
     const body = await readBody<{ pattern?: string; replacement?: string; regex?: boolean }>(c);
     const pattern = (body.pattern || '').trim();
     if (!pattern) return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'pattern 必填' } }, 400);
+    // v2.23.0：输入长度限制——防止超大 pattern/replacement 造成 CPU 消耗或生成超大配置
+    if (pattern.length > 256) return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'pattern 过长（最多 256 字符）' } }, 400);
+    const replacement = (body.replacement ?? '').trim();
+    if (replacement.length > 512) return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'replacement 过长（最多 512 字符）' } }, 400);
     if (body.regex) {
       try { new RegExp(pattern); } catch {
         return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: '正则表达式无效' } }, 400);
       }
     }
-    const created = await config.addCleanRule({ pattern, replacement: body.replacement ?? '', regex: body.regex ?? false });
+    const created = await config.addCleanRule({ pattern, replacement, regex: body.regex ?? false });
     return c.json({ success: true, data: created });
   });
 

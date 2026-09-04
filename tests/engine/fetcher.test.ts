@@ -72,6 +72,41 @@ describe('isBlockedIp', () => {
     expect(isBlockedIp('8.8.8.8')).toBe(false);
     expect(isBlockedIp('1.1.1.1')).toBe(false);
   });
+
+  // v2.23.0：扩充保留网段 + 非标准 IPv4 + IPv6 映射
+  it('should block CGNAT 100.64/10', () => {
+    expect(isBlockedIp('100.64.0.1')).toBe(true);
+    expect(isBlockedIp('100.127.255.255')).toBe(true);
+    expect(isBlockedIp('100.128.0.1')).toBe(false); // 超出 /10
+  });
+
+  it('should block benchmark 198.18/15 and test-net ranges', () => {
+    expect(isBlockedIp('198.18.0.1')).toBe(true);
+    expect(isBlockedIp('198.19.255.255')).toBe(true);
+    expect(isBlockedIp('198.20.0.1')).toBe(false);
+    expect(isBlockedIp('192.0.0.1')).toBe(true);   // IETF PI 192.0.0.0/24
+    expect(isBlockedIp('192.0.2.1')).toBe(true);   // TEST-NET-1
+    expect(isBlockedIp('198.51.100.1')).toBe(true); // TEST-NET-2
+    expect(isBlockedIp('203.0.113.1')).toBe(true);  // TEST-NET-3
+  });
+
+  it('should block multicast and reserved ranges', () => {
+    expect(isBlockedIp('224.0.0.1')).toBe(true);
+    expect(isBlockedIp('239.255.255.255')).toBe(true);
+    expect(isBlockedIp('240.0.0.1')).toBe(true);
+    expect(isBlockedIp('255.255.255.255')).toBe(true);
+  });
+
+  it('should reject invalid IPv4 octet values as blocked', () => {
+    expect(isBlockedIp('999.1.1.1')).toBe(true);  // 段值 >255
+    expect(isBlockedIp('1.2.3.999')).toBe(true);
+  });
+
+  it('should block IPv4-mapped IPv6 (::ffff:) for private IPs', () => {
+    expect(isBlockedIp('::ffff:127.0.0.1')).toBe(true);
+    expect(isBlockedIp('::ffff:10.0.0.1')).toBe(true);
+    expect(isBlockedIp('::ffff:8.8.8.8')).toBe(false); // 公网映射放行
+  });
 });
 
 describe('fetchSubscription', () => {

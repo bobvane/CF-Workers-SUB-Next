@@ -30,9 +30,11 @@ const DOH_ENDPOINTS = [
 /** IPv4 正则：4段点分十进制，每段1-3位数字 */
 const IPV4_RE = /^\d{1,3}(?:\.\d{1,3}){3}$/;
 
-/** 判断 server 是否为纯 IP（IPv4） */
+/** 判断 server 是否为纯 IP（IPv4）。每段需 ≤255，且必须是点分十进制
+ * （v2.23.0：补段值校验，避免 999.1.1.1 / 2130706433 十进制等非标准写法被当作域名去真解析） */
 function isPureIP(server: string): boolean {
-  return IPV4_RE.test(server);
+  if (!IPV4_RE.test(server)) return false;
+  return server.split('.').every((octet) => parseInt(octet, 10) <= 255);
 }
 
 /**

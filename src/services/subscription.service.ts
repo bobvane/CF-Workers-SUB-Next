@@ -79,19 +79,21 @@ export function createSubscriptionService(
         const rules = await getRules();
         nodes = applyRules(nodes, rules);
 
+        // 5. 节点处理（先应用清洗规则再写入缓存）
+        const cleanRules = await getCleanRules();
+        if (cleanRules.length > 0) {
+          nodes = nodes.map((n) => ({ ...n, name: applyCleanRules(n.name, cleanRules) }));
+        }
+        // v2.23.0：先写入节点缓存，再更新订阅状态为 active——
+        // 避免「状态已 active 但节点写入失败」的中间态（节点整批原子写，失败则 catch 置 error）
+        await repos.nodes.setBySubscription(id, nodes);
+
         const updated = await repos.subscriptions.update(id, {
           status: 'active',
           lastFetchAt: Date.now(),
           nodeCount: nodes.length,
           errorMessage: undefined,
         });
-
-        // 5. 缓存节点（写入前应用持久化清洗规则集，保证每天自动更新后名字保持干净）
-        const cleanRules = await getCleanRules();
-        if (cleanRules.length > 0) {
-          nodes = nodes.map((n) => ({ ...n, name: applyCleanRules(n.name, cleanRules) }));
-        }
-        await repos.nodes.setBySubscription(id, nodes);
 
         return {
           subscription: updated!,
