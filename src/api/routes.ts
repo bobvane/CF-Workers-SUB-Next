@@ -732,19 +732,19 @@ export function createApp(deps: AppDeps): Hono {
   });
 
   // 查询今日请求数（逐账户并发调 CF GraphQL；token 仅服务端使用，不回传）
+  // v2.26.0：同时为每个账户并发查 KV 写次数（复用同一 token），挂到账户对象的 kv 字段
   app.get('/api/cf-usage', requireAuth(auth), async (c) => {
     const list = await config.getCFUsageAccounts();
     const enabled = list.filter((a) => a.enabled);
+    const { fetchCfUsage, fetchKVUsage } = await import('@/services/cf-usage.service');
     const results = await Promise.all(
       enabled.map(async (a) => {
-        try {
-          const r = await import('@/services/cf-usage.service').then((m) =>
-            m.fetchCfUsage(a.accountId || '', a.apiToken)
-          );
-          return { accountId: a.accountId, name: a.name, ...r };
-        } catch (e) {
-          return { accountId: a.accountId, name: a.name, success: false, pages: 0, workers: 0, total: 0, max: 100000, error: (e as Error).message };
-        }
+        // 请求统计 + KV 写次数 并发查
+        const [usageR, kvR] = await Promise.all([
+          fetchCfUsage(a.accountId || '', a.apiToken).catch((e) => ({ success: false, pages: 0, workers: 0, total: 0, max: 100000, error: (e as Error).message })),
+          fetchKVUsage(a.accountId || '', a.apiToken).catch((e) => ({ success: false, write: 0, read: 0, delete: 0, list: 0, writeMax: 1000, error: (e as Error).message })),
+        ]);
+        return { accountId: a.accountId, name: a.name, ...usageR, kv: kvR };
       })
     );
     return c.json({ success: true, data: results });
@@ -763,26 +763,6 @@ export function createApp(deps: AppDeps): Hono {
       return c.json({ success: true, data: r });
     } catch (e) {
       return c.json({ success: false, error: { code: 'QUERY_FAILED', message: (e as Error).message } }, 400);
-    }
-  });
-
-  // ============ KV 写次数统计（v2.26.0，复用 CF 账户 token，零配置） ============
-  // 调 CF GraphQL kvOperationsAdaptiveGroups 按 actionType 聚合今日次数
-  app.get('/api/kv-usage', requireAuth(auth), async (c) => {
-    const list = await config.getCFUsageAccounts();
-    const enabled = list.filter((a) => a.enabled);
-    if (enabled.length === 0) {
-      return c.json({ success: true, data: null, reason: 'NO_CF_ACCOUNT' });
-    }
-    // 多账户取首个启用账户的查询结果（KV 写次数是 account-wide，单账户足以）
-    const a = enabled[0];
-    try {
-      const r = await import('@/services/cf-usage.service').then((m) =>
-        m.fetchKVUsage(a.accountId || '', a.apiToken)
-      );
-      return c.json({ success: true, data: { accountName: a.name, ...r } });
-    } catch (e) {
-      return c.json({ success: true, data: { accountName: a.name, success: false, write: 0, read: 0, delete: 0, list: 0, writeMax: 1000, error: (e as Error).message } });
     }
   });
 

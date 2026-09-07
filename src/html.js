@@ -345,18 +345,11 @@ tbody tr:hover { background: var(--accent-soft); }
       <div class="card"><div class="card-title">最近更新</div><div class="card-value" style="font-size:14px" id="statUpdate">-</div></div>
     </div>
 
-    <!-- Dashboard CF 请求统计（v2.18.0，仅仪表盘显示，横向长条） -->
+    <!-- Dashboard CF 请求统计（v2.18.0 + v2.26.0：同卡合并请求量+KV 写） -->
     <div style="display:none" id="cfUsageSection">
-      <h3 style="margin:0 0 12px">📊 Cloudflare 请求数统计（今日）</h3>
+      <h3 style="margin:0 0 12px">📊 Cloudflare 统计（今日）</h3>
       <div style="display:flex;flex-direction:column;gap:12px" id="cfUsageGrid"></div>
       <div style="margin-top:10px;color:var(--text2);font-size:13px">未配置 CF 账户？<a href="#settings" style="color:var(--accent)">前往设置添加</a></div>
-    </div>
-
-    <!-- Dashboard KV 写次数统计（v2.26.0，复用 CF 账户 token，零配置） -->
-    <div style="display:none" id="kvUsageSection" style="margin-top:24px">
-      <h3 style="margin:0 0 12px">💾 KV 写次数统计（今日）</h3>
-      <div style="display:flex;flex-direction:column;gap:12px" id="kvUsageGrid"></div>
-      <div style="margin-top:10px;color:var(--text2);font-size:13px">CF Workers 免费版 KV 每日写额度 <b>1,000 次</b>，复用 CF 账户 token 查询，无需额外配置</div>
     </div>
   </div>
 
@@ -1084,7 +1077,6 @@ async function loadDashboard() {
     document.getElementById('statUpdate').textContent = data.data.lastUpdate ? new Date(data.data.lastUpdate).toLocaleString() : '暂无';
   } catch { toast('加载仪表盘失败', 'error'); }
   loadCFUsageDashboard();
-  loadKVUsageDashboard();
 }
 
 // ============ Dashboard CF 请求统计（v2.18.0） ============
@@ -1105,72 +1097,63 @@ async function loadCFUsageDashboard() {
 }
 
 function renderCFUsageCard(a) {
+  // v2.26.0：同卡合并请求量 + KV 写，左半为请求量进度条，右半为 KV 写进度条
   const pct = a.max ? ((a.total / a.max) * 100) : 0;
   const pctStr = pct.toFixed(2);
   const warn = pct >= 90 ? '#c00000' : (pct >= 80 ? '#e00' : 'var(--text2)');
   const barColor = pct >= 90 ? '#c00000' : (pct >= 80 ? '#e00' : 'var(--accent)');
-  // 横向长条：左侧账户名+今日请求量+百分比，右侧进度条+Pages/Workers 拆分
-  return \`<div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
-    <div style="min-width:200px;flex-shrink:0">
-      <div style="font-weight:600;margin-bottom:4px">📊 \${escHtml(a.name || a.accountId)}</div>
-      \${a.success ? \`
-        <div style="font-size:13px;color:var(--text2)">今日请求量</div>
-        <div style="font-size:24px;font-weight:700;line-height:1.2">\${a.total.toLocaleString()} <span style="font-size:13px;color:var(--text2);font-weight:400">/ \${a.max.toLocaleString()} <span style="color:\${warn}">(\${pctStr}%)</span></span></div>\` :
-        \`<div style="font-size:13px;color:var(--red)">⚠️ \${escHtml(a.error || '查询失败')}</div>\`}
+  // KV 写进度
+  const kv = a.kv || {};
+  const kvPct = kv.writeMax ? ((kv.write / kv.writeMax) * 100) : 0;
+  const kvPctStr = kvPct.toFixed(2);
+  const kvWarn = kvPct >= 90 ? '#c00000' : (kvPct >= 80 ? '#e00' : 'var(--text2)');
+  const kvBarColor = kvPct >= 90 ? '#c00000' : (kvPct >= 80 ? '#e00' : 'var(--accent)');
+  return \`<div class="card" style="padding:14px 18px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">
+      <div style="font-weight:600">📊 \${escHtml(a.name || a.accountId)}</div>
     </div>
-    \${a.success ? \`
-      <div style="flex:1;min-width:220px">
-        <div style="height:8px;background:rgba(0,0,0,0.08);border-radius:999px;overflow:hidden">
-          <div style="height:100%;width:\${Math.min(pct,100)}%;background:\${barColor};border-radius:999px"></div>
+    <div style="display:flex;align-items:stretch;gap:24px;flex-wrap:wrap">
+      <!-- 左半：请求量 -->
+      <div style="flex:1;min-width:240px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="min-width:160px;flex-shrink:0">
+          \${a.success ? \`
+            <div style="font-size:12px;color:var(--text2)">今日请求量</div>
+            <div style="font-size:20px;font-weight:700;line-height:1.2">\${a.total.toLocaleString()} <span style="font-size:12px;color:var(--text2);font-weight:400">/ \${a.max.toLocaleString()} <span style="color:\${warn}">(\${pctStr}%)</span></span></div>\` :
+            \`<div style="font-size:13px;color:var(--red)">⚠️ \${escHtml(a.error || '查询失败')}</div>\`}
         </div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:6px">
-          <span>Pages: \${a.pages.toLocaleString()}</span>
-          <span>Workers: \${a.workers.toLocaleString()}</span>
+        \${a.success ? \`
+          <div style="flex:1;min-width:160px">
+            <div style="height:8px;background:rgba(0,0,0,0.08);border-radius:999px;overflow:hidden">
+              <div style="height:100%;width:\${Math.min(pct,100)}%;background:\${barColor};border-radius:999px"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px">
+              <span>Pages: \${a.pages.toLocaleString()}</span>
+              <span>Workers: \${a.workers.toLocaleString()}</span>
+            </div>
+          </div>\` : ''}
+      </div>
+      <!-- 右半：KV 写 -->
+      <div style="width:1px;background:rgba(0,0,0,0.08)"></div>
+      <div style="flex:1;min-width:240px;display:flex;align-items:center;gap:16px;flex-wrap:wrap">
+        <div style="min-width:160px;flex-shrink:0">
+          \${kv.success ? \`
+            <div style="font-size:12px;color:var(--text2)">今日 KV 写</div>
+            <div style="font-size:20px;font-weight:700;line-height:1.2">\${kv.write.toLocaleString()} <span style="font-size:12px;color:var(--text2);font-weight:400">/ \${kv.writeMax.toLocaleString()} <span style="color:\${kvWarn}">(\${kvPctStr}%)</span></span></div>\` :
+            \`<div style="font-size:13px;color:var(--red)">⚠️ \${escHtml(kv.error || '查询失败')}</div>\`}
         </div>
-      </div>\` : ''}
-  </div>\`;
-}
-
-// ============ Dashboard KV 写次数统计（v2.26.0） ============
-async function loadKVUsageDashboard() {
-  const section = document.getElementById('kvUsageSection');
-  const grid = document.getElementById('kvUsageGrid');
-  if (!section || !grid) return;
-  try {
-    const res = await api('/kv-usage');
-    if (!res.data) { section.style.display = 'none'; return; } // 无 CF 账户不显示
-    section.style.display = 'block';
-    grid.innerHTML = renderKVUsageCard(res.data);
-  } catch {
-    section.style.display = 'none'; // 查询失败不打扰用户
-  }
-}
-
-function renderKVUsageCard(d) {
-  const pct = d.writeMax ? ((d.write / d.writeMax) * 100) : 0;
-  const pctStr = pct.toFixed(2);
-  // 80% 黄、90% 深红；read/delete 同样按比例着色（KV 读额度 100000 比写宽松得多，仅 write 主显示）
-  const warn = pct >= 90 ? '#c00000' : (pct >= 80 ? '#e00' : 'var(--text2)');
-  const barColor = pct >= 90 ? '#c00000' : (pct >= 80 ? '#e00' : 'var(--accent)');
-  return \`<div class="card" style="padding:14px 18px;display:flex;align-items:center;gap:24px;flex-wrap:wrap">
-    <div style="min-width:200px;flex-shrink:0">
-      <div style="font-weight:600;margin-bottom:4px">💾 \${escHtml(d.accountName || '默认账户')}</div>
-      \${d.success ? \`
-        <div style="font-size:13px;color:var(--text2)">今日 KV 写次数</div>
-        <div style="font-size:24px;font-weight:700;line-height:1.2">\${d.write.toLocaleString()} <span style="font-size:13px;color:var(--text2);font-weight:400">/ \${d.writeMax.toLocaleString()} <span style="color:\${warn}">(\${pctStr}%)</span></span></div>\` :
-        \`<div style="font-size:13px;color:var(--red)">⚠️ \${escHtml(d.error || '查询失败')}</div>\`}
+        \${kv.success ? \`
+          <div style="flex:1;min-width:160px">
+            <div style="height:8px;background:rgba(0,0,0,0.08);border-radius:999px;overflow:hidden">
+              <div style="height:100%;width:\${Math.min(kvPct,100)}%;background:\${kvBarColor};border-radius:999px;transition:width 0.4s"></div>
+            </div>
+            <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--text2);margin-top:6px">
+              <span>读: \${kv.read.toLocaleString()}</span>
+              <span>删: \${kv.delete.toLocaleString()}</span>
+              <span>列表: \${kv.list.toLocaleString()}</span>
+            </div>
+          </div>\` : ''}
+      </div>
     </div>
-    \${d.success ? \`
-      <div style="flex:1;min-width:220px">
-        <div style="height:8px;background:rgba(0,0,0,0.08);border-radius:999px;overflow:hidden">
-          <div style="height:100%;width:\${Math.min(pct,100)}%;background:\${barColor};border-radius:999px;transition:width 0.4s"></div>
-        </div>
-        <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text2);margin-top:6px">
-          <span>读: \${d.read.toLocaleString()}</span>
-          <span>删: \${d.delete.toLocaleString()}</span>
-          <span>列表: \${d.list.toLocaleString()}</span>
-        </div>
-      </div>\` : ''}
   </div>\`;
 }
 
