@@ -2,6 +2,30 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.26.0] - 2026-09-05
+
+### 仪表盘新增「KV 写次数统计（今日）」卡片
+
+> 用户 2026-09-05 实测「每天免费 KV 写 1000 次被耗光、登录失败」后要求在仪表盘做进度条提示。
+> 复用现有 CF 账户 token，**零新增配置**。
+
+#### 核心改动
+- `cf-usage.service.ts` 新增 `fetchKVUsage(accountId, token)`：调 CF GraphQL `kvOperationsAdaptiveGroups`
+  按 `actionType`（write/read/delete/list）维度聚合今日次数
+- `routes.ts` 新增 `GET /api/kv-usage`（requireAuth）：复用首个启用 CF 账户的 token 查 KV 写次数
+- 前端：仪表盘加 `💾 KV 写次数统计（今日）` 卡片（与 CF 卡片同款横向长条+渐变进度条），80% 黄/90% 红警示
+- 底部读/删/列表 3 项辅助统计；超过 1000 自动 clamp 到 100% 不溢出
+- 无 CF 账户 → 卡片自动隐藏（不打扰用户）
+- **零配置**：用户已配置 CF 账户则直接生效，无需新建任何 key/token
+
+#### 限额对照
+- CF Workers 免费版 KV 写：**1,000 次/天**（超出即挂，v2.25.0 GeoRetry 门闩就是为此加的）
+- CF Workers 免费版 KV 读：**100,000 次/天**（远宽松，仅 write 进度条主显示）
+
+#### 测试
+- 新增 `tests/services/kv-usage.test.ts` 7 用例：4 种 actionType 解析、空数据 0、缺失字段降级、HTTP 错、GraphQL 错、无账户、未知 actionType 忽略
+- 测试基线：452 → **459**
+
 ## [2.25.0] - 2026-09-05
 
 ### 修复 GeoRetry 每天耗尽 KV 免费写额度（用户实测「登录不了、KV 写次数不够」）

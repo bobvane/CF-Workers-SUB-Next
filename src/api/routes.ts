@@ -766,6 +766,26 @@ export function createApp(deps: AppDeps): Hono {
     }
   });
 
+  // ============ KV 写次数统计（v2.26.0，复用 CF 账户 token，零配置） ============
+  // 调 CF GraphQL kvOperationsAdaptiveGroups 按 actionType 聚合今日次数
+  app.get('/api/kv-usage', requireAuth(auth), async (c) => {
+    const list = await config.getCFUsageAccounts();
+    const enabled = list.filter((a) => a.enabled);
+    if (enabled.length === 0) {
+      return c.json({ success: true, data: null, reason: 'NO_CF_ACCOUNT' });
+    }
+    // 多账户取首个启用账户的查询结果（KV 写次数是 account-wide，单账户足以）
+    const a = enabled[0];
+    try {
+      const r = await import('@/services/cf-usage.service').then((m) =>
+        m.fetchKVUsage(a.accountId || '', a.apiToken)
+      );
+      return c.json({ success: true, data: { accountName: a.name, ...r } });
+    } catch (e) {
+      return c.json({ success: true, data: { accountName: a.name, success: false, write: 0, read: 0, delete: 0, list: 0, writeMax: 1000, error: (e as Error).message } });
+    }
+  });
+
   // 获取当前用户名
   app.get('/api/auth/username', requireAuth(auth), async (c) => {
     const username = await auth.getUsername();
