@@ -2,6 +2,36 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.26.6] - 2026-09-19
+
+### GitHub 组前移至 Google 之前 + TikTok/Netflix 归入国外媒体组 + TikTok QUIC 例外
+
+**① GitHub 移到 Google 之前**
+
+组顺序修正为 `… → AI → YouTube → **GitHub** → Google → 微软 → …`。GitHub 域名先命中本组，不再被 Google 组或漏网之鱼截走（用户 2026-09-19 纠正）。
+
+**② TikTok / Netflix 归入国外媒体组（新增两条锁死规则）**
+
+复核发现国外媒体组原先只有 `category-media` —— 它是**新闻媒体站聚合**（BBC/CNN/NYT/NHK/RTHK 等 178 条），**并不含流媒体**。因此 TikTok / Netflix 的域名流量此前一路漏到最后的 `MATCH` 兜底，实际未被归组。
+
+本次在媒体组补齐两条锁死域名规则：
+- `GEOSITE,netflix,国外媒体`（配已有的 `GEOIP,netflix` IP 兜底）
+- `GEOSITE,tiktok,国外媒体`
+
+**③ TikTok QUIC 例外（①c，硬编码）**
+
+全局 QUIC 防泄漏 `AND,((GEOSITE,geolocation-!cn),(DST-PORT,443),(NETWORK,UDP)),REJECT` 会拒绝所有非国内域名的 UDP 443。TikTok 重度依赖 QUIC，TCP 回退不畅时表现为「连不上」。现于该拦截**之前**加一条例外：
+
+```
+AND,((GEOSITE,tiktok),(DST-PORT,443),(NETWORK,UDP)),国外媒体
+```
+
+媒体组被整组取消时该例外不输出（避免引用不存在的策略组）。iOS 端 TikTok 仍有 SIM 卡区域锁限制，与本配置无关。
+
+**关于 TikTok IP 规则**：MetaCubeX **无 `geoip:tiktok`**（404），`geoip:bytedance` 同样不存在，故 TikTok 只有域名规则、无 IP 兜底（专业配置亦然，仅含 `tiktok_domain`）。
+
+- 测试 **462/462 通过**（新增 TikTok/Netflix 归组断言，顺序断言同步 ①c）。
+
 ## [2.26.5] - 2026-09-19
 
 ### 页面对齐工程：分流规则页按专业配置组顺序重构 + 锁死模型

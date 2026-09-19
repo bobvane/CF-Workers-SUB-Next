@@ -136,6 +136,8 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
  * 优先级（自上而下匹配）：
  *   ① 内网防代理 GEOIP,lan,DIRECT,no-resolve（必须最前，防内网误代理）
  *   ①b QUIC 防泄漏：非国内域名 UDP 443 → REJECT（硬编码，吸收专业配置）
+ *   ①c TikTok QUIC 例外：TikTok UDP443 先走国外媒体组代理，再执行 ①b 全局拦截
+ *        （TikTok 重度依赖 QUIC，被全局拦截吃掉会表现为「连不上」；媒体组关闭时不输出）
  *   ②~⑬ 业务组：严格按 RULE_GROUPS 数组顺序展平输出 = 页面展示顺序 = 输出顺序（单一来源）
  *       内置规则全部 fixed（锁死，只能整组开关）；disabledGroupKeys 整组取消；自定义规则随所属组位置输出
  *   ⑭ GEOIP,CN,DIRECT（承重墙：国内 IP 最终直连）
@@ -159,6 +161,13 @@ export function buildRules(
   // lan 在前 private 在后；QUIC 非国内域名 UDP443 REJECT（AND 语法见 mihomo 官方文档）
   lines.push('GEOIP,lan,DIRECT,no-resolve');
   lines.push('GEOSITE,private,DIRECT');
+  // ①c TikTok QUIC 例外（2026-09-19）：TikTok 重度依赖 QUIC，若被下面的全局 QUIC 拦截吃掉，TCP 回退不畅
+  // 时表现为「连不上」。先放行 TikTok 的 UDP443 走国外媒体组代理，再执行全局拦截。
+  // 媒体组被整组取消时不输出（否则引用不存在的策略组，客户端会报错）。
+  if (!disabledGroupKeys.has('media')) {
+    const tiktokUdp: MetaCubeXRule = { id: 'tiktok', label: 'TikTok', tag: 'geosite', target: 'PROXY', native: true, fixed: true };
+    lines.push(`AND,((GEOSITE,tiktok),(DST-PORT,443),(NETWORK,UDP)),${ruleActionTarget(tiktokUdp, groups)}`);
+  }
   lines.push('AND,((GEOSITE,geolocation-!cn),(DST-PORT,443),(NETWORK,UDP)),REJECT');
 
   // === ②~⑬ 业务组：严格按 RULE_GROUPS 数组顺序展平（页面次序 = 输出次序 = 匹配优先级）===

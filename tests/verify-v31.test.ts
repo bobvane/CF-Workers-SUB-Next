@@ -114,9 +114,11 @@ describe('V3.1 验证', () => {
     // 不存在 → 兜底；GITHUB 已吸收为独立组 → GitHub（2026-09-19）
     expect(ruleActionTarget({ id: 'NETEASE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
     expect(ruleActionTarget({ id: 'GITHUB', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('GitHub');
-    // native 小写 id；openai/netflix 已移除 → 漏网之鱼；category-ai-!cn 仍在 AI 组
+    // native 小写 id；openai 已移除 → 漏网之鱼；category-ai-!cn 仍在 AI 组
     expect(ruleActionTarget({ id: 'openai', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('漏网之鱼');
-    expect(ruleActionTarget({ id: 'netflix', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('漏网之鱼');
+    // netflix/tiktok 已归入国外媒体组（2026-09-19）
+    expect(ruleActionTarget({ id: 'netflix', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('国外媒体');
+    expect(ruleActionTarget({ id: 'tiktok', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('国外媒体');
     expect(ruleActionTarget({ id: 'category-ai-!cn', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('AI 平台');
   });
 });
@@ -132,8 +134,10 @@ describe('用户自定义规则置顶', () => {
     expect(rules[0]).toBe('GEOIP,lan,DIRECT,no-resolve'); // ① 内网防代理 lan 在前
     expect(rules[1]).toBe('GEOSITE,private,DIRECT');
     // v2.26.3: ①b QUIC 防泄漏（硬编码，吸收专业配置）
-    expect(rules[2]).toBe('AND,((GEOSITE,geolocation-!cn),(DST-PORT,443),(NETWORK,UDP)),REJECT');
-    expect(rules[3]).toBe('GEOSITE,my-custom-site,用户规则'); // ② 用户规则紧随 private 之后
+    // v2.26.6: ①c TikTok QUIC 例外插在 ①b 之前（TikTok UDP443 走国外媒体组）
+    expect(rules[2]).toBe('AND,((GEOSITE,tiktok),(DST-PORT,443),(NETWORK,UDP)),国外媒体');
+    expect(rules[3]).toBe('AND,((GEOSITE,geolocation-!cn),(DST-PORT,443),(NETWORK,UDP)),REJECT');
+    expect(rules[4]).toBe('GEOSITE,my-custom-site,用户规则'); // ② 用户规则紧随 private 之后
     expect(rules.some(r => r.includes('category-ads-all'))).toBe(true);
     // custom 规则只出现一次（orphan 步骤已跳过 custom 避免重复）
     expect(rules.filter(r => r.includes('my-custom-site')).length).toBe(1);

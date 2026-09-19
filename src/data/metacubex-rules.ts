@@ -69,7 +69,7 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
  * 预定义规则分组
  * 分组顺序 = 输出顺序 = 页面展示顺序（v2.27.0 页面对齐工程）：按专业配置 mihomo.yaml 的命中次序排布。
  *   对齐依据（专业配置规则表，2026-09-19 用户共同确认）：
- *     private → AI → YouTube → Google → GitHub → Microsoft(含微软中国→直连) → Apple → Telegram → TikTok/NETFLIX
+ *     private → AI → YouTube → GitHub → Google → Microsoft(含微软中国→直连) → Apple → Telegram → TikTok/NETFLIX
  *     → Wallet → Steam → 直连兜底 → IP 段兜底 → MATCH
  *   - 项目为聚合规则集（category-* 一锅端），落到"目标策略组流向"对齐，聚合组在对应位置。
  *   - 国内直连保持业务组之前（承重墙）：microsoft@cn / steam@cn 必须排在国际版之前，否则微软/Steam 中国区域名被误判代理。
@@ -124,6 +124,14 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
+    key: 'github', name: 'GitHub', icon: '🐙',
+    items: [
+      // 2026-09-19 吸收专业配置 github_domain → GitHub 组（MetaCubeX 有 geosite:github）
+      // GitHub 位于 Google 之前（用户 2026-09-19）：GitHub 域名先命中本组，不落 Google/漏网之鱼。
+      { id: 'github', label: 'GitHub', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+    ],
+  },
+  {
     key: 'google', name: 'Google服务', icon: '🔍',
     items: [
       // 原生 GEOSITE + GEOIP 输出（v2.15.0）
@@ -135,13 +143,6 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'google-trust-services', label: 'Google Trust 服务', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
       // geoip:google 随本组输出（v2.27.0 起不再统一沉底），内部 id 用 google-geoip 避开与 geosite:google 同名冲突
       { id: 'google-geoip', label: 'Google IP段', tag: 'geoip', target: 'PROXY', native: true, fixed: true },
-    ],
-  },
-  {
-    key: 'github', name: 'GitHub', icon: '🐙',
-    items: [
-      // 2026-09-19 吸收专业配置 github_domain → GitHub 组（MetaCubeX 有 geosite:github）
-      { id: 'github', label: 'GitHub', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
@@ -177,9 +178,14 @@ export const RULE_GROUPS: RuleGroup[] = [
   {
     key: 'media', name: '国外媒体', icon: '🌍',
     items: [
-      // 原生 GEOSITE 输出；category-media 灰色固定（含 YouTube/Netflix/TikTok 聚合，YouTube 已单独成组优先命中）
+      // 原生 GEOSITE 输出；category-media 灰色固定
+      // 注：category-media 实为「新闻媒体站」聚合（BBC/CNN/NYT/NHK/RTHK 等 178 条），并不含流媒体
       { id: 'category-media', label: '媒体聚合', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      // 点名单应用域名（2026-09-19 补）：TikTok/Netflix 原先不在本组，域名流量一路漏到 MATCH 兜底
+      { id: 'netflix', label: 'Netflix', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'tiktok', label: 'TikTok', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
       // IP 段兜底（2026-09-19 吸收专业配置）：纯 IP 访问（无域名）时兜底走代理
+      // 注：MetaCubeX 无 geoip:tiktok（404），TikTok 只有域名规则，无 IP 兜底
       { id: 'netflix-geoip', label: 'Netflix IP段', tag: 'geoip', target: 'PROXY', native: true, fixed: true },
     ],
   },

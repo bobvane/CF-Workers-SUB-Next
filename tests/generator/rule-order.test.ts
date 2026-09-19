@@ -40,8 +40,10 @@ describe('rule order', () => {
     const lines = buildRules(all, RULE_GROUPS);
     const idx = (s: string) => lines.findIndex(l => l.startsWith(s));
 
-    // ①b QUIC 防泄漏：紧跟内网防代理之后，早于一切业务规则
-    expect(lines[2]).toBe('AND,((GEOSITE,geolocation-!cn),(DST-PORT,443),(NETWORK,UDP)),REJECT');
+    // ①c TikTok QUIC 例外 + ①b QUIC 防泄漏：紧跟内网防代理之后，早于一切业务规则
+    // v2.26.6: TikTok 的 UDP443 先走国外媒体组，再由 ①b 全局拦截兜底
+    expect(lines[2]).toBe('AND,((GEOSITE,tiktok),(DST-PORT,443),(NETWORK,UDP)),国外媒体');
+    expect(lines[3]).toBe('AND,((GEOSITE,geolocation-!cn),(DST-PORT,443),(NETWORK,UDP)),REJECT');
 
     // @cn 细分：中国区直连必须排在同名国际版之前，否则会先命中国际版走代理
     const msCn = idx('GEOSITE,microsoft@cn');

@@ -49,8 +49,13 @@ describe('providerName / providerUrl', () => {
     expect(ruleActionTarget(rule('cn', 'DIRECT', { native: true, fixed: true }), RULE_GROUPS)).toBe('DIRECT');
   });
 
-  it('ruleActionTarget 流媒体 PROXY 无归属组 → 漏网之鱼（netflix 已移除）', () => {
-    expect(ruleActionTarget(rule('NETFLIX'), RULE_GROUPS)).toBe('漏网之鱼');
+  it('ruleActionTarget 流媒体 PROXY 无归属组 → 漏网之鱼', () => {
+    expect(ruleActionTarget(rule('OPENAI'), RULE_GROUPS)).toBe('漏网之鱼');
+  });
+
+  it('ruleActionTarget TikTok / Netflix → 国外媒体（2026-09-19 归入国外媒体组）', () => {
+    expect(ruleActionTarget(rule('NETFLIX'), RULE_GROUPS)).toBe('国外媒体');
+    expect(ruleActionTarget(rule('TIKTOK'), RULE_GROUPS)).toBe('国外媒体');
   });
 
   it('ruleActionTarget AI 平台 PROXY 无归属组 → 漏网之鱼（openai 已移除）', () => {
