@@ -2,6 +2,24 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.26.7] - 2026-09-19
+
+### 修复 GitHub 策略组图标不显示
+
+Orz-3/mini 图标库 **无 GitHub 图标**（`Color/GitHub.png` → 404），导致 mihomo 客户端里 GitHub 组图标空白。
+
+改用 Koolson/Qure 图标库的官方 GitHub 图标（同一作者，mihomo/Clash 通用）：
+
+```
+https://raw.githubusercontent.com/Koolson/Qure/refs/heads/master/IconSet/Color/GitHub.png
+```
+
+图标模板同步支持完整 URL（`groupIconMap` 值以 `http` 开头则直接使用，不再强制拼 Orz-3 前缀）。
+
+已批量验证其余 8 个图标（Microsoft/Apple/GAME/OpenAI/Telegram/Manual/Google/YouTube）均 200 可用，仅 GitHub 一处缺失。网页分流规则页图标为 emoji（🐙），不受影响。
+
+- 测试 **462/462 通过**。
+
 ## [2.26.6] - 2026-09-19
 
 ### GitHub 组前移至 Google 之前 + TikTok/Netflix 归入国外媒体组 + TikTok QUIC 例外

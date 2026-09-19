@@ -399,7 +399,7 @@ export async function generateProxyGroups(
     'game': 'GAME.png',
     'ai': 'OpenAI.png',
     'youtube': 'YouTube.png',
-    'github': 'GitHub.png',
+    'github': 'https://raw.githubusercontent.com/Koolson/Qure/refs/heads/master/IconSet/Color/GitHub.png',
     'social': 'Telegram.png',
     'crypto': 'Global.png',
     'user': 'Manual.png',
@@ -439,7 +439,9 @@ export async function generateProxyGroups(
       name: g.name, 
       type: 'select', 
       'default-selected': groupDefaults[key].default,
-      icon: `https://raw.githubusercontent.com/Orz-3/mini/master/Color/${groupIconMap[key] || 'Global.png'}`,
+      icon: groupIconMap[key]?.startsWith('http')
+        ? groupIconMap[key]
+        : `https://raw.githubusercontent.com/Orz-3/mini/master/Color/${groupIconMap[key] || 'Global.png'}`,
       proxies 
     });
   }
