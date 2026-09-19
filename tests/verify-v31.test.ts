@@ -130,7 +130,9 @@ describe('用户自定义规则置顶', () => {
     // v2.14.0: 用户规则移到 GEOSITE,private,DIRECT 之后（用户 2026-09-02 拍板）
     expect(rules[0]).toBe('GEOIP,lan,DIRECT,no-resolve'); // ① 内网防代理 lan 在前
     expect(rules[1]).toBe('GEOSITE,private,DIRECT');
-    expect(rules[2]).toBe('GEOSITE,my-custom-site,用户规则'); // ② 用户规则紧随 private 之后
+    // v2.26.3: ①b QUIC 防泄漏（硬编码，吸收专业配置）
+    expect(rules[2]).toBe('AND,((GEOSITE,geolocation-!cn),(DST-PORT,443),(NETWORK,UDP)),REJECT');
+    expect(rules[3]).toBe('GEOSITE,my-custom-site,用户规则'); // ② 用户规则紧随 private 之后
     expect(rules.some(r => r.includes('category-ads-all'))).toBe(true);
     // custom 规则只出现一次（orphan 步骤已跳过 custom 避免重复）
     expect(rules.filter(r => r.includes('my-custom-site')).length).toBe(1);

@@ -230,6 +230,9 @@ tbody tr:hover { background: var(--accent-soft); }
 .rules-arrow { display: inline-flex; transition: transform .25s cubic-bezier(0.16, 1, 0.3, 1); color: var(--text2); font-size: 12px; width: 14px; justify-content: center; }
 .rules-group-head.open .rules-arrow { transform: rotate(90deg); }
 .rules-group-title { font-weight: 600; font-size: 17px; flex: 1; }
+/* 序号徽章：组顺序 = 输出匹配顺序（先命中生效），把隐含的排序显式化 */
+.rules-group-index { display: inline-flex; align-items: center; justify-content: center; min-width: 22px; height: 22px; padding: 0 6px; margin-right: 8px; border-radius: 6px; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 700; }
+[data-theme="dark"] .rules-group-index { background: var(--accent-soft-d); }
 .rules-group-count { font-size: 14px; color: var(--text2); background: var(--bg3); padding: 2px 10px; border-radius: 999px; }
 [data-theme="dark"] .rules-group-count { background: var(--bg3); }
 .rules-items { display: none; padding: 6px 20px 16px 48px; gap: 8px 14px; }
@@ -411,7 +414,7 @@ tbody tr:hover { background: var(--accent-soft); }
       <span style="font-size:14px;color:var(--text2)">已选 <b id="rulesCount" style="color:var(--accent)">0</b> 条规则</span>
     </div>
     <div class="card" style="padding:12px 16px;font-size:14px;color:var(--text2)">
-      💡 勾选 MetaCubeX 规则集，生成订阅时自动写入对应分流规则。点击大类标题展开子项，可直接勾选整个大类，也可单独勾选其中几项。
+      💡 勾选规则集，生成订阅时按<b>本页自上而下的顺序</b>写入分流规则——<b>顺序即匹配优先级，先命中生效</b>。归入某组的自定义规则就排在该组的位置；内网防代理与 QUIC 防泄漏为内置最前两层，不在此页展示。
     </div>
     <div class="card" style="padding:12px 16px;margin-bottom:12px">
       <div style="font-size:14px;font-weight:500;margin-bottom:8px">⚡ 快速预设 <span style="color:var(--text2);font-weight:normal;font-size:14px">点击覆盖当前勾选，配置跟随输出</span></div>
@@ -905,7 +908,7 @@ function renderRulesTree() {
         <div class="rules-group-head \${cls}" data-g="\${gi}" onclick="toggleRuleGroup(\${gi})">
           <span class="rules-arrow">▶</span>
           <input type="checkbox" data-group-check data-g="\${gi}" \${allChecked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="onRuleGroupChange(this)">
-          <span class="rules-group-title">\${g.icon || ''} \${g.name}</span>
+          <span class="rules-group-title"><span class="rules-group-index">\${gi + 1}</span>\${g.icon || ''} \${g.name}</span>
           <span class="rules-group-count">\${checkedCount} / \${g.items.length}</span>
         </div>
         <div class="rules-items">\${itemsHTML}</div>

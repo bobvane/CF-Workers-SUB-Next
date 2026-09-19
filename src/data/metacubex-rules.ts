@@ -97,6 +97,9 @@ export const RULE_GROUPS: RuleGroup[] = [
     items: [
       // 承重墙 — 固定灰色，不可取消；末尾去重，只留 MATCH
       { id: 'cn', label: '中国直连域名', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
+      // @cn 属性细分（2026-09-19 吸收专业配置）：中国区域名直连，必须排在同名国际版规则之前
+      { id: 'microsoft@cn', label: '微软服务(中国区)', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'steam@cn', label: 'Steam 中国区', tag: 'geosite', target: 'DIRECT', native: true },
     ],
   },
   {
@@ -119,6 +122,8 @@ export const RULE_GROUPS: RuleGroup[] = [
       // 原生 GEOSITE 输出，聚合分类灰色固定；点名的 14 条已移除
       { id: 'category-communication', label: '社交通讯聚合', tag: 'geosite', target: 'PROXY', native: true },
       { id: 'category-social-media-!cn', label: '海外社交(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      // IP 段兜底（2026-09-19 吸收专业配置）：纯 IP 访问（无域名）时兜底走代理
+      { id: 'telegram-geoip', label: 'Telegram IP段', tag: 'geoip', target: 'PROXY', native: true },
     ],
   },
   {
@@ -126,6 +131,8 @@ export const RULE_GROUPS: RuleGroup[] = [
     items: [
       // 原生 GEOSITE 输出；category-media 灰色固定；点名的 9 条已移除；apple-music 已归入苹果服务组（DIRECT）
       { id: 'category-media', label: '媒体聚合', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      // IP 段兜底（2026-09-19 吸收专业配置）：纯 IP 访问（无域名）时兜底走代理
+      { id: 'netflix-geoip', label: 'Netflix IP段', tag: 'geoip', target: 'PROXY', native: true },
     ],
   },
   {

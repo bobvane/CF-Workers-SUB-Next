@@ -34,4 +34,30 @@ describe('rule order', () => {
     // 自定义规则必须排在 media 组之内/之后，而不是置顶于 ②
     expect(ci).toBeGreaterThanOrEqual(mi);
   });
+
+  it('吸收专业配置：QUIC 防泄漏最前 + @cn 细分在直连位 + GEOIP 兜底在 MATCH 前 (v2.26.3)', () => {
+    const all = RULE_GROUPS.flatMap(g => g.items.filter(i => !i.custom));
+    const lines = buildRules(all, RULE_GROUPS);
+    const idx = (s: string) => lines.findIndex(l => l.startsWith(s));
+
+    // ①b QUIC 防泄漏：紧跟内网防代理之后，早于一切业务规则
+    expect(lines[2]).toBe('AND,((GEOSITE,geolocation-!cn),(DST-PORT,443),(NETWORK,UDP)),REJECT');
+
+    // @cn 细分：中国区直连必须排在同名国际版之前，否则会先命中国际版走代理
+    const msCn = idx('GEOSITE,microsoft@cn');
+    const ms = idx('GEOSITE,microsoft,');
+    expect(lines[msCn]).toBe('GEOSITE,microsoft@cn,DIRECT');
+    expect(lines[idx('GEOSITE,steam@cn')]).toBe('GEOSITE,steam@cn,DIRECT');
+    expect(msCn).toBeGreaterThan(-1);
+    expect(msCn).toBeLessThan(ms);
+    expect(idx('GEOSITE,steam@cn')).toBeLessThan(idx('GEOSITE,category-games-!cn'));
+
+    // GEOIP 兜底：全部排在 GEOIP,CN 之后、MATCH 之前
+    const cnIp = lines.indexOf('GEOIP,CN,DIRECT');
+    const match = lines.indexOf('MATCH,漏网之鱼');
+    for (const t of ['GEOIP,telegram,', 'GEOIP,netflix,', 'GEOIP,google,']) {
+      expect(idx(t)).toBeGreaterThan(cnIp);
+      expect(idx(t)).toBeLessThan(match);
+    }
+  });
 });
