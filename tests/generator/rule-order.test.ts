@@ -13,4 +13,25 @@ describe('rule order', () => {
     expect(ms).toBeGreaterThan(-1);
     expect(oi).toBeLessThan(ms);
   });
+
+  it('custom rule outputs at its assigned group position (2026-09-07)', () => {
+    // 将一条自定义规则归入「国外媒体」组（user 组无预置规则，media 组有 category-media）
+    const groups = RULE_GROUPS.map(g => ({ ...g, items: [...g.items] }));
+    const media = groups.find(g => g.key === 'media')!;
+    media.items.push({ id: 'netflix-custom', label: 'Netflix 自定义', tag: 'geosite' as const, target: 'PROXY' as const, custom: true });
+    // 选入：media 聚合规则 + 自定义规则
+    const selected = [
+      { id: 'category-media', label: '媒体聚合', tag: 'geosite' as const, target: 'PROXY' as const, native: true, fixed: true },
+      { id: 'netflix-custom', label: 'Netflix 自定义', tag: 'geosite' as const, target: 'PROXY' as const, custom: true },
+    ];
+    const lines = buildRules(selected, groups);
+    // 自定义规则输出的位置（GEOSITE 行，custom 走原生输出）
+    const ci = lines.findIndex(l => l === 'GEOSITE,netflix-custom,国外媒体');
+    // media 聚合规则位置
+    const mi = lines.findIndex(l => l === 'GEOSITE,category-media,国外媒体');
+    expect(ci).toBeGreaterThan(-1);
+    expect(mi).toBeGreaterThan(-1);
+    // 自定义规则必须排在 media 组之内/之后，而不是置顶于 ②
+    expect(ci).toBeGreaterThanOrEqual(mi);
+  });
 });

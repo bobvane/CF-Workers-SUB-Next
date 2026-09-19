@@ -164,11 +164,13 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   lines.push('GEOIP,lan,DIRECT,no-resolve');
   lines.push('GEOSITE,private,DIRECT');
 
-  // === ② 用户规则（紧随 GEOSITE,private,DIRECT 之后 — 用户 2026-09-02 拍板）===
-  // 自定义规则可覆盖后续内置分类；但内网防代理仍在其前（内网流量不应被任何代理规则劫持）。
-  for (const r of selected) {
-    if (r.custom && selectedSet.has(r.id)) {
-      lines.push(ruleSetLine(r, groups));
+  //=== ② 用户规则（归「用户规则」组的 custom 紧随 private 之后最前 — 2026-09-02 拍板）===
+  // 归其它规则组（国外媒体等）的 custom 不再统一置顶，随所属组在 ⑤ 位置输出（2026-09-07）。
+  // 内网防代理仍在其前（内网流量不应被任何代理规则劫持）。
+  const userItems = groups.find(g => g.key === 'user')?.items ?? [];
+  for (const item of userItems) {
+    if (item.custom && selectedSet.has(item.id)) {
+      lines.push(ruleSetLine(item, groups));
     }
   }
 
@@ -198,12 +200,12 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
   // === ⑤ 业务分类：按 RULE_GROUPS 顺序输出（细分在前、宽泛在后）===
   // 跳过 ads（已在第③步处理）和 china-direct（已在第④步处理）
   // v2.15.0：跳过 geoip 项（google 组内的 geoip:google 单独放加密货币后兜底，见下）
-  const skipKeys = new Set(['ads', 'china-direct']);
+  const skipKeys = new Set(['user', 'ads', 'china-direct']);
   for (const g of groups) {
     if (skipKeys.has(g.key)) continue;
     for (const item of g.items) {
-      if (item.custom) continue; // 自定义规则已在 ① 置顶输出
       if (item.tag === 'geoip') continue; // geoip:google 单独在 crypto 后输出
+      // 归「用户规则」组的 custom 已在 ② 置顶输出；归其它组的 custom 随本组位置输出（2026-09-07）
       // native 规则 id 可能小写（如 'netflix'），用大小写不敏感匹配
       const match = selected.find(r => r.id.toLowerCase() === item.id.toLowerCase());
       if (match) {
@@ -238,7 +240,7 @@ export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] =
     }
   }
   const validGroupIds = new Set(groups.flatMap(g => g.items.map(i => i.id)));
-  // custom 规则已在 ① 置顶输出，orphan 步骤跳过 custom 避免重复
+  // custom 规则已随所属组在 ⑤ 输出（mergeCustomRules 保证所有 custom 都合并进组），orphan 跳过避免重复
   // v2.15.0：geoip 项已在 ⑬b 单独处理，orphan 跳过避免用错误 id（google-geoip）重复输出
   const orphanSelected = selected.filter(r => !r.custom && r.tag !== 'geoip' && !matchedIds.has(r.id.toLowerCase()) && validGroupIds.has(r.id));
   for (const r of orphanSelected) {
