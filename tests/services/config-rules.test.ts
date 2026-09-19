@@ -31,8 +31,8 @@ describe('ConfigService 分流规则注入', () => {
 
     const yaml = await svc.generate('mihomo');
 
-    // googlefcm 是 native 规则，输出 GEOSITE,googlefcm,谷歌FCM，不再走 RULE-SET provider
-    expect(yaml).toContain('GEOSITE,googlefcm,谷歌FCM');
+    // googlefcm 并入国内直连组（native → DIRECT，2026-09-19）：GEOSITE,googlefcm,DIRECT，不走 RULE-SET
+    expect(yaml).toContain('GEOSITE,googlefcm,DIRECT');
     expect(yaml).not.toContain('RULE-SET,geosite-googlefcm');
   });
 

@@ -2,6 +2,38 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.26.5] - 2026-09-19
+
+### 页面对齐工程：分流规则页按专业配置组顺序重构 + 锁死模型
+
+> 用户提供专业 mihomo 配置，要求分流规则页完整按专业配置的**组顺序 + 规则顺序**展示，组内规则**锁死**（只能整组开关），并吸收 **YouTube 独立组**、**GitHub 域名组**，将 **谷歌 FCM** 并入国内直连组。
+
+**① 页面 = 输出 = 匹配优先级（单一声明源）**
+
+规则页自上而下顺序改为与生成配置完全一致：内网/QUIC(硬) → 用户规则 → 广告拦截 → 国内直连 → AI → **YouTube** → Google → **GitHub** → 微软 → 苹果 → 社交 → 国外媒体 → 加密货币 → 游戏 → GEOIP,CN(硬) → MATCH(硬)。GEOIP IP 兜底（google/telegram/netflix）随各自组输出，不再统一沉底。`buildRules` 由分阶段拼接改为**严格按 RULE_GROUPS 数组顺序展平**。
+
+**② 锁死模型：内置规则只能整组开关**
+
+新增 `disabled_groups` KV：规则页内置规则全部锁死（🔒），不再逐条勾选；整组可开关，关闭的组不输出任何规则（含其内置项与自定义项）。新增接口 `GET/PUT /api/rules/groups/disabled`。前端重写渲染逻辑，快速预设改为整组开关。
+
+**③ YouTube 独立组（Google 之前）**
+
+新建 `youtube` 组（`GEOSITE,youtube`，域名单条，置于 Google 之前），解决 YouTube 域名被 Google 组截留后余量落入漏网之鱼的问题。专业配置同样只含域名规则，无 youtube IP 段（视频流量走 googlevideo.com 已含其中）。
+
+**④ GitHub 独立组**
+
+新建 `github` 组（`GEOSITE,github`），吸收专业配置的 GitHub 域名分流。
+
+**⑤ 谷歌 FCM 并入国内直连组（走 DIRECT）**
+
+`googlefcm`（`mtalk*.google.com` 推送服务器，国内可直连）撤出独立策略组，并入国内直连组走 DIRECT —— 与中国主流配置文件一致（用户拍板：通用多应用规则放 CN 直连组，不占独立策略组）。
+
+**⑥ 策略组净增：YouTube / GitHub**
+
+- 自定义规则仍可逐条勾选/删除，且排在其所属组的位置（不变）。
+- 新增 `youtube`/`github` 策略组；移除 `谷歌FCM` 策略组图标与默认。
+- **测试 461/461 通过**（更新了顺序断言：google 在 media 前、geoip 随组输出在 GEOIP,CN 前、googlefcm 走 DIRECT）。
+
 ## [2.26.3] - 2026-09-19
 
 ### 新增：吸收专业配置的规则命中排序（防泄漏 + 区域细分 + IP 兜底）

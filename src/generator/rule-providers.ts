@@ -99,8 +99,8 @@ export function ruleSetLine(rule: MetaCubeXRule, groups: RuleGroup[] = []): stri
   // native 规则和 custom（用户添加）规则统一走 GEOSITE/GEOIP 原生输出，不生成 RULE-SET + rule-providers
   if (rule.native || rule.custom) {
     const action = ruleActionTarget(rule, groups);
-    // 原生规则 id 统一用小写（geosite 分类名规范）
-    const normalizedId = rule.id.toLowerCase();
+    // geoip 项内部 id 形如 <name>-geoip（避开与同名 geosite 冲突），输出时剥掉后缀还原为 geoip 分类名
+    const normalizedId = rule.tag === 'geoip' ? rule.id.replace(/-geoip$/, '').toLowerCase() : rule.id.toLowerCase();
     if (rule.tag === 'geoip') return `GEOIP,${normalizedId},${action}`;
     return `GEOSITE,${normalizedId},${action}`;
   }
@@ -132,136 +132,49 @@ export function buildRuleProviders(selected: MetaCubeXRule[] = []): Record<strin
 }
 
 /**
- * 生成完整 rules 数组（有序，V3.2 冻结版 — v2.11.0 规则排序重构）
+ * 生成完整 rules 数组（有序，v2.11.0 规则排序重构；v2.27.0 页面对齐工程重写）
  * 优先级（自上而下匹配）：
- *   ① 内网防代理：GEOIP,lan,DIRECT,no-resolve + GEOSITE,private,DIRECT（必须最前，防内网误代理）
- *   ①b QUIC 防泄漏：非国内域名 UDP 443 → REJECT（硬编码，2026-09-19 吸收专业配置）
- *   ② 用户规则（默认面板可切换）—— 放在 GEOSITE,private,DIRECT 之后（用户 2026-09-02 拍板）
- *   ③ 广告拦截 (CATEGORY-ADS-ALL 等) → REJECT
- *   ④ 国内直连（china-direct 组 7 条 GEOSITE → DIRECT）
- *   ⑤ 谷歌FCM
- *   ⑥ AI 平台
- *   ⑦ 社交
- *   ⑧ 国外媒体（media 提前到 game 前）
- *   ⑨ 游戏平台
- *   ⑩ 微软服务
- *   ⑪ 苹果服务
- *   ⑫ 加密货币（置末）
- *   ⑬ GEOIP,CN,DIRECT（从国内直连组剥离，排 crypto 之后）
- *   ⑭ MATCH,漏网之鱼
+ *   ① 内网防代理 GEOIP,lan,DIRECT,no-resolve（必须最前，防内网误代理）
+ *   ①b QUIC 防泄漏：非国内域名 UDP 443 → REJECT（硬编码，吸收专业配置）
+ *   ②~⑬ 业务组：严格按 RULE_GROUPS 数组顺序展平输出 = 页面展示顺序 = 输出顺序（单一来源）
+ *       内置规则全部 fixed（锁死，只能整组开关）；disabledGroupKeys 整组取消；自定义规则随所属组位置输出
+ *   ⑭ GEOIP,CN,DIRECT（承重墙：国内 IP 最终直连）
+ *   ⑮ MATCH,漏网之鱼
  *
  * 依据：Mihomo 规则自上而下匹配，先命中的生效。
  *   - 内网防代理必须最前（防 192.168.x.x 误代理），lan 在前 private 在后
- *   - 用户规则紧跟 private 之后（用户显式意图次优先于内网防代理）
- *   - 细分业务规则优先于宽泛国内规则
- *   - GEOIP,CN,DIRECT 剥离出国内直连组，移到 crypto 之后 MATCH 之前
+ *   - 用户规则紧跟 ①b QUIC 之后（用户显式意图次优先于内网防代理；用户 2026-09-02 拍板）
+ *   - 国内直连保持业务组之前：@cn 细分必须排在国际版之前，否则微软/Steam 中国区域名被误判代理
+ *   - GEOIP/d 兜底随各自组输出（v2.27.0 起不再统一沉底，用户 2026-09-19 纠正）
  */
-export function buildRules(selected: MetaCubeXRule[] = [], groups: RuleGroup[] = []): string[] {
+export function buildRules(
+  selected: MetaCubeXRule[] = [],
+  groups: RuleGroup[] = [],
+  disabledGroupKeys: Set<string> = new Set()
+): string[] {
   const selectedSet = new Set(selected.map(r => r.id));
   const lines: string[] = [];
 
-  // === ① 内网防代理（必须最前，防内网误代理）===
-  // lan 在前 private 在后（Q3 已确认）
+  // === ① 内网防代理 + ①b QUIC 防泄漏（硬编码，用户不可调）===
+  // lan 在前 private 在后；QUIC 非国内域名 UDP443 REJECT（AND 语法见 mihomo 官方文档）
   lines.push('GEOIP,lan,DIRECT,no-resolve');
   lines.push('GEOSITE,private,DIRECT');
-
-  // === ①b QUIC 防泄漏（硬编码，用户不可调 — 2026-09-19 吸收专业配置）===
-  // 非国内域名走 UDP 443（QUIC）直接拒绝，强制回落 TCP 走代理，防 QUIC 直连泄露真实 IP。
-  // 语法依据 mihomo 官方文档：AND,((规则),(规则),(规则)),动作
-  // 位置：内网防代理之后（内网流量不应被任何规则劫持），早于一切业务规则。
   lines.push('AND,((GEOSITE,geolocation-!cn),(DST-PORT,443),(NETWORK,UDP)),REJECT');
 
-  //=== ② 用户规则（归「用户规则」组的 custom 紧随 private 之后最前 — 2026-09-02 拍板）===
-  // 归其它规则组（国外媒体等）的 custom 不再统一置顶，随所属组在 ⑤ 位置输出（2026-09-07）。
-  // 内网防代理仍在其前（内网流量不应被任何代理规则劫持）。
-  const userItems = groups.find(g => g.key === 'user')?.items ?? [];
-  for (const item of userItems) {
-    if (item.custom && selectedSet.has(item.id)) {
+  // === ②~⑬ 业务组：严格按 RULE_GROUPS 数组顺序展平（页面次序 = 输出次序 = 匹配优先级）===
+  // 锁死模型：内置规则全部 fixed（整组开关 disabledGroupKeys）；自定义规则随所属组位置输出
+  for (const g of groups) {
+    if (disabledGroupKeys.has(g.key)) continue; // 整组取消
+    for (const item of g.items) {
+      if (g.key === 'user' && !item.custom) continue; // 用户组只含自定义规则
+      if (!item.fixed && !selectedSet.has(item.id)) continue; // 非 fixed（自定义）需选中才输出
       lines.push(ruleSetLine(item, groups));
     }
   }
 
-  // === ③ 广告拦截（REJECT，最高业务优先级）===
-  // 遍历 ads 组所有选中项（CATEGORY-ADS-ALL 等），全部输出到广告拦截组
-  const adsGroup = groups.find(g => g.key === 'ads');
-  if (adsGroup) {
-    for (const item of adsGroup.items) {
-      if (selectedSet.has(item.id)) {
-        lines.push(ruleSetLine(item, groups));
-      }
-    }
-  }
-
-  // === ④ 国内直连（china-direct 组内规则 → 直接 DIRECT）===
-  // 注意：china-direct 承重墙项为 fixed；@cn 细分项（microsoft@cn / steam@cn）可勾选
-  // GEOIP,CN 已从本组剥离，移到第 ⑬ 步单独输出
-  for (const g of groups) {
-    if (g.key !== 'china-direct') continue;
-    for (const item of g.items) {
-      if (item.custom) continue;
-      // 承重墙(fixed)无条件输出；新增的 @cn 细分项可勾选（2026-09-19）
-      if (!item.fixed && !selectedSet.has(item.id)) continue;
-      // native 规则使用 GEOSITE/GEOIP 原生输出；无 native 标记的 fallback 到 RULE-SET
-      lines.push(ruleSetLine(item, groups));
-    }
-  }
-
-  // === ⑤ 业务分类：按 RULE_GROUPS 顺序输出（细分在前、宽泛在后）===
-  // 跳过 ads（已在第③步处理）和 china-direct（已在第④步处理）
-  // v2.15.0：跳过 geoip 项（google 组内的 geoip:google 单独放加密货币后兜底，见下）
-  const skipKeys = new Set(['user', 'ads', 'china-direct']);
-  for (const g of groups) {
-    if (skipKeys.has(g.key)) continue;
-    for (const item of g.items) {
-      if (item.tag === 'geoip') continue; // geoip:google 单独在 crypto 后输出
-      // 归「用户规则」组的 custom 已在 ② 置顶输出；归其它组的 custom 随本组位置输出（2026-09-07）
-      // native 规则 id 可能小写（如 'netflix'），用大小写不敏感匹配
-      const match = selected.find(r => r.id.toLowerCase() === item.id.toLowerCase());
-      if (match) {
-        lines.push(ruleSetLine(match, groups));
-      }
-    }
-  }
-
-  // === ⑬ GEOIP,CN,DIRECT（从国内直连组剥离，排 crypto 之后 MACH 之前）===
-  // 兜底去重后仍须保留此承重墙：国内 IP 最终直连
+  // === ⑭ GEOIP,CN,DIRECT（承重墙：国内 IP 最终直连，排业务组之后 MATCH 之前）===
   lines.push('GEOIP,CN,DIRECT');
 
-  // === ⑬b GEOIP 兜底（IP 段规则集中放 GEOIP,CN 之后、MATCH 之前）===
-  // 吸收专业配置「域名规则在前、IP 规则兜底」的次序（2026-09-19）。
-  // 项 id 形如 <name>-geoip，输出时去掉后缀还原为 GEOIP 的 geoip 条目名。
-  for (const g of groups) {
-    for (const item of g.items) {
-      if (item.tag !== 'geoip') continue;
-      if (!item.fixed && !selectedSet.has(item.id)) continue;
-      lines.push(`GEOIP,${item.id.replace(/-geoip$/, '')},${g.name}`);
-    }
-  }
-
-  // === 兜底去重：防止孤儿规则重复 ===
-  // 注意：GEOSITE/GEOIP 行的 id 已转小写，matchedIds 也用小写匹配，避免大小写不一致导致重复输出
-  const matchedIds = new Set<string>();
-  for (const l of lines) {
-    const parts = l.split(',');
-    if (parts[0] === 'RULE-SET' && parts[1].startsWith('geosite-')) {
-      matchedIds.add(parts[1].slice(8).toLowerCase());
-    } else if (parts[0] === 'GEOSITE' || parts[0] === 'GEOIP') {
-      matchedIds.add(parts[1].toLowerCase()); // 保留 @cn/!cn 属性
-    } else {
-      matchedIds.add(parts[0].toLowerCase());
-    }
-  }
-  const validGroupIds = new Set(groups.flatMap(g => g.items.map(i => i.id)));
-  // custom 规则已随所属组在 ⑤ 输出（mergeCustomRules 保证所有 custom 都合并进组），orphan 跳过避免重复
-  // v2.15.0：geoip 项已在 ⑬b 单独处理，orphan 跳过避免用错误 id（google-geoip）重复输出
-  const orphanSelected = selected.filter(r => !r.custom && r.tag !== 'geoip' && !matchedIds.has(r.id.toLowerCase()) && validGroupIds.has(r.id));
-  for (const r of orphanSelected) {
-    lines.push(ruleSetLine(r, groups));
-  }
-
-  // === ⑭ MATCH 收尾 ===
-  return [
-    ...lines,
-    'MATCH,漏网之鱼',
-  ];
+  // === ⑮ MATCH 收尾 ===
+  return [...lines, 'MATCH,漏网之鱼'];
 }

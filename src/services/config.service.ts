@@ -51,6 +51,10 @@ export interface ConfigService {
   getSelectedRuleIds(): Promise<string[]>;
   /** 设置用户勾选的规则 id 列表 */
   setSelectedRuleIds(ids: string[]): Promise<void>;
+  /** 获取整组取消的规则大类 key 列表（v2.27.0 锁死模型：内置规则只能整组开关） */
+  getDisabledGroupKeys(): Promise<string[]>;
+  /** 设置整组取消的规则大类 key 列表 */
+  setDisabledGroupKeys(keys: string[]): Promise<void>;
   /** 获取用户勾选的完整规则对象列表（由 id 解析自 RULE_GROUPS） */
   getSelectedRules(): Promise<MetaCubeXRule[]>;
   /** 获取自定义规则列表 */
@@ -96,6 +100,7 @@ const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string 
 const DISABLED_NODES_KEY = 'disabled_nodes';
 const SELECTED_RULES_KEY = 'selected_rules';
 const CUSTOM_RULES_KEY = 'custom_rules';
+const DISABLED_GROUPS_KEY = 'disabled_groups';
 
 export function createConfigService(repos: Repositories): ConfigService {
   return {
@@ -135,6 +140,22 @@ export function createConfigService(repos: Repositories): ConfigService {
     async setSelectedRuleIds(ids: string[]): Promise<void> {
       const unique = [...new Set(ids)];
       await repos.settings.set(SELECTED_RULES_KEY, JSON.stringify(unique));
+    },
+
+    async getDisabledGroupKeys(): Promise<string[]> {
+      const raw = await repos.settings.get(DISABLED_GROUPS_KEY);
+      if (!raw) return [];
+      try {
+        const parsed = JSON.parse(raw);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return [];
+      }
+    },
+
+    async setDisabledGroupKeys(keys: string[]): Promise<void> {
+      const unique = [...new Set(keys)];
+      await repos.settings.set(DISABLED_GROUPS_KEY, JSON.stringify(unique));
     },
 
     async getSelectedRules(): Promise<MetaCubeXRule[]> {
@@ -318,7 +339,8 @@ export function createConfigService(repos: Repositories): ConfigService {
             createIpGeoResolver({
               get: (k) => repos.settings.get(k),
               set: (k, v) => repos.settings.set(k, v),
-            })
+            }),
+            new Set(await this.getDisabledGroupKeys())
           );
         case 'singbox':
           return generateSingboxConfig(nodes);

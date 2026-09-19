@@ -52,11 +52,12 @@ describe('rule order', () => {
     expect(msCn).toBeLessThan(ms);
     expect(idx('GEOSITE,steam@cn')).toBeLessThan(idx('GEOSITE,category-games-!cn'));
 
-    // GEOIP 兜底：全部排在 GEOIP,CN 之后、MATCH 之前
+    // v2.27.0：IP 兜底随各自组输出（google/telegram/netflix），排在 GEOIP,CN 之前（不再统一沉底）
     const cnIp = lines.indexOf('GEOIP,CN,DIRECT');
     const match = lines.indexOf('MATCH,漏网之鱼');
     for (const t of ['GEOIP,telegram,', 'GEOIP,netflix,', 'GEOIP,google,']) {
-      expect(idx(t)).toBeGreaterThan(cnIp);
+      expect(idx(t)).toBeGreaterThan(-1);
+      expect(idx(t)).toBeLessThan(cnIp); // 随组输出，在 GEOIP,CN 之前
       expect(idx(t)).toBeLessThan(match);
     }
   });

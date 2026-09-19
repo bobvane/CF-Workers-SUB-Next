@@ -237,6 +237,12 @@ tbody tr:hover { background: var(--accent-soft); }
 [data-theme="dark"] .rules-group-count { background: var(--bg3); }
 .rules-items { display: none; padding: 6px 20px 16px 48px; gap: 8px 14px; }
 .rules-group-head.open + .rules-items { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); }
+/* v2.27.0 锁死模型：内置规则锁死（只整组开关），自定义规则可逐条 */
+.rules-locked { display: flex; align-items: center; gap: 9px; cursor: default; opacity: .9; }
+.rules-lock-icon { flex: none; font-size: 14px; width: 20px; text-align: center; opacity: .85; }
+.rules-custom { cursor: pointer; }
+.rules-off { opacity: .45; padding: 9px 12px; border-radius: 10px; }
+.rules-group-off .rules-group-head { opacity: .55; }
 .rules-item {
   display: grid;
   grid-template-columns: 20px 1fr;
@@ -411,10 +417,10 @@ tbody tr:hover { background: var(--accent-soft); }
   <div class="page" id="page-rules">
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
       <h2>🌐 分流规则</h2>
-      <span style="font-size:14px;color:var(--text2)">已选 <b id="rulesCount" style="color:var(--accent)">0</b> 条规则</span>
+      <span style="font-size:14px;color:var(--text2)">已开启 <b id="rulesCount" style="color:var(--accent)">0</b> 类规则</span>
     </div>
     <div class="card" style="padding:12px 16px;font-size:14px;color:var(--text2)">
-      💡 勾选规则集，生成订阅时按<b>本页自上而下的顺序</b>写入分流规则——<b>顺序即匹配优先级，先命中生效</b>。归入某组的自定义规则就排在该组的位置；内网防代理与 QUIC 防泄漏为内置最前两层，不在此页展示。
+      💡 本页按<b>自上而下的顺序</b>写入分流规则（顺序即匹配优先级，先命中生效）。组内内置规则<b>锁死</b>，只能整组开关；<b>自定义规则</b>可逐条勾选/删除，且排在其所属组的位置。内网防代理与 QUIC 防泄漏为内置最前两层，不在此页展示。
     </div>
     <div class="card" style="padding:12px 16px;margin-bottom:12px">
       <div style="font-size:14px;font-weight:500;margin-bottom:8px">⚡ 快速预设 <span style="color:var(--text2);font-weight:normal;font-size:14px">点击覆盖当前勾选，配置跟随输出</span></div>
@@ -864,61 +870,68 @@ function switchPage(page) {
 // ============ 分流规则 ============
 // 规则大类数据由后端 /api/rules/groups 提供（来源：src/data/metacubex-rules.ts）
 let RULE_GROUPS = [];
-// 每个规则默认勾选状态（1 全部选中，0 未选）
-let ruleSelected = {};
+// 整组取消的规则大类 key（v2.27.0 锁死模型：内置规则只能整组开关）
+let disabledGroupKeys = new Set();
+// 自定义规则选中集合（自定义规则随所属组位置输出，可逐条勾选）
+let customSelected = new Set();
 let ruleExpanded = {};
 
 function initRuleState() {
-  ruleSelected = {};
   ruleExpanded = {};
-  RULE_GROUPS.forEach(g => {
-    g.items.forEach(it => { ruleSelected[it.id] = false; });  // 默认不勾选（由后端保存的选择决定）
-    ruleExpanded[g.key] = false;  // 默认折叠
-  });
+  customSelected = new Set();
+  RULE_GROUPS.forEach(g => { ruleExpanded[g.key] = false; });
 }
+
+function isGroupOn(key) { return !disabledGroupKeys.has(key); }
 
 function renderRulesTree() {
   const container = document.getElementById('rulesTree');
   container.innerHTML = RULE_GROUPS.map((g, gi) => {
-    const allChecked = g.items.every(it => ruleSelected[it.id]);
-    const checkedCount = g.items.filter(it => ruleSelected[it.id]).length;
+    const on = isGroupOn(g.key);
     const cls = ruleExpanded[g.key] ? 'open' : '';
-    // 大类 checkbox：全选时打勾，部分选时半选（CSS 用 indeterminate）
-    // 空组（如 user 组 v2.9.5 起无预置规则）显示占位，等待用户添加
     let itemsHTML;
     if (g.items.length === 0) {
       itemsHTML = \`<div class="rules-empty" style="padding:10px 14px;font-size:14px;color:var(--text2)">暂无预置规则，从右侧规则库添加</div>\`;
     } else {
       itemsHTML = g.items.map(it => {
-        const isCustom = window._customRules && window._customRules.includes(it.id);
-        return \`<label class="rules-item">
-          <input type="checkbox" data-rule-check data-g="\${gi}" data-id="\${escHtml(it.id)}" \${ruleSelected[it.id] ? 'checked' : ''} onchange="onRuleItemChange(this)">
+        const isCustom = it.custom || (window._customRules && window._customRules.includes(it.id));
+        if (isCustom) {
+          // 自定义规则：可逐条勾选 + 删除
+          const checked = on && customSelected.has(it.id);
+          return \`<label class="rules-item rules-custom">
+            <input type="checkbox" data-rule-check data-g="\${gi}" data-id="\${escHtml(it.id)}" \${checked ? 'checked' : ''} onchange="onRuleItemChange(this)">
+            <span class="rule-label">
+              <span class="rule-main">
+                <span class="rule-name">\${escHtml(it.label)}</span>
+                <span class="rule-id">\${escHtml(it.tag)}:\${escHtml(it.id)}</span>
+              </span>
+              <span title="删除此规则" style="cursor:pointer;color:var(--red);font-size:16px;margin-left:8px;opacity:.8;flex:none" class="rule-del" onclick="event.stopPropagation();deleteCustomRule('\${escHtml(it.id)}')">🗑</span>
+            </span>
+          </label>\`;
+        }
+        // 内置规则：锁死，只能整组开关（2026-09-19 用户拍板）
+        return \`<div class="rules-item rules-locked \${on ? '' : 'rules-off'}">
+          <span class="rules-lock-icon" title="内置规则锁死，只能整组开关">🔒</span>
           <span class="rule-label">
             <span class="rule-main">
               <span class="rule-name">\${escHtml(it.label)}</span>
               <span class="rule-id">\${escHtml(it.tag)}:\${escHtml(it.id)}</span>
             </span>
-            \${isCustom ? \`<span title="删除此规则" style="cursor:pointer;color:var(--red);font-size:16px;margin-left:8px;opacity:.8;flex:none" class="rule-del" onclick="event.stopPropagation();deleteCustomRule('\${escHtml(it.id)}')">🗑</span>\` : ''}
           </span>
-        </label>\`;
+        </div>\`;
       }).join('');
     }
     return \`
-      <div class="rules-group">
+      <div class="rules-group \${on ? '' : 'rules-group-off'}">
         <div class="rules-group-head \${cls}" data-g="\${gi}" onclick="toggleRuleGroup(\${gi})">
           <span class="rules-arrow">▶</span>
-          <input type="checkbox" data-group-check data-g="\${gi}" \${allChecked ? 'checked' : ''} onclick="event.stopPropagation()" onchange="onRuleGroupChange(this)">
+          <input type="checkbox" data-group-check data-g="\${gi}" \${on ? 'checked' : ''} onclick="event.stopPropagation()" onchange="onRuleGroupChange(this)">
           <span class="rules-group-title"><span class="rules-group-index">\${gi + 1}</span>\${g.icon || ''} \${g.name}</span>
-          <span class="rules-group-count">\${checkedCount} / \${g.items.length}</span>
+          <span class="rules-group-count">\${on ? '开启' : '已关闭'}</span>
         </div>
-        <div class="rules-items">\${itemsHTML}</div>
+        <div class="rules-items\${on ? '' : ' rules-off'}">\${itemsHTML}</div>
       </div>\`;
   }).join('');
-  // 设置半选状态
-  RULE_GROUPS.forEach((g, gi) => {
-    const cb = document.querySelector(\`.rules-group-head[data-g="\${gi}"] input[data-group-check]\`);
-    if (cb) cb.indeterminate = g.items.some(it => ruleSelected[it.id]) && !g.items.every(it => ruleSelected[it.id]);
-  });
   updateRulesCount();
   renderPresetBar();
 }
@@ -930,48 +943,60 @@ function toggleRuleGroup(gi) {
 
 function onRuleGroupChange(cb) {
   const gi = +cb.dataset.g;
-  const checked = cb.checked;
-  RULE_GROUPS[gi].items.forEach(it => { ruleSelected[it.id] = checked; });
+  const key = RULE_GROUPS[gi].key;
+  if (cb.checked) disabledGroupKeys.delete(key);
+  else disabledGroupKeys.add(key);
   renderRulesTree();
-  saveRuleSelection();
+  saveDisabledGroups();
 }
 
 function onRuleItemChange(cb) {
-  const gi = +cb.dataset.g;
   const id = cb.dataset.id;
-  ruleSelected[id] = cb.checked;
+  if (cb.checked) customSelected.add(id);
+  else customSelected.delete(id);
   renderRulesTree();
   saveRuleSelection();
 }
 
 function updateRulesCount() {
-  const total = Object.values(ruleSelected).filter(Boolean).length;
-  document.getElementById('rulesCount').textContent = total;
+  const onGroups = RULE_GROUPS.filter(g => isGroupOn(g.key)).length;
+  document.getElementById('rulesCount').textContent = onGroups;
 }
 
-// 把当前勾选的规则 id 保存到后端
+// 把整组取消的 key 保存到后端
+function saveDisabledGroups() {
+  fetch('/api/rules/groups/disabled', {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ keys: [...disabledGroupKeys] }),
+  }).then(r => r.json()).then(() => {}).catch(() => toast('规则组保存失败', 'error'));
+}
+
+// 把自定义规则的选中 id 保存到后端
 function saveRuleSelection() {
-  const ids = RULE_GROUPS.flatMap(g => g.items).filter(it => ruleSelected[it.id]).map(it => it.id);
   fetch('/api/rules/selection', {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ids }),
+    body: JSON.stringify({ ids: [...customSelected] }),
   }).then(r => r.json()).then(() => {}).catch(() => toast('规则保存失败', 'error'));
 }
 
 function selectAllRules(check) {
-  RULE_GROUPS.forEach(g => g.items.forEach(it => { ruleSelected[it.id] = check; }));
+  RULE_GROUPS.forEach(g => {
+    if (check) disabledGroupKeys.delete(g.key);
+    else disabledGroupKeys.add(g.key);
+  });
   renderRulesTree();
-  saveRuleSelection();
+  saveDisabledGroups();
 }
 
 // ============ 快速预设 ============
-// 以"组"为单位：选中组全组勾选，未选组全组取消；组内规则目标配置不变
+// 以"组"为单位：整组开关；组内内置规则锁死，自定义规则随其组开关
 const RULE_PRESETS = [
-  { key: 'mini', label: '🟢 极简', groups: ['ads','china-direct','media','google','ai'] },
-  { key: 'mini-crypto', label: '🟢 极简+加密', groups: ['ads','china-direct','media','google','ai','crypto'] },
-  { key: 'standard', label: '🔵 标准', groups: ['ads','china-direct','media','google','ai','google-fcm','microsoft','apple','game'] },
-  { key: 'standard-crypto', label: '🔵 标准+加密', groups: ['ads','china-direct','media','google','ai','google-fcm','microsoft','apple','game','crypto'] },
+  { key: 'mini', label: '🟢 极简', groups: ['ads','china-direct','ai','youtube','github','media'] },
+  { key: 'mini-crypto', label: '🟢 极简+加密', groups: ['ads','china-direct','ai','youtube','github','media','crypto'] },
+  { key: 'standard', label: '🔵 标准', groups: ['ads','china-direct','ai','youtube','google','github','microsoft','apple','media','game'] },
+  { key: 'standard-crypto', label: '🔵 标准+加密', groups: ['ads','china-direct','ai','youtube','google','github','microsoft','apple','media','game','crypto'] },
   { key: 'full', label: '🟣 完全体', groups: null },  // null = 除 crypto 外全部
   { key: 'full-crypto', label: '🟣 完全+加密', groups: 'ALL' },
 ];
@@ -986,33 +1011,21 @@ function applyPreset(key) {
   const p = RULE_PRESETS.find(x => x.key === key);
   if (!p) return;
   const on = new Set(presetGroups(p));
-  RULE_GROUPS.forEach(g => {
-    const checked = on.has(g.key);
-    g.items.forEach(it => {
-      // 只动本分组预置项；用户自定义加入的规则（custom）跟随其所在组的开关
-      ruleSelected[it.id] = checked;
-    });
-  });
+  disabledGroupKeys = new Set(RULE_GROUPS.map(g => g.key).filter(k => !on.has(k)));
   renderRulesTree();
-  saveRuleSelection();
+  saveDisabledGroups();
   toast(\`已应用预设「\${p.label.replace(/^\\S+\\s/, '')}」\`);
 }
 
-// 当前勾选状态与某预设完全一致时高亮；用户手动改动后自然失配
+// 当前开关状态与某预设完全一致时高亮；手动改动后自然失配
 function activePresetKey() {
   for (const p of RULE_PRESETS) {
-    const keys = new Set(presetGroups(p));
-    let match = true;
-    for (const g of RULE_GROUPS) {
-      const want = keys.has(g.key);
-      for (const it of g.items) {
-        if (ruleSelected[it.id] !== want) { match = false; break; }
-      }
-      if (!match) break;
-    }
-    if (match) return p.key;
+    const on = new Set(presetGroups(p));
+    const curOn = RULE_GROUPS.map(g => g.key).filter(k => isGroupOn(k));
+    const same = RULE_GROUPS.length === 0 || (curOn.length === on.size && curOn.every(k => on.has(k)));
+    if (same) return p.key;
   }
-  return null;  // 自定义状态，无高亮
+  return null;
 }
 
 function renderPresetBar() {
@@ -1030,7 +1043,7 @@ function resetRulesExpanded() {
 }
 
 function loadRules() {
-  // 首次加载时从后端拉取规则大类 + 已保存的选择 + 自定义规则，同时显示加载状态
+  // 首次加载时从后端拉取规则大类 + 已保存的选择 + 自定义规则 + 整组开关，同时显示加载状态
   const container = document.getElementById('rulesTree');
   if (RULE_GROUPS.length === 0) {
     container.innerHTML = '<div class="rules-loading">⏳ 正在加载规则…</div>';
@@ -1038,15 +1051,22 @@ function loadRules() {
       fetch('/api/rules/groups').then(r => r.json()),
       fetch('/api/rules/selection').then(r => r.json()),
       fetch('/api/rules/custom').then(r => r.json()),
+      fetch('/api/rules/groups/disabled').then(r => r.json()),
     ])
-      .then(([groupsRes, selRes, customRes]) => {
+      .then(([groupsRes, selRes, customRes, disabledRes]) => {
         if (groupsRes.success && groupsRes.data && groupsRes.data.groups) {
           RULE_GROUPS = groupsRes.data.groups;
           window._customRules = (customRes.data?.rules || []).map(r => r.id);
           initRuleState();
-          // 应用已保存的选择
+          // 应用整组取消的 key
+          if (disabledRes.success && disabledRes.data && Array.isArray(disabledRes.data.keys)) {
+            disabledGroupKeys = new Set(disabledRes.data.keys);
+          }
+          // 应用自定义规则的选中集合（内置规则已锁死，无需从 selection 恢复）
           if (selRes.success && selRes.data && Array.isArray(selRes.data.ids)) {
-            selRes.data.ids.forEach(id => { if (id in ruleSelected) ruleSelected[id] = true; });
+            selRes.data.ids.forEach(id => {
+              if (window._customRules.includes(id)) customSelected.add(id);
+            });
           }
           renderRulesTree();
         } else {
@@ -2059,6 +2079,9 @@ async function confirmAddRule() {
       body: JSON.stringify({ id, label, groupKey, target }),
     });
     toast('✅ 已加入规则库');
+    // 新规则自动选中，随其所属组输出（v2.27.0：自定义规则勾选→立即生效）
+    customSelected.add(id);
+    saveRuleSelection();
     closeModal('addRuleModal');
     // 刷新规则页，让新规则出现在对应分组；并清空搜索框恢复初始态
     if (typeof RULE_GROUPS !== 'undefined') { RULE_GROUPS = []; }

@@ -2,8 +2,12 @@
  * MetaCubeX 分流规则大类定义（预定义分组 + 默认规则）
  * 数据源：MetaCubeX/meta-rules-dat geosite.dat（src/data/metacubex-catalog.json 为 1546 全量清单）
  *
- * 结构：9 个常规大类，每个大类预置常用规则（默认勾选）
+ * 结构：13 个常规大类，每个大类预置常用规则（默认勾选）
  * 用户可在设置页自定义：添加/删除分类、新建大类、改名
+ *
+ * 分组顺序 = 策略组生成顺序 = 输出 rules 顺序 = 页面展示顺序（单一来源，v2.27.0 页面对齐工程）
+ * 锁死模型（2026-09-19 用户拍板）：内置规则全部 fixed（组内锁死、只能整组取消 disabledGroups），
+ * 自定义规则（custom）唯一可自由增删/勾选，且随所属组的配置位置输出。
  */
 import catalogRaw from './metacubex-catalog.json';
 
@@ -16,7 +20,7 @@ export interface MetaCubeXRule {
   tag: 'geosite' | 'geoip' | 'ruleset';
   /** 目标策略：PROXY / DIRECT / REJECT */
   target: 'PROXY' | 'DIRECT' | 'REJECT';
-  /** 用户自定义规则（在输出配置中享有最高优先级，紧跟 PRIVATE 之后第一个命中） */
+  /** 用户自定义规则（在输出配置中享有最高优先级，紧随 PRIVATE 之后第一个命中） */
   custom?: boolean;
   /** 原生 GEOSITE/GEOIP 输出（不走 rule-provider）；缺省=false → 走 RULE-SET provider */
   native?: boolean;
@@ -63,19 +67,18 @@ export const METACUBEX_CATALOG: { meta: Record<string, string | number>; catalog
 
 /**
  * 预定义规则分组
- * 规则优先级（自上而下匹配，见 rule-providers.buildRules，V3.2 冻结版 — v2.11.0 规则排序重构）：
- *   1. 用户规则（默认 DIRECT，面板可切换；无预设规则，等用户添加）
- *   2. 内网防代理：GEOIP,lan,DIRECT,no-resolve + GEOSITE,private,DIRECT（lan 在前）
- *   3. 广告拦截（CATEGORY-ADS-ALL → REJECT）
- *   4. 国内直连（china-direct 组 7 条 GEOSITE → DIRECT；GEOIP,CN 已剥离）
- *   5. 业务分类（细分在前，宽泛在后；FCM/AI/社交/媒体/游戏/微软/苹果/加密货币 → 厂商组最后）
- *   6. GEOIP,CN → DIRECT（从国内直连组剥离，排 crypto 之后）
- *   7. MATCH → 漏网之鱼
+ * 分组顺序 = 输出顺序 = 页面展示顺序（v2.27.0 页面对齐工程）：按专业配置 mihomo.yaml 的命中次序排布。
+ *   对齐依据（专业配置规则表，2026-09-19 用户共同确认）：
+ *     private → AI → YouTube → Google → GitHub → Microsoft(含微软中国→直连) → Apple → Telegram → TikTok/NETFLIX
+ *     → Wallet → Steam → 直连兜底 → IP 段兜底 → MATCH
+ *   - 项目为聚合规则集（category-* 一锅端），落到"目标策略组流向"对齐，聚合组在对应位置。
+ *   - 国内直连保持业务组之前（承重墙）：microsoft@cn / steam@cn 必须排在国际版之前，否则微软/Steam 中国区域名被误判代理。
+ *   - googlefcm（Google FCM 推送，mtalk*.google.com）国内可直连，并入国内直连组（用户 2026-09-19 拍板）。
+ *   - YouTube 单独成组、位于 Google 之前（避免 YouTube 域名先被 Google 或漏网之鱼截走）。
+ *   - IP 段兜底随各自组输出（google-geoip/telegram-geoip/netflix-geoip），不再统一沉底（用户 2026-09-19 纠正）。
  *
- * 分组顺序即策略组生成顺序（generateProxyGroups 按此数组输出）。
- * 注意：`china-direct` 内规则统一 GEOSITE,xxx,DIRECT，
- *       不生成「全球直连」策略组（国内直连用 DIRECT 本身）。
- *       应用净化（CATEGORY-ADS）已合并进广告拦截（ADS⊂ADS-ALL，93% 重叠）。
+ * 硬层（不在此数组，buildRules 硬编码）：GEOIP,lan,DIRECT,no-resolve + GEOSITE,private,DIRECT + QUIC 防泄漏
+ *                                        + GEOIP,CN,DIRECT + MATCH,漏网之鱼。
  */
 export const RULE_GROUPS: RuleGroup[] = [
   // 用户规则组 — 首位，优先级最高
@@ -98,14 +101,10 @@ export const RULE_GROUPS: RuleGroup[] = [
       // 承重墙 — 固定灰色，不可取消；末尾去重，只留 MATCH
       { id: 'cn', label: '中国直连域名', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
       // @cn 属性细分（2026-09-19 吸收专业配置）：中国区域名直连，必须排在同名国际版规则之前
-      { id: 'microsoft@cn', label: '微软服务(中国区)', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'steam@cn', label: 'Steam 中国区', tag: 'geosite', target: 'DIRECT', native: true },
-    ],
-  },
-  {
-    key: 'google-fcm', name: '谷歌FCM', icon: '📲',
-    items: [
-      { id: 'googlefcm', label: '谷歌推送(Google FCM)', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'microsoft@cn', label: '微软服务(中国区)', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
+      { id: 'steam@cn', label: 'Steam 中国区', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
+      // Google FCM 推送（mtalk*.google.com）国内可直连打通，并入国内直连组（用户 2026-09-19 拍板；谷歌FCM 独立组撤除）
+      { id: 'googlefcm', label: '谷歌推送(Google FCM)', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
     ],
   },
   {
@@ -117,63 +116,71 @@ export const RULE_GROUPS: RuleGroup[] = [
     ],
   },
   {
-    key: 'social', name: '社交', icon: '📱',
+    key: 'youtube', name: 'YouTube', icon: '▶️',
     items: [
-      // 原生 GEOSITE 输出，聚合分类灰色固定；点名的 14 条已移除
-      { id: 'category-communication', label: '社交通讯聚合', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'category-social-media-!cn', label: '海外社交(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      // IP 段兜底（2026-09-19 吸收专业配置）：纯 IP 访问（无域名）时兜底走代理
-      { id: 'telegram-geoip', label: 'Telegram IP段', tag: 'geoip', target: 'PROXY', native: true },
-    ],
-  },
-  {
-    key: 'media', name: '国外媒体', icon: '🌍',
-    items: [
-      // 原生 GEOSITE 输出；category-media 灰色固定；点名的 9 条已移除；apple-music 已归入苹果服务组（DIRECT）
-      { id: 'category-media', label: '媒体聚合', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      // IP 段兜底（2026-09-19 吸收专业配置）：纯 IP 访问（无域名）时兜底走代理
-      { id: 'netflix-geoip', label: 'Netflix IP段', tag: 'geoip', target: 'PROXY', native: true },
+      // 单独成组，位于 Google 之前（用户 2026-09-19）：YouTube 域名先命中本组，不再漏给 Google / 漏网之鱼。
+      // geosite:youtube 已覆盖 googlevideo.com 等视频域名；MetaCubeX 无 geoip:youtube（与专业配置一致，无 IP 兜底）。
+      { id: 'youtube', label: 'YouTube', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
     key: 'google', name: 'Google服务', icon: '🔍',
     items: [
-      // 原生 GEOSITE + GEOIP 输出（v2.15.0）；默认在预设里勾选，用户可取消
-      { id: 'google', label: 'Google', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'google-gemini', label: 'Google Gemini', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'google-deepmind', label: 'Google DeepMind', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'google-play', label: 'Google Play', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'google-scholar', label: 'Google 学术', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'google-trust-services', label: 'Google Trust 服务', tag: 'geosite', target: 'PROXY', native: true },
-      // geoip:google 单独放加密货币之后兜底（v2.15.0），内部 id 用 google-geoip 避开与 geosite:google 同名冲突
-      { id: 'google-geoip', label: 'Google IP段', tag: 'geoip', target: 'PROXY', native: true },
+      // 原生 GEOSITE + GEOIP 输出（v2.15.0）
+      { id: 'google', label: 'Google', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'google-gemini', label: 'Google Gemini', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'google-deepmind', label: 'Google DeepMind', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'google-play', label: 'Google Play', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'google-scholar', label: 'Google 学术', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'google-trust-services', label: 'Google Trust 服务', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      // geoip:google 随本组输出（v2.27.0 起不再统一沉底），内部 id 用 google-geoip 避开与 geosite:google 同名冲突
+      { id: 'google-geoip', label: 'Google IP段', tag: 'geoip', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
-    key: 'game', name: '游戏平台', icon: '🎮',
+    key: 'github', name: 'GitHub', icon: '🐙',
     items: [
-      // 原生 GEOSITE 输出；category-games-!cn 灰色固定；点名的 11 条已移除
-      { id: 'category-games-!cn', label: '游戏聚合(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      // 2026-09-19 吸收专业配置 github_domain → GitHub 组（MetaCubeX 有 geosite:github）
+      { id: 'github', label: 'GitHub', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
     key: 'microsoft', name: '微软服务', icon: '🪟',
     items: [
-      // 原生 GEOSITE 输出；microsoft 灰色固定；skype 被 microsoft 聚合兜底；onedrive 已在国内直连走 DIRECT，不在本组重复；azure/bing/msn 已移除
+      // 原生 GEOSITE 输出；skype 被 microsoft 聚合兜底；onedrive 已在国内直连走 DIRECT，不在本组重复；azure/bing/msn 已移除
       { id: 'microsoft', label: '微软服务', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
-      { id: 'microsoft-dev', label: '微软开发者', tag: 'geosite', target: 'PROXY', native: true },
-      { id: 'microsoft-pki', label: '微软 PKI', tag: 'geosite', target: 'PROXY', native: true },
+      { id: 'microsoft-dev', label: '微软开发者', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'microsoft-pki', label: '微软 PKI', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
     key: 'apple', name: '苹果服务', icon: '🍎',
     items: [
-      // 原生 GEOSITE 输出；apple 灰色固定；appstore 被 apple/itunes 聚合兜底，不在本组重复；podcasts/tvplus/intelligence/icloud/itunes 已移除
+      // 原生 GEOSITE 输出；appstore 被 apple/itunes 聚合兜底，不在本组重复；podcasts/tvplus/intelligence/icloud/itunes 已移除
       { id: 'apple', label: '苹果服务', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
-      { id: 'apple-music', label: 'Apple Music', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'apple-dev', label: 'Apple 开发者', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'apple-update', label: 'Apple 系统更新', tag: 'geosite', target: 'DIRECT', native: true },
-      { id: 'apple-pki', label: 'Apple PKI', tag: 'geosite', target: 'DIRECT', native: true },
+      { id: 'apple-music', label: 'Apple Music', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
+      { id: 'apple-dev', label: 'Apple 开发者', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
+      { id: 'apple-update', label: 'Apple 系统更新', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
+      { id: 'apple-pki', label: 'Apple PKI', tag: 'geosite', target: 'DIRECT', native: true, fixed: true },
+    ],
+  },
+  {
+    key: 'social', name: '社交', icon: '📱',
+    items: [
+      // 原生 GEOSITE 输出，聚合分类灰色固定
+      { id: 'category-communication', label: '社交通讯聚合', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'category-social-media-!cn', label: '海外社交(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      // IP 段兜底（2026-09-19 吸收专业配置）：纯 IP 访问（无域名）时兜底走代理
+      { id: 'telegram-geoip', label: 'Telegram IP段', tag: 'geoip', target: 'PROXY', native: true, fixed: true },
+    ],
+  },
+  {
+    key: 'media', name: '国外媒体', icon: '🌍',
+    items: [
+      // 原生 GEOSITE 输出；category-media 灰色固定（含 YouTube/Netflix/TikTok 聚合，YouTube 已单独成组优先命中）
+      { id: 'category-media', label: '媒体聚合', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      // IP 段兜底（2026-09-19 吸收专业配置）：纯 IP 访问（无域名）时兜底走代理
+      { id: 'netflix-geoip', label: 'Netflix IP段', tag: 'geoip', target: 'PROXY', native: true, fixed: true },
     ],
   },
   {
@@ -183,7 +190,13 @@ export const RULE_GROUPS: RuleGroup[] = [
       { id: 'category-cryptocurrency', label: '加密货币通用合集', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
     ],
   },
-
+  {
+    key: 'game', name: '游戏平台', icon: '🎮',
+    items: [
+      // 原生 GEOSITE 输出；category-games-!cn 灰色固定；点名的 11 条已移除
+      { id: 'category-games-!cn', label: '游戏聚合(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+    ],
+  },
 ];
 
 /** 将 RULE_GROUPS 转为前端所需的小写风格（保持 geosite id 大写） */

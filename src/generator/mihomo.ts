@@ -317,10 +317,12 @@ export async function generateProxyGroups(
   nodes: Node[],
   selectedRules: MetaCubeXRule[] = [],
   ruleGroups: RuleGroup[] = [],
-  ipGeoResolver?: GeoResolver
+  ipGeoResolver?: GeoResolver,
+  disabledGroupKeys: Set<string> = new Set()
 ): Promise<Record<string, unknown>[]> {
-  // 判断某规则大类是否有规则被勾选
+  // 判断某规则大类是否有规则被勾选（v2.27.0：含 fixed 项即视为选中——内置规则全部锁死）
   const hasSelected = (key: string): boolean =>
+    ruleGroups.find(g => g.key === key)?.items.some(i => i.fixed) ||
     selectedRules.some(r => ruleGroups.find(g => g.key === key)?.items.some(i => i.id === r.id));
 
   // 1. 地理分组（emoji/名字优先 + 三字码补充 + IP 兜底）
@@ -392,21 +394,23 @@ export async function generateProxyGroups(
   //    ads(广告拦截) / media(国外媒体) 已由上方固化策略组承接；
   // Orz-3/mini Color 图标映射：仓库实际文件名（英文），无对应图标时用 Global.png 兜底
   const groupIconMap: Record<string, string> = {
-    'google-fcm': 'Google.png',
     'microsoft': 'Microsoft.png',
     'apple': 'Apple.png',
     'game': 'GAME.png',
     'ai': 'OpenAI.png',
+    'youtube': 'YouTube.png',
+    'github': 'GitHub.png',
     'social': 'Telegram.png',
     'crypto': 'Global.png',
     'user': 'Manual.png',
   };
   const groupDefaults: Record<string, { name: string; default: string }> = {
-    'google-fcm': { name: '谷歌FCM', default: 'DIRECT' },
     'microsoft': { name: '微软服务', default: '自动选择' },
     'apple': { name: '苹果服务', default: 'DIRECT' },
-    'game': { name: '游戏平台', default: 'DIRECT' },
+    'game': { name: '游戏平台', default: '手动切换' },
     'ai': { name: 'AI 平台', default: '手动切换' },
+    'youtube': { name: 'YouTube', default: '手动切换' },
+    'github': { name: 'GitHub', default: '手动切换' },
     'social': { name: '社交', default: '自动选择' },
     'crypto': { name: '加密货币', default: '🇹🇼 台湾' },
     'user': { name: '用户规则', default: '手动切换' },
@@ -416,7 +420,7 @@ export async function generateProxyGroups(
   
   for (const key of independentGroupKeys) {
     const g = ruleGroups.find(gr => gr.key === key);
-    if (!g || !hasSelected(key)) continue;
+    if (!g || !hasSelected(key) || disabledGroupKeys.has(key)) continue;
     ruleClassGroupNames.push(g.name);
 
     let proxies: string[] = ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'];
@@ -493,7 +497,8 @@ export async function generateMihomoConfig(
   nodes: Node[],
   selectedRules: MetaCubeXRule[] = [],
   ruleGroups: RuleGroup[] = [],
-  ipGeoResolver?: GeoResolver
+  ipGeoResolver?: GeoResolver,
+  disabledGroupKeys: Set<string> = new Set()
 ): Promise<string> {
   // 注：v2.12.2 按用户指令去除全部硬编码头字段（mixed-port/allow-lan/mode/log-level/ipv6/
   // external-controller/secret）及 profile/dns/sniffer 段，配置仅输出 proxies/proxy-groups/rules。
@@ -502,7 +507,7 @@ export async function generateMihomoConfig(
   // url/interval/tolerance 移到 type 正下方便于阅读，测速地址统一用 google generate_204）。
   const uniqueNodes = makeUniqueNames(nodes);
   const proxies = uniqueNodes.map(nodeToMihomoProxy);
-  const groups = await generateProxyGroups(uniqueNodes, selectedRules, ruleGroups, ipGeoResolver);
+  const groups = await generateProxyGroups(uniqueNodes, selectedRules, ruleGroups, ipGeoResolver, disabledGroupKeys);
 
   const config: Record<string, unknown> = {
     'mixed-port': 7893,
@@ -524,7 +529,7 @@ export async function generateMihomoConfig(
     if (nonNativeRules.length > 0) {
       config['rule-providers'] = buildRuleProviders(nonNativeRules);
     }
-    config.rules = buildRules(selectedRules, ruleGroups);
+    config.rules = buildRules(selectedRules, ruleGroups, disabledGroupKeys);
   }
 
   return generateYaml(config);

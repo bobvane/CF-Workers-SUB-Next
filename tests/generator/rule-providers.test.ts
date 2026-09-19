@@ -57,8 +57,8 @@ describe('providerName / providerUrl', () => {
     expect(ruleActionTarget(rule('OPENAI'), RULE_GROUPS)).toBe('漏网之鱼');
   });
 
-  it('ruleActionTarget 谷歌FCM PROXY → 谷歌FCM', () => {
-    expect(ruleActionTarget(rule('GOOGLEFCM'), RULE_GROUPS)).toBe('谷歌FCM');
+  it('ruleActionTarget 谷歌FCM PROXY → DIRECT（并入国内直连组，2026-09-19）', () => {
+    expect(ruleActionTarget(rule('GOOGLEFCM'), RULE_GROUPS)).toBe('DIRECT');
   });
 
   it('ruleActionTarget 苹果服务 DIRECT → 苹果服务', () => {
@@ -134,10 +134,10 @@ describe('buildRules 原生规则输出', () => {
     expect(rules[rules.length - 2]).toBe('GEOIP,CN,DIRECT');
   });
 
-  it('google-fcm 例外组仍生成 RULE-SET provider', () => {
+  it('googlefcm 并入国内直连组 → 原生 GEOSITE,DIRECT（不再生成 RULE-SET，v2.27.0）', () => {
     const rules = buildRules([rule('googlefcm', 'PROXY')], RULE_GROUPS);
-    const googlefcm = rules.find(r => r.startsWith('RULE-SET,geosite-googlefcm'));
-    expect(googlefcm).toBeDefined();
+    expect(rules).toContain('GEOSITE,googlefcm,DIRECT');
+    expect(rules.some(r => r.startsWith('RULE-SET,geosite-googlefcm'))).toBe(false);
   });
 
   it('@属性原生规则正确输出（如 category-social-media-!cn → 社交）', () => {

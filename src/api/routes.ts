@@ -633,6 +633,22 @@ export function createApp(deps: AppDeps): Hono {
     return c.json({ success: true, data: { ids: body.ids } });
   });
 
+  // 获取整组取消的规则大类 key 列表（v2.27.0 锁死模型）
+  app.get('/api/rules/groups/disabled', async (c) => {
+    const keys = await config.getDisabledGroupKeys();
+    return c.json({ success: true, data: { keys } });
+  });
+
+  // 保存整组取消的规则大类 key 列表
+  app.put('/api/rules/groups/disabled', async (c) => {
+    const body = await readBody<{ keys?: string[] }>(c);
+    if (!Array.isArray(body.keys)) {
+      return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'keys 必须为数组' } }, 400);
+    }
+    await config.setDisabledGroupKeys(body.keys);
+    return c.json({ success: true, data: { keys: body.keys } });
+  });
+
   // 获取用户自定义规则列表
   app.get('/api/rules/custom', async (c) => {
     const rules = await config.getCustomRules();
