@@ -9,7 +9,6 @@ import { Repositories } from '@/storage/kv';
 import { generateMihomoConfig } from '@/generator/mihomo';
 import { generateSingboxConfig } from '@/generator/singbox';
 import { generateBase64Config } from '@/generator/base64-generator';
-import { generateShadowrocketConfig } from '@/generator/shadowrocket';
 import { nodeToUrl } from '@/generator/node-to-url';
 import { MetaCubeXRule, RULE_GROUPS, CustomRule, mergeCustomRules, findRuleInGroups } from '@/data/metacubex-rules';
 import { createIpGeoResolver, prewarmIpGeo, PrewarmResult, filterUnlocatedServers, countUnlocatedGeo } from './ip-geo.service';
@@ -85,7 +84,7 @@ const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string 
   v2ray: { contentType: 'text/plain; charset=utf-8', filename: 'v2ray.txt' },
   v2rayn: { contentType: 'text/plain; charset=utf-8', filename: 'v2rayn.txt' },
   nekoray: { contentType: 'text/plain; charset=utf-8', filename: 'nekoray.txt' },
-  shadowrocket: { contentType: 'text/plain; charset=utf-8', filename: 'shadowrocket.conf' },
+  shadowrocket: { contentType: 'text/plain; charset=utf-8', filename: 'shadowrocket.txt' },
 };
 
 const DISABLED_NODES_KEY = 'disabled_nodes';
@@ -335,11 +334,10 @@ export function createConfigService(repos: Repositories): ConfigService {
           );
         case 'singbox':
           return generateSingboxConfig(nodes);
-        case 'shadowrocket':
-          return generateShadowrocketConfig(nodes);
         case 'v2ray':
         case 'v2rayn':
         case 'nekoray':
+        case 'shadowrocket':
           return generateBase64Config(nodes);
         default:
           return '';

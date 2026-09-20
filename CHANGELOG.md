@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.27.5] - 2026-09-20
+
+### 变更：NekoRay / Shadowrocket 输出改为 v2Ray 订阅格式
+
+- NekoRay 原本已走 v2ray base64，无需改动。
+- Shadowrocket 输出从私有链接格式改为 v2Ray 订阅（base64），与 v2ray/v2rayNG/NekoRay 统一；文件名 `shadowrocket.conf` → `shadowrocket.txt`。
+- `src/generator/shadowrocket.ts` 已无调用点（孤儿），保留待砍除。
+
 ## [2.27.4] - 2026-09-20
 
 ### 修复：节点名字清洗应用到所有配置输出
