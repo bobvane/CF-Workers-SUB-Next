@@ -2,6 +2,34 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.26.8] - 2026-09-19
+
+### 吸收专业配置基础层：geox-url / ntp / tun / sniffer / dns + 连接调优
+
+按用户指令，将专业配置（nikki / OpenClash 官方内核通用版）的基础层**完整硬编码**进 mihomo 输出，所有客户端开箱即得，无需用户手动改配置。
+
+**新增输出块：**
+
+| 块 | 内容 | 作用 |
+|---|---|---|
+| `geox-url` | MetaCubeX `country.mmdb`（jsdelivr） | 提供 GeoIP 数据库下载源（fallback-filter 依赖） |
+| `ntp` | `enable` + `write-to-system` | 时间同步，证书校验/节点握手依赖准确时钟 |
+| `tun` | `stack: mixed`、`dns-hijack`、`auto-route`、`auto-redirect`、`auto-detect-interface` | 系统级接管，配合 zashboard 等桌面端 |
+| `sniffer` | HTTP/TLS/QUIC 端口 + `parse-pure-ip` + `skip-domain` | 嗅探真实域名，防 IP 直连绕过分流 |
+| `dns` | fake-ip + ARC 缓存 + 国内/非国内双路解析 | 国内域名走阿里/腾讯 DoH，非国内走 8.8.8.8（经代理组） |
+
+**同时吸收连接调优字段：** `unified-delay`（统一延迟，测速扣掉 TCP 握手耗时）、`tcp-concurrent`（多 IP 并发连接取最快）、`profile.store-selected`（记住手动选的策略组）、`profile.store-fake-ip`（持久化 fake-ip 映射）。
+
+> 上述 4 项曾于 v2.12.2 按指令移除，本次按用户最新指令恢复。
+
+**三处适配（不能照抄专业配置）：**
+
+1. **DNS 引用的第三方 rule-set 替换为原生 geosite** — 专业配置的 `fakeipfilter_cn` / `fakeipfilter_!cn` 来自 qichiyuhub 第三方规则集，本项目不引入外部依赖，改用 MetaCubeX 原生快捷式：`geosite:cn,private,microsoft@cn,apple@cn,steam@cn`（国内解析）与 `geosite:geolocation-!cn`（代理解析）。
+2. **TUN 的 `route-exclude-address-set` 改用原生 `GEOIP,CN`** — 专业配置引用 `cn_ip` rule-provider，本项目使用 mihomo 内置 GEOIP,CN，无需额外规则集。
+3. **DNS 走代理的组名改为 `漏网之鱼`** — 专业配置的 `#默认代理` 在本项目不存在（项目兜底组名为 `漏网之鱼`），照抄会导致 mihomo 加载时报「找不到代理组」。
+
+**明确不吸收：** `external-controller` / `secret` / `external-ui`（zashboard，控制 API 裸开在 `0.0.0.0` 且无密码，生成分发配置中存在安全风险）、`authentication`（明文口令写进 URL 分发的配置）、`bind-address`（默认即 `*`）、`proxy-providers`（本项目自身即订阅生成器，节点内联）。
+
 ## [2.26.7] - 2026-09-19
 
 ### 修复 GitHub 策略组图标不显示

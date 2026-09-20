@@ -490,6 +490,82 @@ export async function generateProxyGroups(
 }
 
 /**
+ * 专业配置基础层（2026-09-19 吸收，全输出）：
+ * geox-url / ntp / tun / sniffer / dns 五大块，忠实还原专业配置的可运行架构。
+ * 唯一适配：dns 段原引用 qichiyuhub 第三方 rule-set（fakeipfilter_cn/!cn），
+ * 按设计改为本项目 MetaCubeX 原生 geosite 快捷式（cn / private / microsoft@cn / apple@cn / steam@cn / geolocation-!cn）。
+ * TUN route-exclude-address-set 原引用 cn_ip rule-provider，项目用原生 GEOIP,CN 快捷式替代。
+ * 另吸收 unified-delay / tcp-concurrent / profile(store-selected+store-fake-ip)（用户 2026-09-19 拍板，推翻 v2.12.2 删除指令）。
+ * 不吸收：external-controller/secret/external-ui(zashboard)（裸开控制 API 有安全风险）、authentication(明文口令随 URL 分发)、bind-address(默认即 *)。
+ */
+const BASE_LAYER: Record<string, unknown> = {
+  'unified-delay': true,
+  'tcp-concurrent': true,
+  'geox-url': {
+    mmdb: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb',
+  },
+  ntp: {
+    enable: true,
+    'write-to-system': true,
+  },
+  tun: {
+    enable: true,
+    stack: 'mixed', // 内核 >v1.19.31 可改 mips 自研协议栈，性能更佳
+    'dns-hijack': ['any:53', 'tcp://any:53'],
+    'auto-route': true,
+    'auto-redirect': true,
+    'auto-detect-interface': true,
+    'route-exclude-address-set': ['GEOIP,CN'],
+  },
+  sniffer: {
+    enable: true,
+    'override-destination': false,
+    'force-dns-mapping': false,
+    'parse-pure-ip': true,
+    sniff: {
+      HTTP: { ports: [80, '8080-8880'] },
+      TLS: { ports: [443, 8443] },
+      QUIC: { ports: [443, 8443] },
+    },
+    'skip-domain': ['Mijia Cloud', '+.push.apple.com'],
+  },
+  dns: {
+    enable: true,
+    'cache-algorithm': 'arc',
+    ipv6: false,
+    'enhanced-mode': 'fake-ip',
+    'fake-ip-ttl': 1,
+    'fake-ip-range': '198.18.0.0/16',
+    'fake-ip-filter-mode': 'blacklist',
+    'default-nameserver': ['https://223.5.5.5/dns-query'],
+    'proxy-server-nameserver': ['https://dns.alidns.com/dns-query', 'https://doh.pub/dns-query'],
+    'direct-nameserver': ['https://dns.alidns.com/dns-query', 'https://doh.pub/dns-query'],
+    'nameserver-policy': {
+      'geosite:cn,private,microsoft@cn,apple@cn,steam@cn': [
+        'https://dns.alidns.com/dns-query#disable-qtype-65=true',
+        'https://doh.pub/dns-query#disable-qtype-65=true',
+      ],
+      'geosite:geolocation-!cn': ['https://8.8.8.8/dns-query#漏网之鱼&disable-qtype-65=true'],
+    },
+    nameserver: ['https://8.8.8.8/dns-query#漏网之鱼&ecs=223.5.5.0/24'],
+    fallback: ['https://8.8.8.8/dns-query#漏网之鱼'],
+    'fallback-filter': { geoip: true, 'geoip-code': 'CN' },
+    'fake-ip-filter': [
+      'geosite:geolocation-!cn',
+      'geosite:cn',
+      'geosite:private',
+      'geosite:microsoft@cn',
+      'geosite:apple@cn',
+      'geosite:steam@cn',
+    ],
+  },
+  profile: {
+    'store-selected': true,
+    'store-fake-ip': true,
+  },
+};
+
+/**
  * 生成 Mihomo YAML 配置
  * @param selectedRules 用户勾选的 MetaCubeX 分流规则（用于生成 rule-providers + rules）
  * @param ruleGroups 预定义规则大类（用于生成按规则分类的 proxy-groups）
@@ -518,6 +594,7 @@ export async function generateMihomoConfig(
     'allow-lan': true,
     mode: 'Rule',
     'log-level': 'info',
+    ...BASE_LAYER,
     proxies,
     'proxy-groups': groups,
     rules: ['MATCH,漏网之鱼'],

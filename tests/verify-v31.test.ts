@@ -145,21 +145,21 @@ describe('用户自定义规则置顶', () => {
 });
 
 describe('AI 审查意见修复', () => {
-  it('输出配置已移除 DNS 段 + fake-ip + sniffer（v2.12.2）', async () => {
+  it('输出配置已吸收 DNS + sniffer 基础层（v2.26.8 推翻 v2.12.2 移除）', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    // v2.12.2: profile/dns/sniffer 三段落全部移除；v2.13.0: 恢复必要头部（port/socks-port/allow-lan/mode/log-level）
-    expect(yaml).not.toContain('dns:');
-    expect(yaml).not.toContain('enhanced-mode');
-    expect(yaml).not.toContain('fake-ip');
-    expect(yaml).not.toContain('nameserver-policy');
-    expect(yaml).not.toContain('fallback-filter');
+    // v2.26.8: 按用户指令吸收专业配置基础层 geox-url/ntp/tun/sniffer/dns（全输出）
+    expect(yaml).toContain('dns:');
+    expect(yaml).toContain('enhanced-mode: fake-ip');
+    expect(yaml).toContain('fake-ip-range: 198.18.0.0/16');
+    expect(yaml).toContain('nameserver-policy');
+    expect(yaml).toContain('fallback-filter');
     expect(yaml).toContain('port: 7890');
     expect(yaml).toContain('socks-port: 7891');
     expect(yaml).toContain('allow-lan: true');
     expect(yaml).toContain('mode: Rule');
     expect(yaml).toContain('log-level: info');
-    expect(yaml).not.toContain('sniffer:');
-    expect(yaml).not.toContain('sniff:');
+    expect(yaml).toContain('sniffer:');
+    expect(yaml).toContain('sniff:');
     expect(yaml).toContain('proxies:');
     expect(yaml).toContain('proxy-groups:');
     expect(yaml).toContain('rules:');

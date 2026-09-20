@@ -164,9 +164,9 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('allow-lan: true');
     expect(yaml).toContain('mode: Rule');
     expect(yaml).toContain('log-level: info');
-    expect(yaml).not.toContain('profile:'); // v2.12.2: profile 段已移除
-    expect(yaml).not.toContain('dns:'); // v2.12.2: dns 段已移除
-    expect(yaml).not.toContain('sniffer:'); // v2.12.2: sniffer 段已移除
+    expect(yaml).toContain('profile:'); // v2.26.8: 恢复 profile 段（store-selected / store-fake-ip）
+    expect(yaml).toContain('dns:'); // v2.26.8: 吸收专业配置 DNS 基础层
+    expect(yaml).toContain('sniffer:'); // v2.26.8: 吸收专业配置 sniffer 基础层
     expect(yaml).toContain('proxies:');
     expect(yaml).toContain('proxy-groups:');
     // 新分组层级 V3.1
@@ -183,20 +183,53 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('MATCH,漏网之鱼');
   });
 
-  it('should NOT include removed hardcoded template header fields (v2.12.2)', async () => {
+  it('base layer: 专业配置头字段已吸收 (v2.26.8)', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    // v2.12.2: 按用户指令去除 profile: 之上的硬编码头字段（v2.13.0 仅恢复 port/socks-port/allow-lan/mode/log-level），其余仍不出现
+    // v2.26.8 用户拍板吸收；v2.12.2 的"删除这些头字段"指令作废
+    expect(yaml).toContain('unified-delay: true');
+    expect(yaml).toContain('tcp-concurrent: true');
+    expect(yaml).toContain('store-selected: true');
+    expect(yaml).toContain('store-fake-ip: true');
+    // 仍不吸收：控制API裸开有安全风险 / 明文口令随URL分发 / 默认即 *
     expect(yaml).not.toContain('external-controller');
-    expect(yaml).not.toContain('secret:');
-    expect(yaml).not.toContain('unified-delay');
-    expect(yaml).not.toContain('tcp-concurrent');
+    expect(yaml).not.toContain('authentication');
+    expect(yaml).not.toContain('bind-address');
     expect(yaml).not.toContain('geodata-mode');
     expect(yaml).not.toContain('geodata-loader');
     expect(yaml).not.toContain('geosite-matcher');
     expect(yaml).not.toContain('geo-auto-update');
     expect(yaml).not.toContain('geo-update-interval');
-    expect(yaml).not.toContain('store-selected'); // v2.12.2: profile 段已移除
-    expect(yaml).not.toContain('profile:');
+  });
+
+  it('base layer: geox-url/ntp/tun/sniffer/dns 五大块已硬编码输出 (v2.26.8)', async () => {
+    const yaml = await generateMihomoConfig([makeNode()]);
+    // geox-url
+    expect(yaml).toContain('geox-url:');
+    expect(yaml).toContain('MetaCubeX/meta-rules-dat@release/country.mmdb');
+    // ntp / tun
+    expect(yaml).toContain('ntp:');
+    expect(yaml).toContain('write-to-system: true');
+    expect(yaml).toContain('tun:');
+    expect(yaml).toContain('dns-hijack:');
+    expect(yaml).toContain('GEOIP,CN'); // route-exclude-address-set（项目无 cn_ip provider，用原生快捷式）
+    // sniffer
+    expect(yaml).toContain('sniffer:');
+    expect(yaml).toContain('parse-pure-ip: true');
+    expect(yaml).toContain('Mijia Cloud');
+    // dns
+    expect(yaml).toContain('cache-algorithm: arc');
+    expect(yaml).toContain('enhanced-mode: fake-ip');
+    expect(yaml).toContain('fake-ip-range: 198.18.0.0/16');
+    expect(yaml).toContain('fake-ip-filter-mode: blacklist');
+    expect(yaml).toContain('geosite:cn,private,microsoft@cn,apple@cn,steam@cn');
+    expect(yaml).toContain('geosite:geolocation-!cn');
+    expect(yaml).toContain('geoip-code: CN');
+    // 非国内 DNS 走项目兜底组「漏网之鱼」，不是专业配置的「默认代理」（该组在本项目不存在）
+    expect(yaml).toContain('#漏网之鱼');
+    expect(yaml).not.toContain('#默认代理');
+    // 第三方 rule-set 已替换为原生 geosite
+    expect(yaml).not.toContain('fakeipfilter');
+    expect(yaml).not.toContain('qichiyuhub');
   });
 
   it('should generate multiple proxies', async () => {
