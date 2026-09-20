@@ -9,10 +9,7 @@ import { Repositories } from '@/storage/kv';
 import { generateMihomoConfig } from '@/generator/mihomo';
 import { generateSingboxConfig } from '@/generator/singbox';
 import { generateBase64Config } from '@/generator/base64-generator';
-import { generateSurgeConfig } from '@/generator/surge';
-import { generateQuantumultXConfig } from '@/generator/quantumultx';
 import { generateShadowrocketConfig } from '@/generator/shadowrocket';
-import { generateLoonConfig } from '@/generator/loon';
 import { nodeToUrl } from '@/generator/node-to-url';
 import { MetaCubeXRule, RULE_GROUPS, CustomRule, mergeCustomRules, findRuleInGroups } from '@/data/metacubex-rules';
 import { createIpGeoResolver, prewarmIpGeo, PrewarmResult, filterUnlocatedServers, countUnlocatedGeo } from './ip-geo.service';
@@ -25,13 +22,10 @@ const CLEAN_RULES_KEY = 'clean_rules';
 export type OutputFormat =
   | 'mihomo'
   | 'singbox'
-  | 'surge'
-  | 'quantumultx'
   | 'v2ray'
   | 'v2rayn'
   | 'nekoray'
-  | 'shadowrocket'
-  | 'loon';
+  | 'shadowrocket';
 
 export interface OutputResult {
   content: string;
@@ -88,13 +82,10 @@ export interface ConfigService {
 const FORMAT_META: Record<OutputFormat, { contentType: string; filename: string }> = {
   mihomo: { contentType: 'text/yaml; charset=utf-8', filename: 'mihomo.yaml' },
   singbox: { contentType: 'application/json; charset=utf-8', filename: 'sing-box.json' },
-  surge: { contentType: 'text/plain; charset=utf-8', filename: 'surge.conf' },
-  quantumultx: { contentType: 'text/plain; charset=utf-8', filename: 'quantumultx.conf' },
   v2ray: { contentType: 'text/plain; charset=utf-8', filename: 'v2ray.txt' },
   v2rayn: { contentType: 'text/plain; charset=utf-8', filename: 'v2rayn.txt' },
   nekoray: { contentType: 'text/plain; charset=utf-8', filename: 'nekoray.txt' },
   shadowrocket: { contentType: 'text/plain; charset=utf-8', filename: 'shadowrocket.conf' },
-  loon: { contentType: 'text/plain; charset=utf-8', filename: 'loon.conf' },
 };
 
 const DISABLED_NODES_KEY = 'disabled_nodes';
@@ -344,14 +335,8 @@ export function createConfigService(repos: Repositories): ConfigService {
           );
         case 'singbox':
           return generateSingboxConfig(nodes);
-        case 'surge':
-          return generateSurgeConfig(nodes, await this.getSelectedRules(), await this.getMergedGroups());
-        case 'quantumultx':
-          return generateQuantumultXConfig(nodes, await this.getSelectedRules(), await this.getMergedGroups());
         case 'shadowrocket':
           return generateShadowrocketConfig(nodes);
-        case 'loon':
-          return generateLoonConfig(nodes, await this.getSelectedRules(), await this.getMergedGroups());
         case 'v2ray':
         case 'v2rayn':
         case 'nekoray':

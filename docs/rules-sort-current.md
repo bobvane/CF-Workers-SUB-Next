@@ -179,7 +179,7 @@ GLOBAL proxies：`['节点选择', '手动切换', '自动选择', 'DIRECT']` �
 |---|---|---|
 | **Mihomo YAML** | ✅ 完整 | proxies + proxy-groups + rules + rule-providers |
 | **sing-box JSON** | ✅ 完整 | 1.11+ 格式，含 DNS/TUN/urltest |
-| v2ray / v2rayN / NekoBox / Shadowrocket / Loon / Surge / Quantumult X | ❌ 仅节点链接 | Base64/原生链接，无分流规则 |
+| v2ray / v2rayN / NekoBox / Shadowrocket | ❌ 仅节点链接 | Base64/原生链接，无分流规则 |
 
 ---
 

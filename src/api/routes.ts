@@ -501,10 +501,10 @@ export function createApp(deps: AppDeps): Hono {
   // ============ Output API ============
 
   // 通用配置输出：/api/output/{format}（需登录）
-  // 支持: mihomo / singbox / v2ray / v2rayn / nekoray / shadowrocket / loon / surge / quantumultx
+  // 支持: mihomo / singbox / v2ray / v2rayn / nekoray / shadowrocket
   app.get('/api/output/:format', requireAuth(auth), async (c) => {
     const format = c.req.param('format') ?? '';
-    const allowedFormats = ['mihomo', 'singbox', 'v2ray', 'v2rayn', 'nekoray', 'shadowrocket', 'loon', 'surge', 'quantumultx'];
+    const allowedFormats = ['mihomo', 'singbox', 'v2ray', 'v2rayn', 'nekoray', 'shadowrocket'];
     if (!allowedFormats.includes(format)) {
       throw ERRORS.INVALID_PARAMETER('Unsupported format');
     }
@@ -539,7 +539,7 @@ export function createApp(deps: AppDeps): Hono {
   }
 
   // 通用订阅端点：/sub/{format}/{token}
-  // 支持: mihomo / singbox / v2ray / v2rayn / nekoray / shadowrocket / loon / surge / quantumultx
+  // 支持: mihomo / singbox / v2ray / v2rayn / nekoray / shadowrocket
   app.get('/sub/:format/:token', async (c) => {
     const token = c.req.param('token') ?? '';
     const format = c.req.param('format') ?? '';
@@ -548,7 +548,7 @@ export function createApp(deps: AppDeps): Hono {
       return c.json({ success: false, error: { code: 'AUTH_REQUIRED', message: 'Invalid token' } }, 401);
     }
 
-    const allowedFormats = ['mihomo', 'singbox', 'v2ray', 'v2rayn', 'nekoray', 'shadowrocket', 'loon', 'surge', 'quantumultx'];
+    const allowedFormats = ['mihomo', 'singbox', 'v2ray', 'v2rayn', 'nekoray', 'shadowrocket'];
     if (!allowedFormats.includes(format)) {
       return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: 'Unsupported format' } }, 400);
     }

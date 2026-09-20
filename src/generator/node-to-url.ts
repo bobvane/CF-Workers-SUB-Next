@@ -1,6 +1,6 @@
 /**
  * Node → 标准节点链接序列化
- * 用于 Base64 输出格式（V2RAY/V2RAYNG/NEKORAY/Shadowrocket/Loon）
+ * 用于 Base64 输出格式（V2RAY/V2RAYNG/NEKORAY/Shadowrocket）
  * 把统一 Node 模型转回 vless:// vmess:// trojan:// ss:// hysteria2:// tuic:// wireguard:// anytls:// 链接
  */
 

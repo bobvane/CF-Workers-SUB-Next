@@ -476,9 +476,6 @@ tbody tr:hover { background: var(--accent-soft); }
           <option value="v2rayn">📱 V2RayNG</option>
           <option value="nekoray">🪐 NekoRay</option>
           <option value="shadowrocket">🚀 Shadowrocket</option>
-          <option value="loon">🌙 Loon</option>
-          <option value="surge">⚡ Surge</option>
-          <option value="quantumultx">🍁 Quantumult X</option>
         </select>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap">
@@ -630,9 +627,6 @@ tbody tr:hover { background: var(--accent-soft); }
           <option value="v2rayn">📱 V2RayNG</option>
           <option value="nekoray">🪐 NekoRay</option>
           <option value="shadowrocket">🚀 Shadowrocket</option>
-          <option value="loon">🌙 Loon</option>
-          <option value="surge">⚡ Surge</option>
-          <option value="quantumultx">🍁 Quantumult X</option>
         </select>
         <button class="btn btn-primary btn-sm" onclick="previewSelect(true)" style="margin-left:8px">👉 加载</button>
         <button class="btn btn-sm" onclick="downloadConfigByFormat()" style="margin-left:8px">💾 下载配置文件</button>
@@ -1578,9 +1572,6 @@ function renderOutputUrls() {
     { label: '分流配置（含策略组 + 规则）',
       formats: [
         { key: 'mihomo',    name: '🐱 Mihomo',       desc: 'Mihomo / Clash Meta / OpenClash / Stash' },
-        { key: 'surge',     name: '⚡ Surge',         desc: 'Surge iOS / Mac' },
-        { key: 'loon',      name: '🌙 Loon',          desc: 'Loon iOS' },
-        { key: 'quantumultx', name: '🍁 Quantumult X', desc: 'Quantumult X iOS' },
       ]},
     { label: '节点聚合（纯链接，无分流规则）',
       formats: [
@@ -1717,9 +1708,6 @@ const CONFIG_FILE_NAMES = {
   v2rayn:        'v2rayn.txt',
   nekoray:       'nekoray.txt',
   shadowrocket:  'shadowrocket.conf',
-  loon:          'loon.conf',
-  surge:         'surge.conf',
-  quantumultx:   'quantumultx.conf',
 };
 
 /** 读取预览弹窗当前选中的格式，按客户端标准文件名下载 */

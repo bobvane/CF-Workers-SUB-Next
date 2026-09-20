@@ -1,8 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { makeUniqueNames, generateMihomoConfig } from '@/generator/mihomo';
 import { generateSingboxConfig } from '@/generator/singbox';
-import { generateSurgeConfig } from '@/generator/surge';
-import { generateQuantumultXConfig } from '@/generator/quantumultx';
 import { Node } from '@/models/node';
 
 function makeNode(name: string): Node {
@@ -48,15 +46,5 @@ describe('generators with duplicate names', () => {
     const json = generateSingboxConfig([makeNode('US'), makeNode('US')]);
     expect(json).toContain('"US"');
     expect(json).toContain('"US-1"');
-  });
-
-  it('should not produce duplicate names in surge', async () => {
-    const config = generateSurgeConfig([makeNode('US'), makeNode('US')]);
-    expect(config).toContain('US-1');
-  });
-
-  it('should not produce duplicate names in quantumultx', async () => {
-    const config = generateQuantumultXConfig([makeNode('US'), makeNode('US')]);
-    expect(config).toContain('US-1');
   });
 });

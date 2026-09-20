@@ -1,6 +1,6 @@
 /**
  * Base64 订阅生成器
- * 覆盖客户端：V2RAY / V2RAYNG / NEKORAY / Shadowrocket / Loon
+ * 覆盖客户端：V2RAY / V2RAYNG / NEKORAY / Shadowrocket
  * 输出：所有节点链接 Base64 编码（标准 V2Ray 订阅格式）
  */
 

@@ -1,7 +1,5 @@
 import { describe, it, expect } from 'vitest';
 import { generateBase64Config, validateBase64 } from '@/generator/base64-generator';
-import { generateSurgeConfig, nodeToSurgeProxy } from '@/generator/surge';
-import { generateQuantumultXConfig, nodeToQXServer } from '@/generator/quantumultx';
 import { generateShadowrocketConfig } from '@/generator/shadowrocket';
 import { nodeToUrl } from '@/generator/node-to-url';
 import { Node } from '@/models/node';
@@ -94,49 +92,6 @@ describe('generateBase64Config', () => {
     const decoded = safeBase64Decode(content);
     expect(decoded).toContain('vless://');
     expect(decoded).toContain('JP-01');
-  });
-});
-
-describe('generateSurgeConfig', () => {
-  it('should generate valid surge config', () => {
-    const config = generateSurgeConfig([makeNode()]);
-    expect(config).toContain('[Proxy]');
-    expect(config).toContain('[Proxy Group]');
-    expect(config).toContain('[Rule]');
-    expect(config).toContain('FINAL,PROXY');
-    expect(config).toContain('JP-01');
-  });
-
-  it('should convert ss proxy', () => {
-    const node = makeNode({
-      protocol: 'ss',
-      password: 'p1',
-      metadata: { source: 'test', originalName: 'SS-1', tags: ['chacha20-ietf-poly1305'] },
-    });
-    const line = nodeToSurgeProxy(node);
-    expect(line).toContain('ss');
-    expect(line).toContain('encrypt-method=chacha20-ietf-poly1305');
-  });
-});
-
-describe('generateQuantumultXConfig', () => {
-  it('should generate valid quantumult x config', () => {
-    const config = generateQuantumultXConfig([makeNode()]);
-    expect(config).toContain('[server_local]');
-    expect(config).toContain('[filter_local]');
-    expect(config).toContain('[policy]');
-    expect(config).toContain('JP-01');
-  });
-
-  it('should convert ss server line', () => {
-    const node = makeNode({
-      protocol: 'ss',
-      password: 'p1',
-      metadata: { source: 'test', originalName: 'SS-1', tags: ['chacha20-ietf-poly1305'] },
-    });
-    const line = nodeToQXServer(node);
-    expect(line).toContain('ss=');
-    expect(line).toContain('method=chacha20-ietf-poly1305');
   });
 });
 

@@ -2,6 +2,19 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.27.2] - 2026-09-20
+
+### 移除 Surge / Loon / Quantumult X 三种输出格式
+
+- 按用户要求「砍掉不做了」，彻底删除，不保留
+- `src/generator/` 删除 `surge.ts`、`loon.ts`、`quantumultx.ts` 三个生成器
+- `config.service.ts`：`OutputFormat`、`FORMAT_META`、生成 switch 删除 3 个分支
+- `routes.ts`：`/api/sub/` 允许格式数组删除 3 项
+- `public/index.html`：两个格式下拉 `<select>`、输出卡片分组、下载文件名表各删除 3 项
+- `rule-format-mapping.ts`：删除 blackmatrix7 整套死代码（106 行映射表 + 3 个 URL 函数 + 2 个映射查询函数 + 过滤函数）—— 该表仅被这三个客户端使用
+- 测试同步删 3 import + 6 用例；文档 `docs/rules-sort-current.md` 更新客户端清单
+- 结论：**此后仅 mihomo 一种输出携带分流规则**，其余（sing-box / v2ray / v2rayn / nekoray / shadowrocket）为纯节点输出
+
 ## [2.27.1] - 2026-09-19
 
 ### geox-url.mmdb 改用内核默认的 geoip.metadb
