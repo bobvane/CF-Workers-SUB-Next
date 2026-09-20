@@ -207,7 +207,7 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('geox-url:');
     expect(yaml).toContain('meta-rules-dat@release/geoip.dat');
     expect(yaml).toContain('meta-rules-dat@release/geosite.dat');
-    expect(yaml).toContain('meta-rules-dat@release/country.mmdb');
+    expect(yaml).toContain('meta-rules-dat@release/geoip.metadb');
     expect(yaml).toContain('meta-rules-dat@release/GeoLite2-ASN.mmdb');
     // ntp / tun
     expect(yaml).toContain('ntp:');

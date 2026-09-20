@@ -506,7 +506,9 @@ const BASE_LAYER: Record<string, unknown> = {
     // 仅当内核工作目录缺失对应文件时才按此表获取；内核默认源全是 github.com，国内常超时。
     geoip: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat',
     geosite: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat',
-    mmdb: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb',
+    // mmdb 用内核自身的默认文件 geoip.metadb（含国家+ASN，比 GeoLite2-Country 数据更全），
+    // 只换下载域名 → 内容与内核默认完全一致，兼容性最保险。
+    mmdb: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.metadb',
     asn: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb',
   },
   ntp: {

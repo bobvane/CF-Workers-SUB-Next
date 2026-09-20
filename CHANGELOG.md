@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.27.1] - 2026-09-19
+
+### geox-url.mmdb 改用内核默认的 geoip.metadb
+
+- 原指向 `country.mmdb`（GeoLite2-Country，官方文档示例地址），现改为 `geoip.metadb`
+- 理由：`geoip.metadb` 是 mihomo 自身的默认下载文件（`config.go` 的 `GeoXUrl.Mmdb`），含国家 + ASN，数据更全；改动后只换了下载域名，**内容与内核默认完全一致**，跨客户端兼容性最保险
+- `geox-url.mmdb` 是单个字符串，无法同时填两个 URL；「多客户端兼容」由 **mmdb（metadb）+ geoip（.dat）两种格式各一项** 覆盖，两项均已配置
+- 新 URL 已实测 HTTP 200；464 tests pass
+
 ## [2.27.0] - 2026-09-19
 
 ### AI 平台组补入四家点名规则并锁死
