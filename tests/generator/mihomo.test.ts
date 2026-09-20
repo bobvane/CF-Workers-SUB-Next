@@ -203,9 +203,12 @@ describe('generateMihomoConfig', () => {
 
   it('base layer: geox-url/ntp/tun/sniffer/dns 五大块已硬编码输出 (v2.26.8)', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
-    // geox-url
+    // geox-url（四项同源 CDN，缺文件时内核才按此下载）
     expect(yaml).toContain('geox-url:');
-    expect(yaml).toContain('MetaCubeX/meta-rules-dat@release/country.mmdb');
+    expect(yaml).toContain('meta-rules-dat@release/geoip.dat');
+    expect(yaml).toContain('meta-rules-dat@release/geosite.dat');
+    expect(yaml).toContain('meta-rules-dat@release/country.mmdb');
+    expect(yaml).toContain('meta-rules-dat@release/GeoLite2-ASN.mmdb');
     // ntp / tun
     expect(yaml).toContain('ntp:');
     expect(yaml).toContain('write-to-system: true');

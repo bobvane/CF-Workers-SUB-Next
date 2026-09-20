@@ -502,7 +502,12 @@ const BASE_LAYER: Record<string, unknown> = {
   'unified-delay': true,
   'tcp-concurrent': true,
   'geox-url': {
+    // 四项同源 CDN（jsdelivr testingcf）。geox-url 只是 URL 对照表，不会主动下载，
+    // 仅当内核工作目录缺失对应文件时才按此表获取；内核默认源全是 github.com，国内常超时。
+    geoip: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat',
+    geosite: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat',
     mmdb: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb',
+    asn: 'https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb',
   },
   ntp: {
     enable: true,

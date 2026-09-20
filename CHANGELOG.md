@@ -2,6 +2,32 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.26.9] - 2026-09-19
+
+### 补齐 geox-url 为四项同源 CDN
+
+v2.26.8 只覆盖了 `mmdb` 一项，而本项目 DNS 配置大量依赖 `geosite:`（`nameserver-policy` / `fake-ip-filter` 里的 `geosite:cn`、`geosite:private`、`geosite:geolocation-!cn` 等）。若客户端内核工作目录里连 `GeoSite.dat` 都没有，会退回内核默认源下载：
+
+```
+https://github.com/MetaCubeX/meta-rules-dat/releases/download/latest/geosite.dat
+```
+
+内核的四个默认 geox 源**全部指向 github.com**（已核对 `config/config.go`），国内裸内核/路由器首次启动经常下载超时。
+
+现补齐为四项同源 jsdelivr CDN：
+
+```yaml
+geox-url:
+  geoip:   "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geoip.dat"
+  geosite: "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/geosite.dat"
+  mmdb:    "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/country.mmdb"
+  asn:     "https://testingcf.jsdelivr.net/gh/MetaCubeX/meta-rules-dat@release/GeoLite2-ASN.mmdb"
+```
+
+四个地址均已实测 HTTP 200。该地址即官方文档「自定 GEO 下载地址」一节的示例写法。
+
+**说明：** `geox-url` 只是一张 URL 对照表，**不会主动下载任何文件**——内核仅在自身工作目录缺失对应文件时才按此表获取（`component/geodata/init.go` 以 `os.Stat` 判断）。因此对已预置 Geo 文件的成品客户端（OpenClash / Nikki / Clash Verge 等）零影响、零额外开销，只是为缺失场景铺好国内可达的管道。
+
 ## [2.26.8] - 2026-09-19
 
 ### 吸收专业配置基础层：geox-url / ntp / tun / sniffer / dns + 连接调优
