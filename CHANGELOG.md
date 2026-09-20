@@ -2,6 +2,21 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.27.3] - 2026-09-20
+
+### Mihomo 策略组默认值与顺序（按分流页面）
+
+- **默认切换值调整**（对齐用户最新指令）：
+  - AI 平台：手动切换 → **美国地理组**
+  - GitHub：手动切换 → 自动选择
+  - Google服务：手动切换 → DIRECT
+  - YouTube：手动切换 → 自动选择
+  - 微软服务：自动选择 → DIRECT
+  - 游戏平台：手动切换 → DIRECT
+  - 漏网之鱼：手动切换 → 自动选择
+- **整组顺位改为与分流页面（RULE_GROUPS）顺序一致**：顶层切换组（节点选择/手动切换/自动选择）→ 业务组（用户规则/广告拦截/AI 平台/YouTube/GitHub/Google服务/微软服务/苹果服务/社交/国外媒体/加密货币/游戏平台）→ 漏网之鱼 → GLOBAL → 地理组
+- `src/generator/mihomo.ts`：`groupDefaults` 调整 + AI 默认取美国组实际名 + 末尾 `PANEL_ORDER` 稳定排序
+
 ## [2.27.2] - 2026-09-20
 
 ### 移除 Surge / Loon / Quantumult X 三种输出格式

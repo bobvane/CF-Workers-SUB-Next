@@ -295,17 +295,12 @@ export interface GeoResolver {
 /**
  * 生成代理组配置（参考 ACL4SSR/参考配置 sub.bobvane.top 排序与结构）
  *
- * 分组排序（zashboard 面板显示顺序 = GLOBAL 组的 proxies 引用顺序）：
- *   1. 节点选择（select：自动选择 + 地理组 + 手动切换 + DIRECT）
- *   2. 手动切换（select：具体节点扁平列表，逐节点选）
- *   3. 自动选择（url-test：具体节点，自动测速）
- *   4. 国外媒体（流媒体 PROXY，默认 DIRECT）——固化组
- *   5. 广告拦截（默认 REJECT）——固化组
- *   6. 业务分类组（谷歌FCM/微软服务/苹果服务/游戏平台/AI/社交/加密货币/用户规则，
- *      仅勾选该大类规则才生成；v2.11.0 默认全部 DIRECT，面板可切换）
- *   7. 漏网之鱼（MATCH 兜底，默认 节点选择）
- *   8. GLOBAL（显式定义，完整列出所有组，决定面板显示顺序，默认 节点选择）
- *   9. 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，除指定 6 国外，全部 select；美国/马来西亚/日本/新加坡/台湾/韩国 6 组 url-test 自动测速）
+ * 分组排序（v2.27.2 起）：整组顺位按分流页面（RULE_GROUPS）顺序排列，
+ *   由函数末尾 PANEL_ORDER 排序实现。结构为：
+ *   顶层切换组（节点选择/手动切换/自动选择）
+ *   → 业务分类组（用户规则/广告拦截/AI 平台/YouTube/GitHub/Google服务/微软服务/苹果服务/社交/国外媒体/加密货币/游戏平台）
+ *   → 漏网之鱼（MATCH 兜底）→ GLOBAL（显式定义）→ 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，除指定 6 国外全部 select；
+ *     美国/马来西亚/日本/新加坡/台湾/韩国 6 组 url-test 自动测速）
  *
  * 不生成「全球直连」「国内媒体」策略组：国内直连规则在 rule-providers 中直接写 RULE-SET,xxx,DIRECT。
  * 应用净化已移除（CATEGORY-ADS⊂CATEGORY-ADS-ALL，93% 重叠，并入广告拦截）。
@@ -377,7 +372,7 @@ export async function generateProxyGroups(
     name: 'Google服务',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Google.png',
-    'default-selected': '手动切换',
+    'default-selected': 'DIRECT',
     proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
   });
 
@@ -404,13 +399,15 @@ export async function generateProxyGroups(
     'crypto': 'Global.png',
     'user': 'Manual.png',
   };
+  // AI 平台默认「美国地理组」：取美国组的实际名字（AI 组排除港澳台，美国本身在组内，是合法默认成员）
+  const US_GEO_NAME = geoGroupNames.find(n => n.includes('美国')) || '手动切换';
   const groupDefaults: Record<string, { name: string; default: string }> = {
-    'microsoft': { name: '微软服务', default: '自动选择' },
+    'microsoft': { name: '微软服务', default: 'DIRECT' },
     'apple': { name: '苹果服务', default: 'DIRECT' },
-    'game': { name: '游戏平台', default: '手动切换' },
-    'ai': { name: 'AI 平台', default: '手动切换' },
-    'youtube': { name: 'YouTube', default: '手动切换' },
-    'github': { name: 'GitHub', default: '手动切换' },
+    'game': { name: '游戏平台', default: 'DIRECT' },
+    'ai': { name: 'AI 平台', default: US_GEO_NAME },
+    'youtube': { name: 'YouTube', default: '自动选择' },
+    'github': { name: 'GitHub', default: '自动选择' },
     'social': { name: '社交', default: '自动选择' },
     'crypto': { name: '加密货币', default: '🇹🇼 台湾' },
     'user': { name: '用户规则', default: '手动切换' },
@@ -451,7 +448,7 @@ export async function generateProxyGroups(
     name: '漏网之鱼',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Global.png',
-    'default-selected': '手动切换',
+    'default-selected': '自动选择',
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
@@ -485,6 +482,21 @@ export async function generateProxyGroups(
     group.proxies = geo.nodes;
     groups.push(group);
   }
+
+  // v2.27.2：整组顺位改成与分流页面（RULE_GROUPS）顺序一致。
+  // 节点选择/手动切换/自动选择是顶层切换组，置于最前；漏网之鱼/GLOBAL 是配置基础设施，排业务组之后。
+  // 地理组无对应分流页面分组，rank=100，稳定排序保持原相对顺序位于尾部。
+  const PANEL_ORDER: Record<string, number> = {
+    '节点选择': 1, '手动切换': 2, '自动选择': 3, '用户规则': 4, '广告拦截': 5,
+    'AI 平台': 6, 'YouTube': 7, 'GitHub': 8, 'Google服务': 9, '微软服务': 10,
+    '苹果服务': 11, '社交': 12, '国外媒体': 13, '加密货币': 14, '游戏平台': 15,
+    '漏网之鱼': 16, 'GLOBAL': 17,
+  };
+  groups.sort((a, b) => {
+    const ra = PANEL_ORDER[String(a.name)] ?? 100;
+    const rb = PANEL_ORDER[String(b.name)] ?? 100;
+    return ra - rb;
+  });
 
   return groups;
 }
