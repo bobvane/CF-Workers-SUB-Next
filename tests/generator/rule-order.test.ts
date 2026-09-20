@@ -2,6 +2,28 @@ import { describe, it, expect } from 'vitest';
 import { buildRules } from '@/generator/rule-providers';
 import { RULE_GROUPS } from '@/data/metacubex-rules';
 describe('rule order', () => {
+  it('AI 平台四家点名规则锁死且排在聚合分类之前（2026-09-19）', () => {
+    const ai = RULE_GROUPS.find(g => g.key === 'ai')!;
+    // 锁死：四条均为 fixed（组内不可单独取消，只能整组 disabledGroups）
+    for (const id of ['google-gemini', 'perplexity', 'openai', 'anthropic']) {
+      const item = ai.items.find(i => i.id === id);
+      expect(item, `${id} 应在 AI 平台组内`).toBeDefined();
+      expect(item!.fixed, `${id} 应锁死`).toBe(true);
+      expect(item!.target).toBe('PROXY');
+    }
+    // 输出：点名规则排在聚合分类之前
+    const all = RULE_GROUPS.flatMap(g => g.items.filter(i => !i.custom));
+    const lines = buildRules(all, RULE_GROUPS);
+    const first = lines.indexOf('GEOSITE,google-gemini,AI 平台');
+    const agg = lines.indexOf('GEOSITE,category-ai-!cn,AI 平台');
+    expect(first).toBeGreaterThan(-1);
+    expect(agg).toBeGreaterThan(-1);
+    expect(first).toBeLessThan(agg);
+    for (const id of ['google-gemini', 'perplexity', 'openai', 'anthropic']) {
+      expect(lines).toContain(`GEOSITE,${id},AI 平台`);
+    }
+  });
+
   it('category-ai-!cn (ai) before microsoft', () => {
     // 使用 native=true 模拟已定稿组的原生规则输出
     const all = RULE_GROUPS.flatMap(g => g.items.filter(i => !i.custom)).map(i => ({ ...i, native: true }));

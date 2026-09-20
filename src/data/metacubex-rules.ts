@@ -110,6 +110,13 @@ export const RULE_GROUPS: RuleGroup[] = [
   {
     key: 'ai', name: 'AI 平台', icon: '🤖',
     items: [
+      // 2026-09-19 用户实测：点名规则比聚合分类命中更稳，四家补入并锁死（组内 fixed，只能整组取消）。
+      // 排在聚合分类之前 —— 同组同出口，顺序不影响路由，但点名规则独立命中、不受聚合分类后续变更影响。
+      // 小写 id = 原生 geosite 分类名（MetaCubeX meta 分支同名 .mrs 已验证 200；大写形式 404）。
+      { id: 'google-gemini', label: 'Google Gemini', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'perplexity', label: 'Perplexity', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'openai', label: 'OpenAI (ChatGPT)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
+      { id: 'anthropic', label: 'Anthropic (Claude)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
       // 原生 GEOSITE 输出，聚合分类灰色固定；点名的 8 条已移除
       { id: 'category-ai-!cn', label: 'AI 平台(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },
       { id: 'category-ai-chat-!cn', label: 'AI 对话(非中国)', tag: 'geosite', target: 'PROXY', native: true, fixed: true },

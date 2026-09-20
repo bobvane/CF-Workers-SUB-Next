@@ -49,8 +49,9 @@ describe('providerName / providerUrl', () => {
     expect(ruleActionTarget(rule('cn', 'DIRECT', { native: true, fixed: true }), RULE_GROUPS)).toBe('DIRECT');
   });
 
-  it('ruleActionTarget 流媒体 PROXY 无归属组 → 漏网之鱼', () => {
-    expect(ruleActionTarget(rule('OPENAI'), RULE_GROUPS)).toBe('漏网之鱼');
+  it('ruleActionTarget 无归属组 PROXY → 漏网之鱼', () => {
+    // 用一个确定不属于任何组的 id 验证兜底路径（openai/anthropic 已于 2026-09-19 归入 AI 平台组）
+    expect(ruleActionTarget(rule('UNGROUPED-TEST-SITE'), RULE_GROUPS)).toBe('漏网之鱼');
   });
 
   it('ruleActionTarget TikTok / Netflix → 国外媒体（2026-09-19 归入国外媒体组）', () => {
@@ -58,8 +59,11 @@ describe('providerName / providerUrl', () => {
     expect(ruleActionTarget(rule('TIKTOK'), RULE_GROUPS)).toBe('国外媒体');
   });
 
-  it('ruleActionTarget AI 平台 PROXY 无归属组 → 漏网之鱼（openai 已移除）', () => {
-    expect(ruleActionTarget(rule('OPENAI'), RULE_GROUPS)).toBe('漏网之鱼');
+  it('ruleActionTarget AI 平台点名规则 → AI 平台（2026-09-19 四家补入并锁死）', () => {
+    expect(ruleActionTarget(rule('OPENAI'), RULE_GROUPS)).toBe('AI 平台');
+    expect(ruleActionTarget(rule('ANTHROPIC'), RULE_GROUPS)).toBe('AI 平台');
+    expect(ruleActionTarget(rule('GOOGLE-GEMINI'), RULE_GROUPS)).toBe('AI 平台');
+    expect(ruleActionTarget(rule('PERPLEXITY'), RULE_GROUPS)).toBe('AI 平台');
   });
 
   it('ruleActionTarget 谷歌FCM PROXY → DIRECT（并入国内直连组，2026-09-19）', () => {

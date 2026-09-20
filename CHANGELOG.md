@@ -2,6 +2,16 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.27.0] - 2026-09-19
+
+### AI 平台组补入四家点名规则并锁死
+
+- 用户实测：`GOOGLE-GEMINI` / `PERPLEXITY` / `OPENAI` / `ANTHROPIC` 比聚合分类 `category-ai-!cn` 命中更稳，补入 AI 平台组
+- 四条均为 `fixed`（组内锁死，只有「整组取消」生效，与其余内置规则一致），目标 `PROXY` → 出口「AI 平台」
+- 输出为原生 `GEOSITE,<小写id>,AI 平台`，排在聚合分类之前；小写 id 对应 MetaCubeX `meta` 分支同名 `.mrs`（四个已实测 HTTP 200，大写形式 404）
+- 行为变更：`ruleActionTarget` 对这四个 id 由「无归属 → 漏网之鱼」兜底改为命中「AI 平台」，相关断言同步更新
+- 464 tests pass
+
 ## [2.26.9] - 2026-09-19
 
 ### 补齐 geox-url 为四项同源 CDN

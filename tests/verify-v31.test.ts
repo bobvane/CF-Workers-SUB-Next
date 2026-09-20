@@ -114,8 +114,8 @@ describe('V3.1 验证', () => {
     // 不存在 → 兜底；GITHUB 已吸收为独立组 → GitHub（2026-09-19）
     expect(ruleActionTarget({ id: 'NETEASE', label: '', tag: 'geosite' as const, target: 'DIRECT' as const }, RULE_GROUPS)).toBe('DIRECT');
     expect(ruleActionTarget({ id: 'GITHUB', label: '', tag: 'geosite' as const, target: 'PROXY' as const }, RULE_GROUPS)).toBe('GitHub');
-    // native 小写 id；openai 已移除 → 漏网之鱼；category-ai-!cn 仍在 AI 组
-    expect(ruleActionTarget({ id: 'openai', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('漏网之鱼');
+    // native 小写 id；openai 已归入 AI 平台组（2026-09-19）；category-ai-!cn 仍在 AI 组
+    expect(ruleActionTarget({ id: 'openai', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('AI 平台');
     // netflix/tiktok 已归入国外媒体组（2026-09-19）
     expect(ruleActionTarget({ id: 'netflix', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('国外媒体');
     expect(ruleActionTarget({ id: 'tiktok', label: '', tag: 'geosite' as const, target: 'PROXY' as const, native: true }, RULE_GROUPS)).toBe('国外媒体');
