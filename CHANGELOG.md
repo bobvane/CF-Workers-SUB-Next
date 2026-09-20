@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.27.4] - 2026-09-20
+
+### 修复：节点名字清洗应用到所有配置输出
+
+- **根因**：`node-to-url.ts` 对带 `originalUrl` 的节点整链直出原链接（参数零丢失），且重建路径优先用 `metadata.originalName`——两个位置都绕过了 `applyCleanRules` 只改 `node.name` 的清洗结果，导致 v2ray/v2rayNG/nekoray（base64）输出沿用未清洗旧名；Mihomo 直接用 `node.name` 所以正常。
+- **修复**：`nodeToUrl` 保留原链接全部参数/加密，但名字片段用清洗后的 `node.name` 覆盖；重建路径 `originalName || name` 全部改为 `name`。
+- `generateBase64Config` 补 `makeUniqueNames` 去重（v2ray/v2rayNG/nekoray 全走此入口）。
+- 新增 2 个回归测试（base64 去重 + originalUrl 名字片段覆盖）。
+
 ## [2.27.3] - 2026-09-20
 
 ### Mihomo 策略组默认值与顺序（按分流页面）

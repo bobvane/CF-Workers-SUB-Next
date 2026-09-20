@@ -7,13 +7,14 @@
 import { Node } from '@/models/node';
 import { nodeToUrl } from './node-to-url';
 import { encodeSubscriptionLines } from './base64';
+import { makeUniqueNames } from './mihomo';
 
 /**
  * 生成 Base64 订阅内容
  * 每行一个节点链接，整体 Base64 编码
  */
 export function generateBase64Config(nodes: Node[]): string {
-  const lines = nodes
+  const lines = makeUniqueNames(nodes)
     .map((n) => nodeToUrl(n))
     .filter((line) => line.length > 0);
   return encodeSubscriptionLines(lines);

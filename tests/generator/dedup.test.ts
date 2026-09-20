@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { makeUniqueNames, generateMihomoConfig } from '@/generator/mihomo';
 import { generateSingboxConfig } from '@/generator/singbox';
+import { generateBase64Config } from '@/generator/base64-generator';
+import { nodeToUrl } from '@/generator/node-to-url';
 import { Node } from '@/models/node';
 
 function makeNode(name: string): Node {
@@ -46,5 +48,25 @@ describe('generators with duplicate names', () => {
     const json = generateSingboxConfig([makeNode('US'), makeNode('US')]);
     expect(json).toContain('"US"');
     expect(json).toContain('"US-1"');
+  });
+
+  it('should not produce duplicate names in base64 (v2ray/v2rayNG)', async () => {
+    const encoded = generateBase64Config([makeNode('US'), makeNode('US')]);
+    const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+    expect(decoded).toContain('#US');
+    expect(decoded).toContain('#US-1');
+  });
+
+  it('nodeToUrl keeps originalUrl params but overrides fragment with cleaned name', () => {
+    // 原链名字是新节点的旧名，node.name 已被清洗（applyCleanRules 只改 name）
+    const n = {
+      ...makeNode('美国bob'),
+      name: '美国bob',
+      metadata: { source: 'test', originalName: 'US-bob something', originalUrl: 'vless://uuid@example.com:443?encryption=none#US-bob something', tags: [] },
+    } as Node;
+    const url = nodeToUrl(n);
+    expect(url).toContain('?encryption=none');   // 参数零丢失
+    expect(url).toContain('#%E7%BE%8E%E5%9B%BDbob'); // 片段=清洗后名
+    expect(url).not.toContain('#US-bob');
   });
 });

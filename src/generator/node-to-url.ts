@@ -11,9 +11,13 @@ import { safeBase64Encode } from './base64';
  * 将 Node 序列化为标准链接
  */
 export function nodeToUrl(node: Node): string {
-  // 整链保真:订阅原文若带有原始链接,直接原样返回,参数零丢失
+  // 整链保真：保留原链接全部参数/加密；但名字片段用清洗后的 node.name 覆盖，
+  // 使节点名字清洗规则（applyCleanRules 只改 node.name，originalUrl/originalName 保留旧名）
+  // 同样作用于 base64/v2ray/v2rayNG/nekoray 输出（此前整链直出旧名，清洗不生效）
   if (node.metadata?.originalUrl) {
-    return node.metadata.originalUrl;
+    return node.name
+      ? node.metadata.originalUrl.replace(/#[^#]*$/, `#${encodeURIComponent(node.name)}`)
+      : node.metadata.originalUrl;
   }
   switch (node.protocol) {
     case 'vless':
@@ -68,7 +72,7 @@ function nodeToVlessUrl(node: Node): string {
 
   const query = params.toString();
   const server = formatHost(node.server, node.port);
-  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const name = encodeURIComponent(node.name);
   return `vless://${node.uuid}@${server}?${query}#${name}`;
 }
 
@@ -78,7 +82,7 @@ function nodeToVlessUrl(node: Node): string {
 function nodeToVmessUrl(node: Node): string {
   const json = JSON.stringify({
     v: '2',
-    ps: node.metadata?.originalName || node.name,
+    ps: node.name,
     add: node.server,
     port: node.port,
     id: node.uuid,
@@ -91,7 +95,7 @@ function nodeToVmessUrl(node: Node): string {
     tls: node.tls ? 'tls' : '',
   });
   const payload = safeBase64Encode(json);
-  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const name = encodeURIComponent(node.name);
   return `vmess://${payload}#${name}`;
 }
 
@@ -104,7 +108,7 @@ function nodeToTrojanUrl(node: Node): string {
   if (node.allowInsecure) params.set('allowInsecure', '1');
   const query = params.toString();
   const server = formatHost(node.server, node.port);
-  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const name = encodeURIComponent(node.name);
   const qs = query ? '?' + query : '';
   return `trojan://${encodeURIComponent(node.password || '')}@${server}${qs}#${name}`;
 }
@@ -126,7 +130,7 @@ function nodeToSsUrl(node: Node): string {
     // 标准 base64 格式
     url = `ss://${safeBase64Encode(userinfo)}@${server}`;
   }
-  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const name = encodeURIComponent(node.name);
   return `${url}#${name}`;
 }
 
@@ -147,7 +151,7 @@ function nodeToHysteria2Url(node: Node): string {
   if (node.alpn?.length) params.set('alpn', node.alpn.join(','));
   const server = formatHost(node.server, node.port);
   const query = params.toString();
-  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const name = encodeURIComponent(node.name);
   const qs = query ? '?' + query : '';
   return `hysteria2://${encodeURIComponent(node.password || '')}@${server}${qs}#${name}`;
 }
@@ -168,7 +172,7 @@ function nodeToTuicUrl(node: Node): string {
   if (node.alpn?.length) params.set('alpn', node.alpn.join(','));
   const server = formatHost(node.server, node.port);
   const query = params.toString();
-  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const name = encodeURIComponent(node.name);
   const qs = query ? '?' + query : '';
   if (node.token) {
     // V4
@@ -193,7 +197,7 @@ function nodeToWireguardUrl(node: Node): string {
   if (node.wgMtu) params.set('mtu', String(node.wgMtu));
   const server = formatHost(node.server, node.port);
   const query = params.toString();
-  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const name = encodeURIComponent(node.name);
   const qs = query ? '?' + query : '';
   return `wireguard://${node.wgPrivateKey}@${server}${qs}#${name}`;
 }
@@ -208,7 +212,7 @@ function nodeToAnytlsUrl(node: Node): string {
   if (node.alpn?.length) params.set('alpn', node.alpn.join(','));
   const server = formatHost(node.server, node.port);
   const query = params.toString();
-  const name = encodeURIComponent(node.metadata?.originalName || node.name);
+  const name = encodeURIComponent(node.name);
   const qs = query ? '?' + query : '';
   return `anytls://${encodeURIComponent(node.password || '')}@${server}${qs}#${name}`;
 }
@@ -227,7 +231,7 @@ function nodeToSsrUrl(node: Node): string {
   const params = new URLSearchParams();
   if (node.ssrObfsParam) params.set('obfsparam', urlSafeBase64Encode(node.ssrObfsParam));
   if (node.ssrProtocolParam) params.set('protoparam', urlSafeBase64Encode(node.ssrProtocolParam));
-  const name = node.metadata?.originalName || node.name;
+  const name = node.name;
   if (name) params.set('remarks', urlSafeBase64Encode(name));
   if (node.ssrGroup) params.set('group', urlSafeBase64Encode(node.ssrGroup));
 
