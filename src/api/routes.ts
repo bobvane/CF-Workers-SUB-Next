@@ -165,10 +165,43 @@ export function createApp(deps: AppDeps): Hono {
     return c.json({ success: true });
   });
 
+  // 仪表盘数据计算：/api/dashboard 与首屏 bootstrap 共用，避免两处重复
+  const buildDashboard = async () => {
+    const subs = await subscriptions.list();
+    const nodes = await repos.nodes.getAll();
+    const lastUpdate = subs.reduce((max, s) => Math.max(max, s.updatedAt), 0);
+    const disabled = await config.getDisabledNodes();
+    const enabledNodes = nodes.filter(n => !disabled.includes(nodeFingerprint(n)));
+    // 按协议统计
+    const protoCount: Record<string, number> = {};
+    nodes.forEach(n => { const p = n.protocol || 'unknown'; protoCount[p] = (protoCount[p] || 0) + 1; });
+    return {
+      subscriptions: subs.length,
+      nodes: nodes.length,
+      enabledNodes: enabledNodes.length,
+      disabledNodes: disabled.length,
+      protoCount,
+      lastUpdate: lastUpdate || null,
+      status: 'ok',
+    };
+  };
+
+  // 会话 / 首屏 bootstrap
+  // 前端原路径是 3 次串行往返：/auth/session → /auth/username → /dashboard
+  // 带 ?page=dashboard 时一次返回「登录态 + 用户名 + 首屏数据」，首次渲染只需 1 次往返。
+  // 不传 page（或传其他页）时不计算仪表盘，避免为没在看的页面白做 KV 读取。
   app.get('/api/auth/session', async (c) => {
     const token = getToken(c);
     const authenticated = token ? await auth.validateSession(token) : false;
-    return c.json({ success: true, data: { authenticated } });
+    if (!authenticated) {
+      return c.json({ success: true, data: { authenticated: false } });
+    }
+    const page = c.req.query('page') || '';
+    const [username, dashboard] = await Promise.all([
+      auth.getUsername(),
+      page === 'dashboard' ? buildDashboard() : Promise.resolve(undefined),
+    ]);
+    return c.json({ success: true, data: { authenticated: true, username, page: page || null, dashboard } });
   });
 
   // ============ 受保护路由（需认证） ============
@@ -476,26 +509,7 @@ export function createApp(deps: AppDeps): Hono {
   // ============ Dashboard API ============
 
   app.get('/api/dashboard', async (c) => {
-    const subs = await subscriptions.list();
-    const nodes = await repos.nodes.getAll();
-    const lastUpdate = subs.reduce((max, s) => Math.max(max, s.updatedAt), 0);
-    const disabled = await config.getDisabledNodes();
-    const enabledNodes = nodes.filter(n => !disabled.includes(nodeFingerprint(n)));
-    // 按协议统计
-    const protoCount: Record<string, number> = {};
-    nodes.forEach(n => { const p = n.protocol || 'unknown'; protoCount[p] = (protoCount[p] || 0) + 1; });
-    return c.json({
-      success: true,
-      data: {
-        subscriptions: subs.length,
-        nodes: nodes.length,
-        enabledNodes: enabledNodes.length,
-        disabledNodes: disabled.length,
-        protoCount,
-        lastUpdate: lastUpdate || null,
-        status: 'ok',
-      },
-    });
+    return c.json({ success: true, data: await buildDashboard() });
   });
 
   // ============ Output API ============

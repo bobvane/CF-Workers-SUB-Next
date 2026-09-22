@@ -646,7 +646,7 @@ tbody tr:hover { background: var(--accent-soft); }
 
 <script>
 // ============ State ============
-let state = { subscriptions: [], nodes: [], currentPage: 'dashboard', authenticated: false };
+let state = { subscriptions: [], nodes: [], currentPage: 'dashboard', authenticated: false, dashboardPrefetch: null };
 
 // ============ Theme ============
 const themes = ['light', 'dark'];
@@ -792,18 +792,18 @@ async function api(path, options = {}) {
 // ============ Auth ============
 async function checkSession() {
   try {
-    const data = await api('/auth/session');
+    // 首屏 bootstrap：登录态 + 用户名 + 当前页数据一次拿回
+    // （原来是串行 3 次往返：/auth/session → /auth/username → /dashboard）
+    const data = await api('/auth/session?page=' + encodeURIComponent(state.currentPage));
     if (data.data?.authenticated) {
       state.authenticated = true;
       document.getElementById('loginPage').style.display = 'none';
       document.getElementById('app').style.display = 'block';
       // 刷新页面恢复会话时，同步右上角用户名
-      try {
-        const u = await api('/auth/username');
-        const badge = document.getElementById('userBadge');
-        if (badge && u.data?.username) badge.textContent = u.data.username;
-      } catch {}
-      loadDashboard();
+      const badge = document.getElementById('userBadge');
+      if (badge && data.data.username) badge.textContent = data.data.username;
+      // 首屏数据随登录态一起返回，存起来交给 switchPage→loadDashboard 直接渲染
+      if (data.data.dashboard) state.dashboardPrefetch = data.data.dashboard;
       return true;
     }
   } catch {}
@@ -1072,22 +1072,28 @@ function loadRules() {
 }
 
 // ============ Dashboard ============
+function renderDashboard(d) {
+  document.getElementById('statSubs').textContent = d.subscriptions;
+  document.getElementById('statNodes').textContent = d.nodes;
+  document.getElementById('statEnabled').textContent = d.enabledNodes ?? '-';
+  document.getElementById('statDisabled').textContent = d.disabledNodes ?? '-';
+  // 协议分布
+  const proto = d.protoCount || {};
+  const protoNames = { vmess:'VMess', vless:'VLESS', trojan:'Trojan', shadowsocks:'SS', ss:'SS' };
+  const protoStr = Object.entries(proto)
+    .map(([k,v]) => (protoNames[k] || k) + ': ' + v)
+    .join(' · ');
+  document.getElementById('statProto').textContent = protoStr || '-';
+  // 最近更新时间
+  document.getElementById('statUpdate').textContent = d.lastUpdate ? new Date(d.lastUpdate).toLocaleString() : '暂无';
+}
+
 async function loadDashboard() {
   try {
-    const data = await api('/dashboard');
-    document.getElementById('statSubs').textContent = data.data.subscriptions;
-    document.getElementById('statNodes').textContent = data.data.nodes;
-    document.getElementById('statEnabled').textContent = data.data.enabledNodes ?? '-';
-    document.getElementById('statDisabled').textContent = data.data.disabledNodes ?? '-';
-    // 协议分布
-    const proto = data.data.protoCount || {};
-    const protoNames = { vmess:'VMess', vless:'VLESS', trojan:'Trojan', shadowsocks:'SS', ss:'SS' };
-    const protoStr = Object.entries(proto)
-      .map(([k,v]) => (protoNames[k] || k) + ': ' + v)
-      .join(' · ');
-    document.getElementById('statProto').textContent = protoStr || '-';
-    // 最近更新时间
-    document.getElementById('statUpdate').textContent = data.data.lastUpdate ? new Date(data.data.lastUpdate).toLocaleString() : '暂无';
+    // 首屏数据可能已随 bootstrap 一起返回，命中后不再重复请求
+    const prefetched = state.dashboardPrefetch;
+    state.dashboardPrefetch = null;
+    renderDashboard(prefetched || (await api('/dashboard')).data);
   } catch { toast('加载仪表盘失败', 'error'); }
   loadCFUsageDashboard();
 }

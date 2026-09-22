@@ -2,6 +2,20 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.27.9] - 2026-09-22
+
+### 性能：首屏请求合并（4 次 → 1 次）
+
+- **首屏 bootstrap**：`GET /api/auth/session?page=dashboard` 一次返回「登录态 + 用户名 + 仪表盘数据」。首次打开页面原本要串行发 4 个请求，现在 1 个。
+- **修复重复请求**：`checkSession()` 内部调用了 `loadDashboard()`，而紧随其后的 `switchPage('dashboard')` 又调一次，导致 `/api/dashboard` 每次打开页面都被请求两遍。已移除 `checkSession()` 里那次，统一由 `switchPage` 负责。
+- **不为没看的页面白算**：仅当 `page=dashboard` 时计算仪表盘；从 `#nodes` 等页面进入时不触发多余 KV 读取。
+- 后端抽出 `buildDashboard()`，`/api/dashboard` 与 bootstrap 共用同一实现；新增测试断言两者返回值完全一致，防止逻辑漂移。
+- 新增 5 个集成测试。
+
+### 评估结论：不做前端文件拆分
+
+曾计划的「前端拆分」经实测放弃：整页 gzip 后仅 28KB（源码 105KB 不是真实传输量）；拆成 HTML/CSS/JS 会多 2 次网络往返；「按页懒加载」项目早已实现（`switchPage` 按需加载），重复访问不重传也已由 v2.27.7 的 304 覆盖。拆 JS 模块需重排 100 个函数、225 个全局变量与 61 处内联事件绑定，风险高而收益≈0。
+
 ## [2.27.8] - 2026-09-22
 
 ### 测试：补齐 `/` 前端缓存的端到端覆盖
