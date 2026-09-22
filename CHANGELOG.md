@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.27.8] - 2026-09-22
+
+### 测试：补齐 `/` 前端缓存的端到端覆盖
+
+- 新增 `tests/unit/worker-html-cache.test.ts`（4 例），覆盖 v2.27.7 引入的 HTML 缓存行为：200 + ETag 格式 + Cache-Control、`If-None-Match` 命中返回 304 且无响应体、不匹配返回完整 HTML、同一内容 ETag 稳定。
+- `/` 在 `buildApp` 之前返回，测试无需 mock KV。
+- 纯测试补充，无运行时行为变化。
+
 ## [2.27.7] - 2026-09-22
 
 ### 性能：开启缓存，减少重复传输与冷读延迟
