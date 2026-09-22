@@ -2,6 +2,17 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.27.6] - 2026-09-22
+
+### 性能：KV 读取从 N 次串行改为 1 次批量
+
+- **根因**：`KVStorage` 只提供单键 `get()`，6 处仓储方法采用「先 `list()` 列目录、再逐个 `await get()`」的模式——读 N 个键就是 N 次串行网络往返。管理页每次加载要读订阅、节点、规则三组数据，往返次数随订阅数量线性增长，这是页面打开慢的主因。
+- **修复**：新增 `KVStorage.getMany(keys)`，走 Cloudflare KV 原生批量读（官方文档：单次最多 100 键），按 100 分片自动分批，1 次请求取回全部。
+- 改写 5 处仓储：`KvSubscriptionRepository.list`、`KvNodeRepository.getAll`、`KvNodeRepository.renameAll`、`KvRuleRepository.list`、`KvSessionRepository.listAll`。
+- 新增 `NodeRepository.getBySubscriptions(ids)`，修掉 `config.service.applyCleanRulesNow` 循环内逐个读节点的第 6 处 N+1。
+- 返回排序、损坏数据跳过、过期 session 清理等原有行为保持不变。
+- 新增 4 个测试：批量读正确性、空键列表不触发请求、超过 100 键分片为 100/100/50、多订阅批量读。
+
 ## [2.27.5] - 2026-09-20
 
 ### 变更：NekoRay / Shadowrocket 输出改为 v2Ray 订阅格式

@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
+  KvAdapter,
   MemoryKvAdapter,
   KvSubscriptionRepository,
   KvNodeRepository,
@@ -46,6 +47,50 @@ describe('MemoryKvAdapter', () => {
     await kv.put('b', '2');
     kv.clear();
     expect(await kv.list('')).toEqual([]);
+  });
+
+  it('should batch get multiple keys', async () => {
+    await kv.put('a', '1');
+    await kv.put('b', '2');
+    const res = await kv.getMany(['a', 'b', 'missing']);
+    expect(res.get('a')).toBe('1');
+    expect(res.get('b')).toBe('2');
+    expect(res.get('missing')).toBeNull();
+  });
+
+  it('should return empty map for empty key list', async () => {
+    expect((await kv.getMany([])).size).toBe(0);
+  });
+});
+
+describe('KvAdapter 批量读分批', () => {
+  /** 最小假 KVNamespace：记录每次批量读的键数 */
+  const fakeNs = (store: Record<string, string>, calls: string[][]) =>
+    ({
+      async get(key: string | string[]) {
+        if (Array.isArray(key)) {
+          calls.push(key);
+          return new Map(key.map((k) => [k, store[k] ?? null]));
+        }
+        return store[key] ?? null;
+      },
+    }) as unknown as KVNamespace;
+
+  it('should chunk more than 100 keys', async () => {
+    const store: Record<string, string> = {};
+    for (let i = 0; i < 250; i++) store[`k${i}`] = `v${i}`;
+    const calls: string[][] = [];
+    const res = await new KvAdapter(fakeNs(store, calls)).getMany(Object.keys(store));
+    expect(res.size).toBe(250);
+    expect(res.get('k249')).toBe('v249');
+    expect(calls.map((c) => c.length)).toEqual([100, 100, 50]);
+  });
+
+  it('should not touch KV for an empty key list', async () => {
+    const calls: string[][] = [];
+    const res = await new KvAdapter(fakeNs({}, calls)).getMany([]);
+    expect(res.size).toBe(0);
+    expect(calls.length).toBe(0);
   });
 });
 
@@ -135,6 +180,21 @@ describe('KvNodeRepository', () => {
     ]);
     await repo.deleteBySubscription('sub001');
     expect(await repo.getBySubscription('sub001')).toEqual([]);
+  });
+
+  it('should batch get nodes for multiple subscriptions', async () => {
+    const repo = new KvNodeRepository(new MemoryKvAdapter());
+    await repo.setBySubscription('sub001', [
+      createNode({ name: 'A', server: 'a.com', port: 443, protocol: 'vless' }),
+    ]);
+    await repo.setBySubscription('sub002', [
+      createNode({ name: 'B', server: 'b.com', port: 443, protocol: 'vmess' }),
+      createNode({ name: 'C', server: 'c.com', port: 443, protocol: 'trojan' }),
+    ]);
+    const map = await repo.getBySubscriptions(['sub001', 'sub002', 'sub404']);
+    expect(map.get('sub001')?.length).toBe(1);
+    expect(map.get('sub002')?.length).toBe(2);
+    expect(map.get('sub404')).toEqual([]);
   });
 });
 

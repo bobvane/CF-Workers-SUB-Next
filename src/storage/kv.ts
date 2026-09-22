@@ -18,9 +18,14 @@ import {
   createCatalogMeta,
 } from '@/models/rule-catalog';
 
+/** CF KV 批量读单次上限（官方文档：单次最多 100 键） */
+const KV_BATCH_LIMIT = 100;
+
 export interface KVStorage {
   // 通用 KV 操作
   get(key: string): Promise<string | null>;
+  /** 批量读取；单次上限 100 键，超出自动分批 */
+  getMany(keys: string[]): Promise<Map<string, string | null>>;
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
   delete(key: string): Promise<void>;
   list(prefix: string): Promise<{ key: string }[]>;
@@ -37,6 +42,22 @@ export class KvAdapter implements KVStorage {
       return await this.ns.get(key);
     } catch (err) {
       throw new Error(`KV get failed for key ${key}: ${(err as Error).message}`);
+    }
+  }
+
+  /** 批量读取：1 次请求替代 N 次串行 get（CF KV 单次上限 100 键） */
+  async getMany(keys: string[]): Promise<Map<string, string | null>> {
+    const out = new Map<string, string | null>();
+    if (keys.length === 0) return out;
+    try {
+      for (let i = 0; i < keys.length; i += KV_BATCH_LIMIT) {
+        const chunk = keys.slice(i, i + KV_BATCH_LIMIT);
+        const res = await this.ns.get(chunk);
+        for (const key of chunk) out.set(key, res.get(key) ?? null);
+      }
+      return out;
+    } catch (err) {
+      throw new Error(`KV batch get failed (${keys.length} keys): ${(err as Error).message}`);
     }
   }
 
@@ -86,6 +107,10 @@ export class MemoryKvAdapter implements KVStorage {
     return this.store.get(key) ?? null;
   }
 
+  async getMany(keys: string[]): Promise<Map<string, string | null>> {
+    return new Map(keys.map((key) => [key, this.store.get(key) ?? null]));
+  }
+
   async put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void> {
     this.store.set(key, value);
     // expirationTtl 在内存模式下忽略（测试简单性）
@@ -123,9 +148,9 @@ export class KvSubscriptionRepository implements SubscriptionRepository {
 
   async list(): Promise<Subscription[]> {
     const entries = await this.kv.list('subscription:');
+    const values = await this.kv.getMany(entries.map((e) => e.key));
     const subs: Subscription[] = [];
-    for (const entry of entries) {
-      const raw = await this.kv.get(entry.key);
+    for (const raw of values.values()) {
       if (raw) {
         try {
           subs.push(JSON.parse(raw) as Subscription);
@@ -185,6 +210,8 @@ export class KvSubscriptionRepository implements SubscriptionRepository {
 
 export interface NodeRepository {
   getBySubscription(subscriptionId: string): Promise<Node[]>;
+  /** 批量读取多个订阅的节点（1 次 KV 批量读，替代循环单读） */
+  getBySubscriptions(subscriptionIds: string[]): Promise<Map<string, Node[]>>;
   setBySubscription(subscriptionId: string, nodes: Node[]): Promise<void>;
   deleteBySubscription(subscriptionId: string): Promise<void>;
   getAll(): Promise<Node[]>;
@@ -209,15 +236,33 @@ export class KvNodeRepository implements NodeRepository {
     await this.kv.put(KV_KEYS.nodes(subscriptionId), JSON.stringify(nodes));
   }
 
+  async getBySubscriptions(subscriptionIds: string[]): Promise<Map<string, Node[]>> {
+    const values = await this.kv.getMany(subscriptionIds.map((id) => KV_KEYS.nodes(id)));
+    const out = new Map<string, Node[]>();
+    for (const id of subscriptionIds) {
+      const raw = values.get(KV_KEYS.nodes(id));
+      if (!raw) {
+        out.set(id, []);
+        continue;
+      }
+      try {
+        out.set(id, JSON.parse(raw) as Node[]);
+      } catch {
+        out.set(id, []);
+      }
+    }
+    return out;
+  }
+
   async deleteBySubscription(subscriptionId: string): Promise<void> {
     await this.kv.delete(KV_KEYS.nodes(subscriptionId));
   }
 
   async getAll(): Promise<Node[]> {
     const entries = await this.kv.list('nodes:');
+    const values = await this.kv.getMany(entries.map((e) => e.key));
     const all: Node[] = [];
-    for (const entry of entries) {
-      const raw = await this.kv.get(entry.key);
+    for (const raw of values.values()) {
       if (raw) {
         try {
           all.push(...(JSON.parse(raw) as Node[]));
@@ -231,9 +276,9 @@ export class KvNodeRepository implements NodeRepository {
 
   async renameAll(transform: (name: string) => string): Promise<number> {
     const entries = await this.kv.list('nodes:');
+    const values = await this.kv.getMany(entries.map((e) => e.key));
     let changed = 0;
-    for (const entry of entries) {
-      const raw = await this.kv.get(entry.key);
+    for (const [key, raw] of values) {
       if (!raw) continue;
       try {
         const nodes = JSON.parse(raw) as Node[];
@@ -246,7 +291,7 @@ export class KvNodeRepository implements NodeRepository {
             changed++;
           }
         }
-        if (dirty) await this.kv.put(entry.key, JSON.stringify(nodes));
+        if (dirty) await this.kv.put(key, JSON.stringify(nodes));
       } catch {
         // 跳过损坏数据
       }
@@ -268,9 +313,9 @@ export class KvRuleRepository implements RuleRepository {
 
   async list(): Promise<Rule[]> {
     const entries = await this.kv.list('rule:');
+    const values = await this.kv.getMany(entries.map((e) => e.key));
     const rules: Rule[] = [];
-    for (const entry of entries) {
-      const raw = await this.kv.get(entry.key);
+    for (const raw of values.values()) {
       if (raw) {
         try {
           rules.push(JSON.parse(raw) as Rule);
@@ -347,9 +392,9 @@ export class KvSessionRepository implements SessionRepository {
 
   async listAll(): Promise<Session[]> {
     const entries = await this.kv.list('session:');
+    const values = await this.kv.getMany(entries.map((e) => e.key));
     const sessions: Session[] = [];
-    for (const entry of entries) {
-      const raw = await this.kv.get(entry.key);
+    for (const raw of values.values()) {
       if (!raw) continue;
       try {
         const s = JSON.parse(raw) as Session;

@@ -236,8 +236,10 @@ export function createConfigService(repos: Repositories): ConfigService {
     async applyCleanRulesNow() {
       const rules = await this.getCleanRules();
       let changed = 0;
-      for (const sub of await repos.subscriptions.list()) {
-        const nodes = await repos.nodes.getBySubscription(sub.id);
+      const subs = await repos.subscriptions.list();
+      const nodesBySub = await repos.nodes.getBySubscriptions(subs.map((s) => s.id));
+      for (const sub of subs) {
+        const nodes = nodesBySub.get(sub.id) ?? [];
         let subChanged = false;
         const transformed = nodes.map((n) => {
           // 始终从原始名出发应用全部启用规则（幂等且删除规则后可正确还原）
