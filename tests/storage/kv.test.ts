@@ -92,6 +92,25 @@ describe('KvAdapter 批量读分批', () => {
     expect(res.size).toBe(0);
     expect(calls.length).toBe(0);
   });
+
+  it('should pass cacheTtl except for session/password-version keys', async () => {
+    const opts: Array<{ cacheTtl?: number } | undefined> = [];
+    const ns = {
+      async get(key: string | string[], options?: { cacheTtl?: number }) {
+        opts.push(options);
+        return Array.isArray(key) ? new Map(key.map((k) => [k, null])) : null;
+      },
+    } as unknown as KVNamespace;
+    const kv = new KvAdapter(ns);
+    await kv.get('subscription:sub001');
+    await kv.get('session:abc');
+    await kv.get('setting:password_version');
+    await kv.getMany(['nodes:sub001']);
+    expect(opts[0]?.cacheTtl).toBe(60);
+    expect(opts[1]?.cacheTtl).toBeUndefined();
+    expect(opts[2]?.cacheTtl).toBeUndefined();
+    expect(opts[3]?.cacheTtl).toBe(60);
+  });
 });
 
 describe('KvSubscriptionRepository', () => {

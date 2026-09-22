@@ -104,15 +104,37 @@ async function buildApp(env: Env): Promise<Hono> {
 // 缓存应用实例
 let appPromise: Promise<Hono> | null = null;
 
+/** 读取前端 HTML 的 ETag（内容哈希，模块级只计算一次） */
+let htmlEtagPromise: Promise<string> | null = null;
+function getHtmlEtag(): Promise<string> {
+  if (!htmlEtagPromise) {
+    htmlEtagPromise = crypto.subtle
+      .digest('SHA-256', new TextEncoder().encode(HTML))
+      .then(
+        (buf) =>
+          `"${Array.from(new Uint8Array(buf, 0, 16), (b) => b.toString(16).padStart(2, '0')).join('')}"`
+      );
+  }
+  return htmlEtagPromise;
+}
+
 export default {
   async fetch(request: Request, env: Env, executionCtx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
 
     // 前端页面：非 API 和非 /sub 请求返回 HTML
+    // 带内容哈希 ETag：二次访问命中 304，省掉约 105KB 传输（内容变了 ETag 自动变，不会读到旧页面）
     if (!url.pathname.startsWith('/api/') && !url.pathname.startsWith('/sub/')) {
-      return new Response(HTML, {
-        headers: { 'Content-Type': 'text/html; charset=utf-8' },
-      });
+      const etag = await getHtmlEtag();
+      const headers: Record<string, string> = {
+        'Content-Type': 'text/html; charset=utf-8',
+        'Cache-Control': 'public, max-age=0, must-revalidate',
+        ETag: etag,
+      };
+      if (request.headers.get('If-None-Match') === etag) {
+        return new Response(null, { status: 304, headers });
+      }
+      return new Response(HTML, { headers });
     }
 
     if (!appPromise) {

@@ -21,6 +21,16 @@ import {
 /** CF KV 批量读单次上限（官方文档：单次最多 100 键） */
 const KV_BATCH_LIMIT = 100;
 
+/**
+ * 边缘缓存秒数（CF KV 原生 cacheTtl，官方最小 30，默认 60）。
+ * 写少读多的键靠它省掉回源冷读延迟；CF 在写入时会重新校验缓存，不会读到旧值。
+ * 例外见 KV_UNCACHED_PREFIXES。
+ */
+const KV_CACHE_TTL = 60;
+
+/** 不参与边缘缓存的键：会话吊销与密码版本必须即时生效 */
+const KV_UNCACHED_PREFIXES = ['session:', 'setting:password_version'];
+
 export interface KVStorage {
   // 通用 KV 操作
   get(key: string): Promise<string | null>;
@@ -37,9 +47,15 @@ export interface KVStorage {
 export class KvAdapter implements KVStorage {
   constructor(private readonly ns: KVNamespace) {}
 
+  /** 边缘缓存选项：会话类键不缓存，其余走 cacheTtl 减少冷读 */
+  private cacheOpts(keys: string[]): { cacheTtl?: number } {
+    const uncached = keys.some((k) => KV_UNCACHED_PREFIXES.some((p) => k.startsWith(p)));
+    return uncached ? {} : { cacheTtl: KV_CACHE_TTL };
+  }
+
   async get(key: string): Promise<string | null> {
     try {
-      return await this.ns.get(key);
+      return await this.ns.get(key, this.cacheOpts([key]));
     } catch (err) {
       throw new Error(`KV get failed for key ${key}: ${(err as Error).message}`);
     }
@@ -52,7 +68,7 @@ export class KvAdapter implements KVStorage {
     try {
       for (let i = 0; i < keys.length; i += KV_BATCH_LIMIT) {
         const chunk = keys.slice(i, i + KV_BATCH_LIMIT);
-        const res = await this.ns.get(chunk);
+        const res = await this.ns.get(chunk, this.cacheOpts(chunk));
         for (const key of chunk) out.set(key, res.get(key) ?? null);
       }
       return out;
