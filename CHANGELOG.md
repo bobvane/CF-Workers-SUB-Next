@@ -2,6 +2,31 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.28.0] - 2026-09-23
+
+### 安全：依赖全面升级，漏洞清零（5 → 0）
+
+GitHub Dependabot 报告的 5 个依赖漏洞全部修复：
+
+| 包 | 升级前 | 升级后 | 说明 |
+|---|---|---|---|
+| hono | 4.13.1 | **4.13.8** | 运行时框架，涉及 3 条通告 |
+| wrangler | 4.122.0 | **4.136.3** | 部署工具 |
+| miniflare | 5.20260811.0-alpha | **5.20260921.0-alpha** | wrangler 子依赖 |
+| sharp | 0.35.2 | **0.35.4** | libheif 漏洞 |
+| js-yaml | 4.3.1 | **4.3.2** | eslint 子依赖 |
+
+- `npm audit`：**0 个漏洞**（升级前 5 个）。
+- 新增 `overrides: { "js-yaml": "^4.3.2" }` —— js-yaml 是 `eslint → @eslint/eslintrc` 的传递依赖，无法直接升级，用 npm 官方 overrides 机制强制到修复版。
+- `allowScripts` 白名单同步到实际安装版本（workerd 1.20260921.1、esbuild 0.28.1/0.28.2），消除安装告警。
+- 验证：lint 干净、`tsc --noEmit` 通过、475 个测试全过、`wrangler deploy --dry-run` 打包正常（738.72 KiB / gzip 160.82 KiB），部署链路未受影响。
+
+### 漏洞影响面的核实结论（升级前已完成）
+
+5 条中只有 `hono` 是运行时依赖，其 3 条通告在本项目**均不可达**：`toSSG()` 与 `parseBody()` 全仓库零调用；查询串解析一条，官方通告原文明确写明「部署在 Cloudflare Workers 等会规范化该目标的运行时上不受影响」，而本项目部署于 Workers。其余 4 条（js-yaml / wrangler / miniflare / sharp）属于 eslint 与 wrangler 的开发期依赖，不随 Worker 上线。
+
+本次升级的目的是消除告警、保持依赖健康，**并非修复已被利用的漏洞**。
+
 ## [2.27.9] - 2026-09-22
 
 ### 性能：首屏请求合并（4 次 → 1 次）
