@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.28.4] - 2026-09-23
+
+### 新增：前端「输出配置」页 Mihomo DNS 泄露提示 + README 标注
+
+- 前端「输出配置」页：Mihomo 配置下方新增红字注释 —— 用 OpenClash 导入时需在
+  插件面板关闭「自定义上游 DNS 服务器」，否则会覆盖订阅 DNS 分流导致国内 DNS 明文外发（防泄露）
+- README 功能特性：新增「DNS 防泄露」条目，同步标注 OpenClash 关闭自定义上游 DNS 的注意点
+
 ## [2.28.3] - 2026-09-23
 
 ### 修复：Mihomo 配置补顶层 `ipv6: false`（对齐 Perfect-Rules）

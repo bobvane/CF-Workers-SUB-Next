@@ -1,11 +1,11 @@
 # CF-Workers-SUB-Next
 
-Cloudflare Native 订阅管理与配置生成平台的 V2 实现（v2.28.1）。
+Cloudflare Native 订阅管理与配置生成平台的 V2 实现（v2.28.4）。
 
 把机场订阅聚合、清洗、解析，并按 mihomo / sing-box / shadowrocket 等格式在线生成客户端可用的配置。运行在 Cloudflare Workers 上，免费额度内零成本运营，无需 VPS / Docker / 本地数据库。
 
 [![CI workflow](https://img.shields.io/badge/CI-通过-green)]()
-![Version](https://img.shields.io/badge/版本-2.28.1-blue)
+![Version](https://img.shields.io/badge/版本-2.28.4-blue)
 ![Tests](https://img.shields.io/badge/测试-475%20passed-green)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
@@ -51,6 +51,7 @@ npm install && npm run deploy
 - **分流规则引擎**：13 组固定策略组（全部原生 GEOSITE）+ 动态规则目录（MetaCubeX 分类）+ 自定义规则，Web 面板可切换
 - **IP 归属识别**：自动解析节点 IP → GeoIP → 国家归属；后台自动重试未识别 IP
 - **多格式输出**：mihomo / sing-box / shadowrocket / v2ray / v2rayN / nekoray，不支持的协议自动跳过
+- **DNS 防泄露**：生成配置内置「国内域名→国内 DoH / 国外域名→国外 DoH」分流 + fake-ip 全接管 + 严格路由；若经 OpenClash 导入，请在面板关闭「自定义上游 DNS 服务器」以免覆盖订阅 DNS 段
 - **内置管理后台**：仪表盘 / 订阅 / 节点 / 规则 / 输出 / 设置，自带鉴权
 - **CF 用量统计**：绑定最多 3 个 Cloudflare 账户，仪表盘显示今日请求量
 

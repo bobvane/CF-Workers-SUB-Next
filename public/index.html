@@ -1589,6 +1589,9 @@ function renderOutputUrls() {
       `<div class="sub-group-label">${g.label}</div>`,
       ...g.formats.map(f => {
         const url = `${baseUrl}/${f.key}/{key}`;
+        const dnsNote = f.key === 'mihomo'
+          ? `<div style="margin:6px 0 12px;padding:9px 12px;color:var(--red);font-size:13px;line-height:1.6;background:var(--bg);border-left:3px solid var(--red);border-radius:6px">⚠️ 防 DNS 泄露：用 <b>OpenClash</b> 导入本配置时，请到 插件面板 → 全局设置 → DNS 设置，<b>关闭「自定义上游 DNS 服务器」</b>——否则会覆盖本订阅的 DNS 分流，导致国内 DNS 地址明文外发（DNS Leak Test 报中国 IP）。</div>`
+          : '';
         return `<div class="sub-item" onclick="showConfigModal('${f.key}', '${f.name}')">
           <span class="name">${f.name}</span>
           <span class="desc">${f.desc}</span>
@@ -1597,7 +1600,7 @@ function renderOutputUrls() {
             <button class="btn btn-sm" onclick="event.stopPropagation();showQrModal('${f.key}', '${f.name}')">📱 二维码</button>
             <button class="btn btn-sm" onclick="event.stopPropagation();copyFormatUrl('${f.key}')">📋 复制</button>
           </span>
-        </div>`;
+        </div>${dnsNote}`;
       }),
     ];
   }).join('');
