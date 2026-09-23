@@ -2,6 +2,13 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.28.3] - 2026-09-23
+
+### 修复：Mihomo 配置补顶层 `ipv6: false`（对齐 Perfect-Rules）
+
+- `BASE_LAYER` 顶层新增 `ipv6: false`：内核不做 AAAA 解析、不建立 IPv6 出站，
+  避免 IPv6 侧绕过 TUN 导致的 DNS/IP 双泄漏。
+
 ## [2.28.2] - 2026-09-23
 
 ### 修复：Mihomo 配置 DNS 泄露防护（参照 Perfect-Rules，仅 BASE_LAYER 硬编码层）

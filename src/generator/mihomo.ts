@@ -513,6 +513,9 @@ export async function generateProxyGroups(
 const BASE_LAYER: Record<string, unknown> = {
   'unified-delay': true,
   'tcp-concurrent': true,
+  // DNS 防泄露：顶层 ipv6:false（对齐 Perfect-Rules）—— 内核不使用 IPv6：不做 AAAA 解析、
+  // 不建 IPv6 出站，避免 IPv6 侧绕过 TUN 直连导致 DNS/IP 双泄漏。
+  ipv6: false,
   'geox-url': {
     // 四项同源 CDN（jsdelivr testingcf）。geox-url 只是 URL 对照表，不会主动下载，
     // 仅当内核工作目录缺失对应文件时才按此表获取；内核默认源全是 github.com，国内常超时。
