@@ -2,6 +2,20 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.28.2] - 2026-09-23
+
+### 修复：Mihomo 配置 DNS 泄露防护（参照 Perfect-Rules，仅 BASE_LAYER 硬编码层）
+
+- `dns.default-nameserver` 由 DoH URL 改为明文 IP（官方要求必须为 IP）—— 修复引导解析循环失效回落系统 DNS 的泄露原点
+- `fake-ip-filter` 收窄为最小集（LAN/NTP/Apple/captive/连通性），移除 `geosite:cn` / `geolocation-!cn` /
+  `private` / `microsoft@cn` / `apple@cn` / `steam@cn` 排除 —— 恢复 fake-ip 全覆盖，漏测站（境外域名）不再走真实 IP 直连
+- `sniffer.override-destination` / `force-dns-mapping` 置 true —— 域名还原完整，境外流量按域名判规则
+- `tun.strict-route: true`、`tun.mtu: 1280`、`dns.listen: 0.0.0.0:53` —— 强化 TUN 接管、堵路由绕过
+- `dns.fallback` 境外双备（cloudflare + google，走漏网之鱼代理）—— 消除 8.8.8.8 单点
+- `fallback-filter` 增加 `domain` 白名单（google/openai/anthropic/claude 等强制只走境外 fallback）
+
+无逻辑接口变更；测试基线维持 475/475。
+
 ## [2.28.1] - 2026-09-23
 
 ### 文档：全面重做技术文档与说明文件

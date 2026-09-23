@@ -535,11 +535,13 @@ const BASE_LAYER: Record<string, unknown> = {
     'auto-redirect': true,
     'auto-detect-interface': true,
     'route-exclude-address-set': ['GEOIP,CN'],
+    'strict-route': true, // DNS 防泄露：严格路由，堵住系统/网卡侧路由绕过
+    mtu: 1280,
   },
   sniffer: {
     enable: true,
-    'override-destination': false,
-    'force-dns-mapping': false,
+    'override-destination': true,
+    'force-dns-mapping': true,
     'parse-pure-ip': true,
     sniff: {
       HTTP: { ports: [80, '8080-8880'] },
@@ -551,12 +553,13 @@ const BASE_LAYER: Record<string, unknown> = {
   dns: {
     enable: true,
     'cache-algorithm': 'arc',
+    listen: '0.0.0.0:53', // DNS 防泄露：显式监听，配合 dns-hijack 接管系统 DNS
     ipv6: false,
     'enhanced-mode': 'fake-ip',
     'fake-ip-ttl': 1,
     'fake-ip-range': '198.18.0.0/16',
     'fake-ip-filter-mode': 'blacklist',
-    'default-nameserver': ['https://223.5.5.5/dns-query'],
+    'default-nameserver': ['223.5.5.5', '119.29.29.29'],
     'proxy-server-nameserver': ['https://dns.alidns.com/dns-query', 'https://doh.pub/dns-query'],
     'direct-nameserver': ['https://dns.alidns.com/dns-query', 'https://doh.pub/dns-query'],
     'nameserver-policy': {
@@ -567,15 +570,46 @@ const BASE_LAYER: Record<string, unknown> = {
       'geosite:geolocation-!cn': ['https://8.8.8.8/dns-query#漏网之鱼&disable-qtype-65=true'],
     },
     nameserver: ['https://8.8.8.8/dns-query#漏网之鱼&ecs=223.5.5.0/24'],
-    fallback: ['https://8.8.8.8/dns-query#漏网之鱼'],
-    'fallback-filter': { geoip: true, 'geoip-code': 'CN' },
+    fallback: [
+      // DNS 防泄露：境外双备（走项目兜底组「漏网之鱼」代理），避免 8.8.8.8 单点
+      'https://cloudflare-dns.com/dns-query#漏网之鱼',
+      'https://dns.google/dns-query#漏网之鱼',
+    ],
+    'fallback-filter': {
+      geoip: true,
+      'geoip-code': 'CN',
+      // 国外常用站强制只走 fallback（境外解析），防境外域名被国内解析污染/泄露
+      domain: [
+        '+.google.com',
+        '+.googleapis.com',
+        '+.googlevideo.com',
+        '+.youtube.com',
+        '+.github.com',
+        '+.openai.com',
+        '+.chatgpt.com',
+        '+.anthropic.com',
+        '+.claude.ai',
+      ],
+    },
     'fake-ip-filter': [
-      'geosite:geolocation-!cn',
-      'geosite:cn',
-      'geosite:private',
-      'geosite:microsoft@cn',
-      'geosite:apple@cn',
-      'geosite:steam@cn',
+      // DNS 防泄露：仅排除必须拿真实 IP 的最小集（局域网/本地、NTP、Apple 推送与激活检测、
+      // 系统连通性探测），其余全部走 fake-ip → TUN 全接管。不再排除 geosite:cn /
+      // geolocation-!cn —— 那会把假 IP 防泄露主闸关掉，漏测站（境外域名）走真实 IP 直连即泄露。
+      '+.lan',
+      '+.local',
+      '+.localhost',
+      '+.home.arpa',
+      'time.*.com',
+      'time.*.gov',
+      'pool.ntp.org',
+      '+.push.apple.com',
+      'mesu.apple.com',
+      'swscan.apple.com',
+      'captive.apple.com',
+      'connectivitycheck.gstatic.com',
+      'connectivitycheck.android.com',
+      'www.msftconnecttest.com',
+      'www.msftncsi.com',
     ],
   },
   profile: {
