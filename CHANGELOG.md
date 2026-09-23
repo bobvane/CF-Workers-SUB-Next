@@ -2,6 +2,28 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.28.1] - 2026-09-23
+
+### 文档：全面重做技术文档与说明文件
+
+无代码逻辑变更，仅文档。
+
+**公开文档（GitHub）**
+
+- 重写 `README.md`：版本徽章与测试基线更新（404 → **475** 项）；修正过时描述（「9 种输出格式」→ 实际的 **6 种**、「11 组固定分流」→ 实际的 **13 组**）
+- 修正 API 表错误：改密/改用户名为 `POST`（原误写 `PUT`）、启用节点为 `/api/nodes/enabled`（原误写 `/disabled`）
+- 重写 `SECURITY.md`：支持版本更新至 v2.28.x
+- 更新 `CONTRIBUTING.md`：测试基线与生成器格式修正
+
+**文档清理**
+
+- 移除已过时文档：`docs/development.md`、`docs/proxy-group-hierarchy.md`、`docs/rules-sort-current.md`、`docs/rules-sort-plan-v211.md`
+- 移除本地内部文档：`PROJECT_CONTEXT.md`、`PLAN.md`、`CURRENT_TASK.md`
+
+**内部技术文档（本地保留，不上传 GitHub）**
+
+- 重建 `docs/00–14` 全套技术规范：导航、架构总览、数据模型、API 规范、协议解析、配置生成、分流规则系统、定时任务、IP 归属识别、Cloudflare 用量统计、测试、部署、安全、前端、路线图
+
 ## [2.28.0] - 2026-09-23
 
 ### 安全：依赖全面升级，漏洞清零（5 → 0）

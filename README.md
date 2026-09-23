@@ -1,11 +1,11 @@
 # CF-Workers-SUB-Next
 
-Cloudflare Native 订阅管理与配置生成平台的 V2 实现（v2.28.0）。
+Cloudflare Native 订阅管理与配置生成平台的 V2 实现（v2.28.1）。
 
 把机场订阅聚合、清洗、解析，并按 mihomo / sing-box / shadowrocket 等格式在线生成客户端可用的配置。运行在 Cloudflare Workers 上，免费额度内零成本运营，无需 VPS / Docker / 本地数据库。
 
 [![CI workflow](https://img.shields.io/badge/CI-通过-green)]()
-![Version](https://img.shields.io/badge/版本-2.28.0-blue)
+![Version](https://img.shields.io/badge/版本-2.28.1-blue)
 ![Tests](https://img.shields.io/badge/测试-475%20passed-green)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
