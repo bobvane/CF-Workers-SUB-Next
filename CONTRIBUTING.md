@@ -56,13 +56,13 @@ chore: root directory cleanup
 测试命令：
 
 ```bash
-npm test          # 运行 Vitest（404 项）
+npm test          # 运行 Vitest（475 项）
 npm run lint      # ESLint 检查
 npx tsc --noEmit  # TypeScript 类型检查
 npm run build     # 构建（含前端内嵌）
 ```
 
-**测试覆盖率**：当前测试基线 404 项，提交前必须保证全绿。
+**测试覆盖率**：当前测试基线 475 项，提交前必须保证全绿。
 
 ## 📐 代码规范
 
@@ -86,9 +86,9 @@ src/
 │   ├── subscription.service.ts
 │   ├── ip-geo.service.ts
 │   └── cf-usage.service.ts
-├── engine/        # 网络层（订阅抓取）
+├── engine/        # 网络层（fetchSubscription 抓取）
 ├── parser/        # 协议解析层
-├── generator/     # 配置生成层（9 种客户端）
+├── generator/     # 配置生成层（mihomo/singbox/shadowrocket/base64）
 ├── models/        # 数据模型
 ├── data/          # 静态规则数据
 ├── storage/       # 数据访问层（KV 仓储）
