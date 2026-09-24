@@ -438,6 +438,16 @@ describe('generateMihomoConfig', () => {
     expect(groups.find(g => g.name === '自动选择')?.timeout).toBe(5000);
     // 非测速组不该被波及
     expect(groups.find(g => g.name === '手动切换')?.timeout).toBeUndefined();
+
+    // 2026-09-24 用户指令：凡候选列表里带地理组的组，同样加入负载均衡地理组
+    for (const name of ['节点选择', '自动选择', '国外媒体', 'Google服务', '漏网之鱼']) {
+      const g = groups.find(x => x.name === name);
+      const list = g?.proxies as string[] | undefined;
+      expect(list, name).toContain('🇺🇸 美国');
+      expect(list, name).toContain('🇺🇸 美国-负载均衡');
+      // 负载均衡组紧跟其地区组之后
+      expect(list!.indexOf('🇺🇸 美国-负载均衡'), name).toBe(list!.indexOf('🇺🇸 美国') + 1);
+    }
   });
 
   it('香港组：手工选定改为 url-test 自动测速 + 负载均衡（2026-09-24 用户指令）', async () => {

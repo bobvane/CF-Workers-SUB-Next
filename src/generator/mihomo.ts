@@ -340,6 +340,20 @@ export async function generateProxyGroups(
   const geoGroups = await groupNodesByGeo(nodes, ipGeoResolver);
   const geoGroupNames = geoGroups.map(g => g.name);
   const allGeoNodes = geoGroups.flatMap(g => g.nodes);
+
+  // 测速地区：指定地区自动测速(url-test)，其余 select。美国/马来西亚/日本/新加坡/台湾/韩国（用户 2026-08-30 指定）
+  // + 香港（用户 2026-09-24：原手工选定改为自动测速组）。
+  // 单节点自动降级为 select（用户 2026-08-30 拍板：url-test 组仅 1 个节点时测速无意义），此时也不产出负载均衡组。
+  const URL_TEST_REGIONS = ['香港', '美国', '马来西亚', '日本', '新加坡', '台湾', '韩国'];
+  const testRegionNames = new Set(
+    geoGroups.filter(g => URL_TEST_REGIONS.some(r => g.name.includes(r)) && g.nodes.length > 1).map(g => g.name)
+  );
+
+  // 候选列表用（用户 2026-09-24）：凡引用地理组的组，同时给出该地区的负载均衡组，紧跟地区组之后。
+  // 注意 geoGroupNames 保持「纯地区组」——下面的下标查找依赖它与 geoGroups 一一对应。
+  const geoChoices = geoGroups.flatMap(g =>
+    testRegionNames.has(g.name) ? [g.name, `${g.name}-负载均衡`] : [g.name]
+  );
   const groups: Record<string, unknown>[] = [];
 
   // 2. 节点选择（手动选地区/节点方案，默认自动选择）
@@ -348,7 +362,7 @@ export async function generateProxyGroups(
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Static.png',
     'default-selected': '自动选择',
-    proxies: ['自动选择', ...geoGroupNames, '手动切换', 'DIRECT'],
+    proxies: ['自动选择', ...geoChoices, '手动切换', 'DIRECT'],
   });
 
   // 3. 手动切换（select：具体节点扁平列表，逐节点选）
@@ -374,8 +388,8 @@ export async function generateProxyGroups(
     // 2026-09-24（吸收 Perfect-Rules）：只认 generate_204 的 204 为存活；连续 3 次失败触发强制复检
     'expected-status': 204,
     'max-failed-times': 3,
-    // 测速对象从「具体节点」改为「有节点的国家地理组」——geoGroupNames 本身就是 groupNodesByGeo 筛选后的结果
-    proxies: geoGroupNames.length > 0 ? geoGroupNames : ['DIRECT'],
+    // 测速对象从「具体节点」改为「地理组」——geoChoices = 各国地理组（测速地区附带其负载均衡组）
+    proxies: geoChoices.length > 0 ? geoChoices : ['DIRECT'],
   });
 
   // 5. 国外媒体（流媒体 PROXY，默认自动选择）——固化策略组
@@ -384,7 +398,7 @@ export async function generateProxyGroups(
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Streaming.png',
     'default-selected': '自动选择',
-    proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
+    proxies: ['自动选择', '节点选择', ...geoChoices, '手动切换', 'DIRECT'],
   });
 
   // 5b. Google服务（v2.15.0，用户拍板：放国外媒体后面，default-selected 手动切换）——固化策略组
@@ -393,7 +407,7 @@ export async function generateProxyGroups(
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Google.png',
     'default-selected': 'DIRECT',
-    proxies: ['自动选择', '节点选择', ...geoGroupNames, '手动切换', 'DIRECT'],
+    proxies: ['自动选择', '节点选择', ...geoChoices, '手动切换', 'DIRECT'],
   });
 
   // 6. 广告拦截（默认 REJECT）——固化策略组，只保留 REJECT 和 DIRECT（用户 2026-08-30 拍板）
@@ -440,16 +454,16 @@ export async function generateProxyGroups(
     if (!g || !hasSelected(key) || disabledGroupKeys.has(key)) continue;
     ruleClassGroupNames.push(g.name);
 
-    let proxies: string[] = ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'];
+    let proxies: string[] = ['节点选择', '手动切换', '自动选择', ...geoChoices, 'DIRECT'];
 
     if (key === 'ai') {
       const banned = ['香港', '澳门', '台湾'];
-      const allowed = geoGroupNames.filter(n => !banned.some(b => n.includes(b)));
+      const allowed = geoChoices.filter(n => !banned.some(b => n.includes(b)));
       proxies = ['节点选择', '手动切换', ...allowed, 'DIRECT'];
     }
 
     if (key === 'crypto') {
-      proxies = ['节点选择', '手动切换', ...geoGroupNames, 'DIRECT'];
+      proxies = ['节点选择', '手动切换', ...geoChoices, 'DIRECT'];
     }
 
     groups.push({ 
@@ -469,7 +483,7 @@ export async function generateProxyGroups(
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Global.png',
     'default-selected': '自动选择',
-    proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
+    proxies: ['节点选择', '手动切换', '自动选择', ...geoChoices, 'DIRECT'],
   });
 
   // 10. GLOBAL（默认自动选择；无 url，不需要测速 —— 用户 2026-09-02 拍板）
@@ -482,19 +496,15 @@ export async function generateProxyGroups(
     'default-selected': '自动选择',
   });
 
-  // 11. 地理组：指定地区自动测速(url-test)，其余 select
-  // 美国/马来西亚/日本/新加坡/台湾/韩国 六组 url-test（用户 2026-08-30 指定），
-  // 香港同样 url-test（用户 2026-09-24：原手工选定改为自动测速组），其余 select
-  const URL_TEST_REGIONS = ['香港', '美国', '马来西亚', '日本', '新加坡', '台湾', '韩国'];
+  // 11. 地理组：testRegionNames 内的走 url-test 自动测速（并另配负载均衡组），其余 select
   // 地理组图标：国家码 → Qure IconSet 国旗（缺失/无法识别的回落 Area.png）
   const geoIcon = (name: string): string => {
     const code = GEO_CODE_BY_NAME[name];
     return code && GEO_ICON_CODES.has(code) ? GEO_ICON_BASE + code + '.png' : GEO_ICON_FALLBACK;
   };
   for (const geo of geoGroups) {
-    const isUrlTest = URL_TEST_REGIONS.some(r => geo.name.includes(r));
-    // 单节点自动降级为 select（用户 2026-08-30 拍板：url-test 组仅 1 个节点时测速无意义）
-    const useUrlTest = isUrlTest && geo.nodes.length > 1;
+    // 与候选列表（geoChoices）同源，避免两处判断跑偏
+    const useUrlTest = testRegionNames.has(geo.name);
     // 键顺序：name → type →（url/interval/timeout/tolerance）→ proxies，让测速参数紧跟 type 下方，排版更清晰（用户 2026-09-02 拍板）
     const group: Record<string, unknown> = {
       name: geo.name,
