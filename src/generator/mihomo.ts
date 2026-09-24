@@ -348,6 +348,9 @@ export async function generateProxyGroups(
   const testRegionNames = new Set(
     geoGroups.filter(g => URL_TEST_REGIONS.some(r => g.name.includes(r)) && g.nodes.length > 1).map(g => g.name)
   );
+  // 排序（用户 2026-09-24 指令，硬编码）：自动测速地区在前（其负载均衡组紧跟），其他 select 地区在后。
+  // 稳定排序 → 测试组内部、普通组内部各自保持原相对顺序；仅整体把测试组提到最前。
+  geoGroups.sort((a, b) => Number(testRegionNames.has(b.name)) - Number(testRegionNames.has(a.name)));
 
   // 候选列表用（用户 2026-09-24）：凡引用地理组的组，同时给出该地区的负载均衡组，紧跟地区组之后。
   // 注意 geoGroupNames 保持「纯地区组」——下面的下标查找依赖它与 geoGroups 一一对应。
