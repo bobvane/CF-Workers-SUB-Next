@@ -2,6 +2,17 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.28.5] - 2026-09-24
+
+### 优化：url-test 健康判据 + 地理组国旗图标（吸收 Perfect-Rules v1.7）
+
+- 自动选择 / 地理 url-test 组：新增 `expected-status: 204` + `max-failed-times: 3`
+  - mihomo 默认 `expected-status` 为 `*`（任何状态都算存活）；限定 204 后，只有 generate_204 返回
+    204 才判定节点可用，避免"能连上但响应异常"的节点被误判为正常
+  - 默认连续失败 5 次才触发强制复检，收紧为 3 次，更快恢复
+- 地理组：按国家码配 Qure IconSet 国旗图标（jsdelivr CDN），无对应图标的回落 Area.png，
+  覆盖 26 个常见国家；纯视觉，不涉及分流/规则逻辑
+
 ## [2.28.4] - 2026-09-23
 
 ### 新增：前端「输出配置」页 Mihomo DNS 泄露提示 + README 标注

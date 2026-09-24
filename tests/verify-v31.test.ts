@@ -191,4 +191,36 @@ describe('AI 审查意见修复', () => {
     expect(names).toContain('自动选择');
     expect(names).toContain('其他');
   });
+
+  it('url-test 组带 expected-status:204 + max-failed-times:3；地理组带国旗图标（v2.28.5）', async () => {
+    const resolver = async (server: string) => {
+      if (server === 'my.example.com') return '🇲🇾 马来西亚';
+      if (server === 'jp.example.com') return '🇯🇵 日本';
+      return null;
+    };
+    const groups = await generateProxyGroups(
+      [
+        makeNode({ name: '🇲🇾 马来西亚 01', server: 'my.example.com' }),
+        makeNode({ id: 'n2', name: '🇲🇾 马来西亚 02', server: 'my.example.com' }),
+        makeNode({ id: 'n3', name: '🇯🇵 日本 01', server: 'jp.example.com' }),
+        makeNode({ id: 'n3b', name: '🇯🇵 日本 02', server: 'jp.example.com' }),
+      ],
+      [], [], resolver
+    );
+    const geo = groups.find(g => g.name === '🇲🇾 马来西亚') as Record<string, unknown>;
+    expect(geo).toBeDefined();
+    expect(geo.type).toBe('url-test');
+    expect(geo['expected-status']).toBe(204);
+    expect(geo['max-failed-times']).toBe(3);
+    // 马来西亚在图标覆盖表内 → MY.png
+    expect(String(geo.icon)).toContain('MY.png');
+    // 日本同理
+    const jp = groups.find(g => g.name === '🇯🇵 日本') as Record<string, unknown>;
+    expect(jp).toBeDefined();
+    expect(String(jp.icon)).toContain('JP.png');
+    // 自动选择组也应带健康判据
+    const auto = groups.find(g => g.name === '自动选择') as Record<string, unknown>;
+    expect(auto['expected-status']).toBe(204);
+    expect(auto['max-failed-times']).toBe(3);
+  });
 });

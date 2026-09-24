@@ -240,6 +240,22 @@ export const GEO_NAMES: Record<string, string> = (() => {
   return m;
 })();
 
+// 地理分组显示名 → 国家码（反向映射，供图标查找）
+const GEO_CODE_BY_NAME: Record<string, string> = {};
+for (const [code, display] of Object.entries(GEO_NAMES)) {
+  GEO_CODE_BY_NAME[display] = code;
+}
+
+// 地理组图标：国家码 → Qure IconSet 国旗（缺失/无法识别的回落 Area.png）
+// 2026-09-24 吸收 Perfect-Rules：每个策略组配图标（纯视觉，不涉及分流逻辑）
+const GEO_ICON_BASE = 'https://cdn.jsdelivr.net/gh/Koolson/Qure@master/IconSet/Color/';
+const GEO_ICON_FALLBACK = GEO_ICON_BASE + 'Area.png';
+const GEO_ICON_CODES = new Set([
+  'AR', 'AU', 'BR', 'CA', 'CN', 'DE', 'EG', 'EU', 'FI', 'FR',
+  'HK', 'IN', 'JP', 'KR', 'LA', 'MO', 'MY', 'PH', 'RU', 'SG',
+  'TH', 'TR', 'TW', 'UA', 'UK', 'US',
+]);
+
 /**
  * 按地区对节点分组（纯 IP 定位）
  * @param nodes 节点完整对象
@@ -354,6 +370,9 @@ export async function generateProxyGroups(
     url: 'http://www.gstatic.com/generate_204',
     interval: 300,
     tolerance: 50,
+    // 2026-09-24（吸收 Perfect-Rules）：只认 generate_204 的 204 为存活；连续 3 次失败触发强制复检
+    'expected-status': 204,
+    'max-failed-times': 3,
     // 测速对象从「具体节点」改为「有节点的国家地理组」——geoGroupNames 本身就是 groupNodesByGeo 筛选后的结果
     proxies: geoGroupNames.length > 0 ? geoGroupNames : ['DIRECT'],
   });
@@ -474,10 +493,18 @@ export async function generateProxyGroups(
       name: geo.name,
       type: useUrlTest ? 'url-test' : 'select',
     };
+    // 2026-09-24（吸收 Perfect-Rules）：每个地理组配国旗图标，无对应图标回退 Area.png
+    const geoCode = GEO_CODE_BY_NAME[geo.name];
+    group.icon = geoCode && GEO_ICON_CODES.has(geoCode)
+      ? GEO_ICON_BASE + geoCode + '.png'
+      : GEO_ICON_FALLBACK;
     if (useUrlTest) {
       group.url = 'http://www.gstatic.com/generate_204';
       group.interval = 300;
       group.tolerance = 50;
+      // 2026-09-24（吸收 Perfect-Rules）：只认 generate_204 的 204 为存活；连续 3 次失败触发强制复检
+      group['expected-status'] = 204;
+      group['max-failed-times'] = 3;
     }
     group.proxies = geo.nodes;
     groups.push(group);
