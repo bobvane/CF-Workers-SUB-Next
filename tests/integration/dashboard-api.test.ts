@@ -58,11 +58,14 @@ describe('Dashboard API', () => {
     const res = await app.request('/api/dashboard', { headers });
     expect(res.status).toBe(200);
     const json = (await res.json()) as { success: boolean; data: {
-      subscriptions: number; nodes: number; enabledNodes: number; disabledNodes: number;
+      subscriptions: number; enabledSubscriptions: number; disabledSubscriptions: number;
+      nodes: number; enabledNodes: number; disabledNodes: number;
       protoCount: Record<string, number>; lastUpdate: number | null; status: string;
     } };
     expect(json.success).toBe(true);
     expect(json.data.subscriptions).toBe(1);
+    expect(json.data.enabledSubscriptions).toBe(1);
+    expect(json.data.disabledSubscriptions).toBe(0);
     expect(json.data.nodes).toBe(2);
     expect(json.data.enabledNodes).toBe(2);
     expect(json.data.disabledNodes).toBe(0);
@@ -81,10 +84,11 @@ describe('Dashboard API', () => {
 
     const res = await app.request('/api/dashboard', { headers });
     const json = (await res.json()) as { data: {
-      subscriptions: number; disabledSubscriptions: number; nodes: number;
+      subscriptions: number; enabledSubscriptions: number; disabledSubscriptions: number; nodes: number;
       enabledNodes: number; protoCount: Record<string, number>;
     } };
     expect(json.data.subscriptions).toBe(2);
+    expect(json.data.enabledSubscriptions).toBe(1);
     expect(json.data.disabledSubscriptions).toBe(1);
     expect(json.data.nodes).toBe(3); // 启用订阅 2 + 停用订阅 1
     expect(json.data.enabledNodes).toBe(2); // 只算启用订阅
