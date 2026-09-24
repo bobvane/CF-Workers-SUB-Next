@@ -317,11 +317,9 @@ export function createConfigService(repos: Repositories): ConfigService {
     },
 
     async generate(format: OutputFormat): Promise<string> {
-      // 只取「启用」订阅的节点：停用的订阅不参与输出（用户 2026-09-24，保留不删）
-      const subList = await repos.subscriptions.list();
-      const enabledIds = subList.filter((s) => s.enabled).map((s) => s.id);
-      const nodesBySub = await repos.nodes.getBySubscriptions(enabledIds);
-      const all = deduplicateNodes([...nodesBySub.values()].flat());
+      // 去重：按 server:port:protocol 三项指纹，合并多订阅重复节点
+      // （getAll() 已排除停用订阅的节点 —— 用户 2026-09-24）
+      const all = deduplicateNodes(await repos.nodes.getAll());
       // 过滤禁用的节点
       const disabled = new Set(await this.getDisabledNodes());
       const nodes = all.filter((n) => !disabled.has(nodeFingerprint(n)));

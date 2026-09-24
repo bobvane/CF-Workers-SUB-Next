@@ -201,6 +201,12 @@ describe('disabled subscription exclusion from output (v2.28.9)', () => {
     // 停用 B
     const disabled = await svcB.setEnabled(b.id, false);
     expect(disabled?.enabled).toBe(false);
+    // 节点列表 / 总数统计 / 重复节点整理 都走 nodes.getAll() → 必须排除停用订阅
+    const allNodes = await repos.nodes.getAll();
+    expect(allNodes.map((n) => n.name)).toEqual(['NODE-A']);
+    // 原始数据仍保留在 KV（启用回来不用重新抓）
+    expect((await repos.nodes.getBySubscription(b.id)).map((n) => n.name)).toEqual(['NODE-B']);
+
     const onlyA = await configService.generate('mihomo');
     expect(onlyA).toContain('NODE-A');
     expect(onlyA).not.toContain('NODE-B');

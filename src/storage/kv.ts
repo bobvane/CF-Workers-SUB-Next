@@ -236,7 +236,18 @@ export interface NodeRepository {
 }
 
 export class KvNodeRepository implements NodeRepository {
-  constructor(private readonly kv: KVStorage) {}
+  constructor(
+    private readonly kv: KVStorage,
+    /** 注入订阅仓储：getAll() 需要知道哪些订阅被停用（用户 2026-09-24） */
+    private readonly subscriptions?: SubscriptionRepository
+  ) {}
+
+  /** 停用订阅的 id 集合；未注入订阅仓储时视为全部启用 */
+  private async disabledSubscriptionIds(): Promise<Set<string>> {
+    if (!this.subscriptions) return new Set();
+    const subs = await this.subscriptions.list();
+    return new Set(subs.filter((s) => !s.enabled).map((s) => s.id));
+  }
 
   async getBySubscription(subscriptionId: string): Promise<Node[]> {
     const raw = await this.kv.get(KV_KEYS.nodes(subscriptionId));
@@ -276,7 +287,10 @@ export class KvNodeRepository implements NodeRepository {
 
   async getAll(): Promise<Node[]> {
     const entries = await this.kv.list('nodes:');
-    const values = await this.kv.getMany(entries.map((e) => e.key));
+    // 停用订阅的节点一律不参与聚合（节点列表 / 总数统计 / 重复节点整理 / 输出配置）——用户 2026-09-24
+    const disabled = await this.disabledSubscriptionIds();
+    const active = entries.filter((e) => !disabled.has(e.key.slice('nodes:'.length)));
+    const values = await this.kv.getMany(active.map((e) => e.key));
     const all: Node[] = [];
     for (const raw of values.values()) {
       if (raw) {
@@ -528,9 +542,11 @@ export interface Repositories {
 }
 
 export function createRepositories(kv: KVStorage): Repositories {
+  const subscriptions = new KvSubscriptionRepository(kv);
   return {
-    subscriptions: new KvSubscriptionRepository(kv),
-    nodes: new KvNodeRepository(kv),
+    subscriptions,
+    // 注入订阅仓储：停用订阅的节点从 getAll() 聚合中排除（用户 2026-09-24）
+    nodes: new KvNodeRepository(kv, subscriptions),
     rules: new KvRuleRepository(kv),
     sessions: new KvSessionRepository(kv),
     settings: new KvSettingsRepository(kv),
