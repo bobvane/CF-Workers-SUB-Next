@@ -170,3 +170,44 @@ describe('single node subscription (direct link)', () => {
     expect(result.nodes[0].flow).toBe('xtls-rprx-vision');
   });
 });
+
+describe('disabled subscription exclusion from output (v2.28.9)', () => {
+  let kv: MemoryKvAdapter;
+  let repos: ReturnType<typeof createRepositories>;
+  let svcA: ReturnType<typeof createSubscriptionService>;
+  let svcB: ReturnType<typeof createSubscriptionService>;
+  let configService: ReturnType<typeof createConfigService>;
+
+  beforeEach(() => {
+    kv = new MemoryKvAdapter();
+    repos = createRepositories(kv);
+    const fa = async () => 'ss://aes-256-gcm:p1@node-a.example.com:8388#NODE-A';
+    const fb = async () => 'ss://aes-256-gcm:p2@node-b.example.com:8388#NODE-B';
+    svcA = createSubscriptionService(repos, fa, async () => []);
+    svcB = createSubscriptionService(repos, fb, async () => []);
+    configService = createConfigService(repos);
+  });
+
+  it('停用订阅的节点不进输出，重新启用后恢复', async () => {
+    const a = await svcA.create('Airport A', 'https://a.example.com/sub');
+    const b = await svcB.create('Airport B', 'https://b.example.com/sub');
+    await svcA.update(a.id, async () => 'ss://aes-256-gcm:p1@node-a.example.com:8388#NODE-A');
+    await svcB.update(b.id, async () => 'ss://aes-256-gcm:p2@node-b.example.com:8388#NODE-B');
+
+    const withBoth = await configService.generate('mihomo');
+    expect(withBoth).toContain('NODE-A');
+    expect(withBoth).toContain('NODE-B');
+
+    // 停用 B
+    const disabled = await svcB.setEnabled(b.id, false);
+    expect(disabled?.enabled).toBe(false);
+    const onlyA = await configService.generate('mihomo');
+    expect(onlyA).toContain('NODE-A');
+    expect(onlyA).not.toContain('NODE-B');
+
+    // 重新启用 B
+    await svcB.setEnabled(b.id, true);
+    const bothBack = await configService.generate('mihomo');
+    expect(bothBack).toContain('NODE-B');
+  });
+});

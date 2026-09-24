@@ -155,6 +155,7 @@ tbody tr:hover { background: var(--accent-soft); }
 /* ===== Status ===== */
 .status-active { color: var(--green); }
 .status-error { color: var(--red); }
+.status-disabled { color: var(--text2); }
 /* ===== Modal ===== */
 .modal-overlay {
   display: none; position: fixed; inset: 0;
@@ -1201,10 +1202,16 @@ function renderSubTable() {
       <td style="font-size:14px;max-width:260px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="\${escHtml(s.url || '')}">
         \${s.url ? \`<a href="\${escHtml(s.url)}" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">\${escHtml(s.url)}</a>\` : '-'}
       </td>
-      <td><span class="status-\${s.status}">\${s.status === 'active' ? '✅ 正常' : s.status === 'error' ? '❌ 错误' : '⏸ 停用'}</span></td>
+      <td>
+        \${s.enabled
+          ? '<span class="status-active">✅ 已启用</span>'
+          : '<span class="status-disabled">⏸ 未启用</span>'}
+        \${s.status === 'error' && s.enabled ? ' <span class="status-error">❌ 更新失败</span>' : ''}
+      </td>
       <td>\${s.nodeCount ?? 0}</td>
       <td style="font-size:14px;color:var(--text2)">\${s.updatedAt ? new Date(s.updatedAt).toLocaleString() : '-'}</td>
       <td>
+        <button class="btn btn-sm" onclick="toggleSub('\${s.id}')">\${s.enabled ? '⏸ 停用' : '▶ 启用'}</button>
         <button class="btn btn-sm" onclick="updateSub('\${s.id}')">🔄 更新</button>
         <button class="btn btn-sm btn-danger" onclick="deleteSub('\${s.id}')">🗑 删除</button>
       </td>
@@ -1228,6 +1235,7 @@ async function addSub() {
     state.subscriptions.unshift({
       id: data.data.id,
       name: name,
+      enabled: true,
       status: 'active',
       nodeCount: 0,
       updatedAt: Date.now(),
@@ -1264,6 +1272,19 @@ async function deleteSub(id) {
     toast('删除成功');
     loadSubscriptions();
   } catch (e) { toast('删除失败: ' + e.message, 'error'); }
+}
+
+// 启用/停用订阅（不删除，留着以后再用）2026-09-24
+async function toggleSub(id) {
+  const sub = state.subscriptions.find(x => x.id === id);
+  if (!sub) return;
+  const enabled = !sub.enabled;
+  try {
+    await api('/subscriptions/' + id + '/enabled', { method: 'POST', body: JSON.stringify({ enabled }) });
+    sub.enabled = enabled;
+    renderSubTable();
+    toast(enabled ? '已启用' : '已停用');
+  } catch (e) { toast('操作失败: ' + e.message, 'error'); }
 }
 
 // ============ Nodes ============

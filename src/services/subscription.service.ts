@@ -28,6 +28,7 @@ export interface SubscriptionService {
   getById(id: string): Promise<Subscription | null>;
   create(name: string, url: string): Promise<Subscription>;
   delete(id: string): Promise<boolean>;
+  setEnabled(id: string, enabled: boolean): Promise<Subscription | null>;
   update(id: string, fetcher: (url: string) => Promise<string>): Promise<{
     subscription: Subscription;
     nodes: Node[];
@@ -56,6 +57,12 @@ export function createSubscriptionService(
 
     async delete(id: string) {
       return repos.subscriptions.delete(id);
+    },
+
+    async setEnabled(id: string, enabled: boolean) {
+      const existing = await repos.subscriptions.getById(id);
+      if (!existing) return null;
+      return repos.subscriptions.update(id, { enabled });
     },
 
     async update(id: string, fetcher: (url: string) => Promise<string>) {

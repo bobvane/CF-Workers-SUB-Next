@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.28.9] - 2026-09-24
+
+### 订阅启用/停用（用户 2026-09-24 拍板新增）
+
+- 订阅管理页面新增「⏸ 停用 / ▶ 启用」按钮 + 状态徽标（✅ 已启用 / ⏸ 未启用）；停用的订阅不用删除，留着以后一键启用。
+- 新端点 `POST /api/subscriptions/:id/enabled`（body `{enabled}`）；`GET /api/subscriptions` 列表补 `enabled` 字段。
+- 停用订阅：不参与每日自动更新（`index.ts` scheduled），也不参与输出配置生成（`config.service.generate` 改用启用订阅的节点；复用已有 `getBySubscriptions` 批量读取）。
+
 ## [2.28.8] - 2026-09-24
 
 ### 地理负载均衡组（用户 2026-09-24 拍板新增）

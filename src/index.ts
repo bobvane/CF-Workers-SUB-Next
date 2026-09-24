@@ -235,6 +235,11 @@ export default {
     );
     const results: string[] = [];
     for (const s of await subs.list()) {
+      // 停用的订阅不参与自动更新（用户 2026-09-24）
+      if (!s.enabled) {
+        results.push(`${s.name}:已停用`);
+        continue;
+      }
       try {
         const { nodeCount } = await subs.update(s.id, fetchSubscription);
         results.push(`${s.name}:${nodeCount}节点`);

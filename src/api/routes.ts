@@ -220,6 +220,7 @@ export function createApp(deps: AppDeps): Hono {
       data: list.map((s) => ({
         id: s.id,
         name: s.name,
+        enabled: s.enabled,
         status: s.status,
         nodeCount: s.nodeCount ?? 0,
         updatedAt: s.updatedAt,
@@ -255,6 +256,18 @@ export function createApp(deps: AppDeps): Hono {
     const deleted = await subscriptions.delete(id);
     if (!deleted) throw ERRORS.SUBSCRIPTION_NOT_FOUND();
     return c.json({ success: true });
+  });
+
+  // 启用/停用订阅（不删除，留待以后再用）
+  app.post('/api/subscriptions/:id/enabled', async (c) => {
+    const id = c.req.param('id') as string;
+    const body = await readBody<{ enabled?: boolean }>(c);
+    if (typeof body.enabled !== 'boolean') {
+      throw ERRORS.INVALID_PARAMETER('enabled is required');
+    }
+    const sub = await subscriptions.setEnabled(id, body.enabled);
+    if (!sub) throw ERRORS.SUBSCRIPTION_NOT_FOUND();
+    return c.json({ success: true, data: { id: sub.id, enabled: sub.enabled } });
   });
 
   // 更新订阅（重新抓取解析）
