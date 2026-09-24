@@ -431,7 +431,7 @@ describe('generateMihomoConfig', () => {
     expect(lb?.type).toBe('load-balance');
     expect(lb?.proxies).toEqual(['US-01', 'US-02']);
     expect(lb.tolerance).toBeUndefined(); // tolerance 是 url-test 专有
-    expect(lb.strategy).toBeUndefined(); // 不写死，走内核默认 consistent-hashing
+    expect(lb.strategy).toBe('consistent-hashing'); // 2026-09-24 用户指令：硬编码输出
     // 2026-09-24：所有带 interval: 300 的组统一补 timeout: 5000
     expect(lb.timeout).toBe(5000);
     expect(groups[idx].timeout).toBe(5000); // 地区 url-test 组

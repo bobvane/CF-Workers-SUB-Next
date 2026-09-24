@@ -527,12 +527,13 @@ export async function generateProxyGroups(
     groups.push(group);
 
     // 地理负载均衡组（用户 2026-09-24 拍板：保留原 url-test 组，同地区另加一组 load-balance，紧随其地区组之后）。
-    // strategy 不写死 —— 走内核默认 consistent-hashing（同目标域名固定走同一节点，不跳 IP）；
+    // strategy 硬编码 consistent-hashing（与内核默认一致，但显式输出，用户 2026-09-24）；
     // tolerance 是 url-test 专有参数，load-balance 不认，故此处不输出。
     if (useUrlTest) {
       groups.push({
         name: `${geo.name}-负载均衡`,
         type: 'load-balance',
+        strategy: 'consistent-hashing',
         icon: geoIcon(geo.name),
         url: 'http://www.gstatic.com/generate_204',
         interval: 300,

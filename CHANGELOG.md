@@ -2,6 +2,12 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.29.7] - 2026-09-24
+
+### 负载均衡组显式输出 strategy（用户 2026-09-24 指令）
+
+- 所有 `load-balance` 组在 `type` 下方硬编码输出 `strategy: consistent-hashing`（与内核默认值一致，此前依赖默认不输出）。
+
 ## [2.29.6] - 2026-09-24
 
 ### 仪表盘新增「已启用订阅」卡片（用户 2026-09-24 指令）
