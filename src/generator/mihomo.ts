@@ -471,14 +471,14 @@ export async function generateProxyGroups(
     proxies: ['节点选择', '手动切换', '自动选择', ...geoGroupNames, 'DIRECT'],
   });
 
-  // 10. GLOBAL（只含核心切换组，默认自动选择 —— 用户 2026-09-03 修改：从 DIRECT 改为自动选择；无 url，不需要测速 —— 用户 2026-09-02 拍板）
+  // 10. GLOBAL（默认自动选择；无 url，不需要测速 —— 用户 2026-09-02 拍板）
+  // proxies 不在此处写死：zashboard/metacubexd 的组顺序 = GLOBAL.all 下标，
+  // 故必须在全部组生成、排序完成后，按面板顺序全量回填（见函数末尾）。
   groups.push({
     name: 'GLOBAL',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Final.png',
     'default-selected': '自动选择',
-    // 用户 2026-08-30 拍板：GLOBAL 只保留 节点选择/手动切换/自动选择/DIRECT 四组
-    proxies: ['节点选择', '手动切换', '自动选择', 'DIRECT'],
   });
 
   // 11. 地理组：指定六国/地区自动测速(url-test)，其余 select
@@ -526,6 +526,17 @@ export async function generateProxyGroups(
     const rb = PANEL_ORDER[String(b.name)] ?? 100;
     return ra - rb;
   });
+
+  // GLOBAL 全量回填（用户 2026-09-24 拍板，推翻 08-30「只留四组」）：
+  // zashboard/metacubexd 用 GLOBAL.all 的下标给组排序，不在该数组里的组会掉进字母序，
+  // 面板顺序就失控。故按面板顺序把全部组写进 GLOBAL.proxies，DIRECT 收尾。
+  const globalGroup = groups.find(g => g.name === 'GLOBAL');
+  if (globalGroup) {
+    globalGroup.proxies = [
+      ...groups.filter(g => g.name !== 'GLOBAL').map(g => String(g.name)),
+      'DIRECT',
+    ];
+  }
 
   return groups;
 }
