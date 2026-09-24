@@ -230,7 +230,8 @@ export interface NodeRepository {
   getBySubscriptions(subscriptionIds: string[]): Promise<Map<string, Node[]>>;
   setBySubscription(subscriptionId: string, nodes: Node[]): Promise<void>;
   deleteBySubscription(subscriptionId: string): Promise<void>;
-  getAll(): Promise<Node[]>;
+  /** 聚合节点；includeDisabledSubscriptions=true 时含停用订阅的节点（仪表盘「节点总数」用） */
+  getAll(includeDisabledSubscriptions?: boolean): Promise<Node[]>;
   /** 对所有节点的 name 应用变换，返回受影响数量 */
   renameAll(transform: (name: string) => string): Promise<number>;
 }
@@ -285,10 +286,13 @@ export class KvNodeRepository implements NodeRepository {
     await this.kv.delete(KV_KEYS.nodes(subscriptionId));
   }
 
-  async getAll(): Promise<Node[]> {
+  /**
+   * 聚合节点。默认只含启用订阅（停用订阅的节点不参与聚合——用户 2026-09-24）；
+   * includeDisabledSubscriptions=true 时连停用订阅的节点一并返回（仪表盘「节点总数」口径，用户 2026-09-24）。
+   */
+  async getAll(includeDisabledSubscriptions = false): Promise<Node[]> {
     const entries = await this.kv.list('nodes:');
-    // 停用订阅的节点一律不参与聚合（节点列表 / 总数统计 / 重复节点整理 / 输出配置）——用户 2026-09-24
-    const disabled = await this.disabledSubscriptionIds();
+    const disabled = includeDisabledSubscriptions ? new Set<string>() : await this.disabledSubscriptionIds();
     const active = entries.filter((e) => !disabled.has(e.key.slice('nodes:'.length)));
     const values = await this.kv.getMany(active.map((e) => e.key));
     const all: Node[] = [];

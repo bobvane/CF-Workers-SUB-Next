@@ -168,16 +168,18 @@ export function createApp(deps: AppDeps): Hono {
   // 仪表盘数据计算：/api/dashboard 与首屏 bootstrap 共用，避免两处重复
   const buildDashboard = async () => {
     const subs = await subscriptions.list();
-    const nodes = await repos.nodes.getAll();
+    // 两种口径各取一次（并行）：enabled=启用订阅的节点，all=含停用订阅的全部节点（用户 2026-09-24）
+    const [nodes, allNodes] = await Promise.all([repos.nodes.getAll(), repos.nodes.getAll(true)]);
     const lastUpdate = subs.reduce((max, s) => Math.max(max, s.updatedAt), 0);
     const disabled = await config.getDisabledNodes();
     const enabledNodes = nodes.filter(n => !disabled.includes(nodeFingerprint(n)));
-    // 按协议统计
+    // 按协议统计：口径与「节点总数」一致（全部订阅）
     const protoCount: Record<string, number> = {};
-    nodes.forEach(n => { const p = n.protocol || 'unknown'; protoCount[p] = (protoCount[p] || 0) + 1; });
+    allNodes.forEach(n => { const p = n.protocol || 'unknown'; protoCount[p] = (protoCount[p] || 0) + 1; });
     return {
       subscriptions: subs.length,
-      nodes: nodes.length,
+      disabledSubscriptions: subs.filter(s => !s.enabled).length,
+      nodes: allNodes.length,
       enabledNodes: enabledNodes.length,
       disabledNodes: disabled.length,
       protoCount,

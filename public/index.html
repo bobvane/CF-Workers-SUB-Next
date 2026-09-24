@@ -344,6 +344,7 @@ tbody tr:hover { background: var(--accent-soft); }
     <h2 style="margin-bottom:16px">📊 仪表盘</h2>
     <div class="stats-grid" id="statsGrid">
       <div class="card"><div class="card-title">订阅数量</div><div class="card-value" id="statSubs">-</div></div>
+      <div class="card"><div class="card-title">已禁用订阅</div><div class="card-value" id="statDisabledSubs">-</div></div>
       <div class="card"><div class="card-title">节点总数</div><div class="card-value" id="statNodes">-</div></div>
       <div class="card"><div class="card-title">已启用节点</div><div class="card-value" id="statEnabled">-</div></div>
       <div class="card"><div class="card-title">已禁用节点</div><div class="card-value" id="statDisabled">-</div></div>
@@ -1075,6 +1076,7 @@ function loadRules() {
 // ============ Dashboard ============
 function renderDashboard(d) {
   document.getElementById('statSubs').textContent = d.subscriptions;
+  document.getElementById('statDisabledSubs').textContent = d.disabledSubscriptions ?? '-';
   document.getElementById('statNodes').textContent = d.nodes;
   document.getElementById('statEnabled').textContent = d.enabledNodes ?? '-';
   document.getElementById('statDisabled').textContent = d.disabledNodes ?? '-';

@@ -27,10 +27,11 @@ function makeNode(id: string, name: string, protocol: Node['protocol'], server: 
 describe('Dashboard API', () => {
   let app: ReturnType<typeof createApp>;
   let headers: Record<string, string>;
+  let repos: ReturnType<typeof createRepositories>;
 
   beforeEach(async () => {
     const kv = new MemoryKvAdapter();
-    const repos = createRepositories(kv);
+    repos = createRepositories(kv);
     const { hash, salt } = await createPasswordHash('test-pass');
     await kv.put('admin:hash', JSON.stringify({ hash, salt }));
     const auth = createAuthService(repos.sessions, async () => ({ hash, salt }));
@@ -68,5 +69,25 @@ describe('Dashboard API', () => {
     expect(json.data.protoCount.vmess).toBe(1);
     expect(json.data.protoCount.trojan).toBe(1);
     expect(json.data.status).toBe('ok');
+  });
+
+  it('节点总数含停用订阅的节点，已禁用订阅单独计数（2026-09-24 用户指令）', async () => {
+    // 再建一个订阅并停用它：其节点应计入「节点总数」，不计入「已启用节点」
+    const off = await repos.subscriptions.create({ name: 'off', url: 'https://example.com/off' });
+    await repos.nodes.setBySubscription(off.id, [
+      makeNode('n3', 'JP-01', 'ss', '9.9.9.9'),
+    ]);
+    await repos.subscriptions.update(off.id, { enabled: false });
+
+    const res = await app.request('/api/dashboard', { headers });
+    const json = (await res.json()) as { data: {
+      subscriptions: number; disabledSubscriptions: number; nodes: number;
+      enabledNodes: number; protoCount: Record<string, number>;
+    } };
+    expect(json.data.subscriptions).toBe(2);
+    expect(json.data.disabledSubscriptions).toBe(1);
+    expect(json.data.nodes).toBe(3); // 启用订阅 2 + 停用订阅 1
+    expect(json.data.enabledNodes).toBe(2); // 只算启用订阅
+    expect(json.data.protoCount.ss).toBe(1); // 协议分布与节点总数同口径
   });
 });
