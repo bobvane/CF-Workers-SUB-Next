@@ -316,7 +316,7 @@ export interface GeoResolver {
  *   顶层切换组（节点选择/手动切换/自动选择）
  *   → 业务分类组（用户规则/广告拦截/AI 平台/YouTube/GitHub/Google服务/微软服务/苹果服务/社交/国外媒体/加密货币/游戏平台）
  *   → 漏网之鱼（MATCH 兜底）→ GLOBAL（显式定义）→ 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，除指定 6 国外全部 select；
- *     美国/马来西亚/日本/新加坡/台湾/韩国 6 组 url-test 自动测速）
+ *     美国/马来西亚/日本/新加坡/台湾/韩国 6 组 url-test 自动测速，且各自另配一组 load-balance 负载均衡组）
  *
  * 不生成「全球直连」「国内媒体」策略组：国内直连规则在 rule-providers 中直接写 RULE-SET,xxx,DIRECT。
  * 应用净化已移除（CATEGORY-ADS⊂CATEGORY-ADS-ALL，93% 重叠，并入广告拦截）。
@@ -484,6 +484,11 @@ export async function generateProxyGroups(
   // 11. 地理组：指定六国/地区自动测速(url-test)，其余 select
   // 美国/马来西亚/日本/新加坡/台湾/韩国 六组 url-test（用户 2026-08-30 指定），其余 select
   const URL_TEST_REGIONS = ['美国', '马来西亚', '日本', '新加坡', '台湾', '韩国'];
+  // 地理组图标：国家码 → Qure IconSet 国旗（缺失/无法识别的回落 Area.png）
+  const geoIcon = (name: string): string => {
+    const code = GEO_CODE_BY_NAME[name];
+    return code && GEO_ICON_CODES.has(code) ? GEO_ICON_BASE + code + '.png' : GEO_ICON_FALLBACK;
+  };
   for (const geo of geoGroups) {
     const isUrlTest = URL_TEST_REGIONS.some(r => geo.name.includes(r));
     // 单节点自动降级为 select（用户 2026-08-30 拍板：url-test 组仅 1 个节点时测速无意义）
@@ -493,11 +498,7 @@ export async function generateProxyGroups(
       name: geo.name,
       type: useUrlTest ? 'url-test' : 'select',
     };
-    // 2026-09-24（吸收 Perfect-Rules）：每个地理组配国旗图标，无对应图标回退 Area.png
-    const geoCode = GEO_CODE_BY_NAME[geo.name];
-    group.icon = geoCode && GEO_ICON_CODES.has(geoCode)
-      ? GEO_ICON_BASE + geoCode + '.png'
-      : GEO_ICON_FALLBACK;
+    group.icon = geoIcon(geo.name);
     if (useUrlTest) {
       group.url = 'http://www.gstatic.com/generate_204';
       group.interval = 300;
@@ -508,6 +509,22 @@ export async function generateProxyGroups(
     }
     group.proxies = geo.nodes;
     groups.push(group);
+
+    // 地理负载均衡组（用户 2026-09-24 拍板：保留原 url-test 组，同地区另加一组 load-balance，紧随其地区组之后）。
+    // strategy 不写死 —— 走内核默认 consistent-hashing（同目标域名固定走同一节点，不跳 IP）；
+    // tolerance 是 url-test 专有参数，load-balance 不认，故此处不输出。
+    if (useUrlTest) {
+      groups.push({
+        name: `${geo.name}-负载均衡`,
+        type: 'load-balance',
+        icon: geoIcon(geo.name),
+        url: 'http://www.gstatic.com/generate_204',
+        interval: 300,
+        'expected-status': 204,
+        'max-failed-times': 3,
+        proxies: geo.nodes,
+      });
+    }
   }
 
   // 面板顺序 = PANEL_ORDER 排位。用户 2026-09-24 重排：

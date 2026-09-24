@@ -409,4 +409,28 @@ describe('generateMihomoConfig', () => {
     // 不可识别-02 仍落"其他"
     expect(yaml).toContain('其他');
   });
+
+  it('地理负载均衡组：url-test 地区各追加一组 load-balance（2026-09-24 用户拍板）', async () => {
+    const usResolver = async (): Promise<string | null> => '🇺🇸 美国';
+    const groups = await generateProxyGroups(
+      [
+        makeNode({ name: 'US-01', server: 'us1.example.com' }),
+        makeNode({ id: 'n2', name: 'US-02', server: 'us2.example.com' }),
+      ],
+      [],
+      [],
+      usResolver
+    );
+    const names = groups.map(g => String(g.name));
+    const idx = names.indexOf('🇺🇸 美国');
+    expect(idx).toBeGreaterThan(-1);
+    expect(groups[idx]?.type).toBe('url-test'); // 原 url-test 组保留不动
+
+    const lb = groups[idx + 1];
+    expect(lb?.name).toBe('🇺🇸 美国-负载均衡'); // 紧随其地区组之后
+    expect(lb?.type).toBe('load-balance');
+    expect(lb?.proxies).toEqual(['US-01', 'US-02']);
+    expect(lb?.tolerance).toBeUndefined(); // tolerance 是 url-test 专有，load-balance 不认
+    expect(lb?.strategy).toBeUndefined(); // 不写死，走内核默认 consistent-hashing
+  });
 });

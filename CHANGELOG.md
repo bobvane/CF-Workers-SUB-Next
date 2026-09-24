@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.28.8] - 2026-09-24
+
+### 地理负载均衡组（用户 2026-09-24 拍板新增）
+
+- 6 个 url-test 地区（美国/马来西亚/日本/新加坡/台湾/韩国）各**额外**产出一组 `load-balance` 负载均衡组，命名 `<地区>-负载均衡`，紧随其地区组之后，成员与该地区组一致。
+- 原 url-test 组保留不动；单节点地区仍按既有规则跳过（测速/均衡均无意义）。
+- `strategy` 不写死，走内核默认 `consistent-hashing`（同一目标域名固定走同一节点，不跳 IP）；`tolerance` 是 url-test 专有参数，load-balance 不输出。
+- 新增回归测试：断言 url-test 组保留、load-balance 组紧随其后且不带 `tolerance` / `strategy`。
+
 ## [2.28.7] - 2026-09-24
 
 ### GLOBAL 全量引用（修正面板顺序失效的真因）
