@@ -183,6 +183,25 @@ describe('generateMihomoConfig', () => {
     expect(yaml).toContain('MATCH,漏网之鱼');
   });
 
+  it('panel 顺序 = 用户 2026-09-24 拍板：切换组→业务组→漏网之鱼→微软/苹果/游戏→广告拦截→地理组→GLOBAL 最后', async () => {
+    const groups = await generateProxyGroups(
+      [makeNode({ name: 'HK-01', server: 'hk.example.com' }), makeNode({ id: 'b', name: 'JP-01' }), makeNode({ id: 'c', name: 'US-01', server: 'us.example.com' })],
+      [], RULE_GROUPS
+    );
+    const names = groups.map(g => String(g.name));
+    const seq = [
+      '节点选择', '手动切换', '自动选择', 'AI 平台', 'GitHub', 'Google服务',
+      'YouTube', '加密货币', '国外媒体', '社交', '漏网之鱼', '微软服务',
+      '苹果服务', '游戏平台', '广告拦截',
+    ];
+    const idx = seq.map(n => names.indexOf(n));
+    expect(idx.every((v, i) => v >= 0 && (i === 0 || v > idx[i - 1]))).toBe(true);
+    // 地理组沉在广告拦截之后，GLOBAL 压最后
+    expect(names.indexOf('GLOBAL')).toBe(names.length - 1);
+    expect(names.indexOf('自动选择')).toBeLessThan(names.indexOf('广告拦截'));
+    expect(names.indexOf('广告拦截')).toBeLessThan(names.indexOf('GLOBAL'));
+  });
+
   it('base layer: 专业配置头字段已吸收 (v2.26.8)', async () => {
     const yaml = await generateMihomoConfig([makeNode()]);
     // v2.26.8 用户拍板吸收；v2.12.2 的"删除这些头字段"指令作废
