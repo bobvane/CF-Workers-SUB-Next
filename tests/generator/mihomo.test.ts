@@ -201,8 +201,8 @@ describe('generateMihomoConfig', () => {
     expect(names.indexOf('自动选择')).toBeLessThan(names.indexOf('广告拦截'));
     expect(names.indexOf('广告拦截')).toBeLessThan(names.indexOf('GLOBAL'));
     // GLOBAL 全量回填 = 面板顺序的全部组 + DIRECT（zashboard 按 GLOBAL.all 下标排面板）
-    const global = groups.find(g => g.name === 'GLOBAL') as any;
-    expect(global.proxies).toEqual([...names.filter(n => n !== 'GLOBAL'), 'DIRECT']);
+    const global = groups.find(g => g.name === 'GLOBAL');
+    expect(global?.proxies).toEqual([...names.filter(n => n !== 'GLOBAL'), 'DIRECT']);
   });
 
   it('base layer: 专业配置头字段已吸收 (v2.26.8)', async () => {
