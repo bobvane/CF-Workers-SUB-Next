@@ -369,6 +369,7 @@ export async function generateProxyGroups(
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Auto.png',
     url: 'http://www.gstatic.com/generate_204',
     interval: 300,
+    timeout: 5000,
     tolerance: 50,
     // 2026-09-24（吸收 Perfect-Rules）：只认 generate_204 的 204 为存活；连续 3 次失败触发强制复检
     'expected-status': 204,
@@ -493,7 +494,7 @@ export async function generateProxyGroups(
     const isUrlTest = URL_TEST_REGIONS.some(r => geo.name.includes(r));
     // 单节点自动降级为 select（用户 2026-08-30 拍板：url-test 组仅 1 个节点时测速无意义）
     const useUrlTest = isUrlTest && geo.nodes.length > 1;
-    // 键顺序：name → type →（url/interval/tolerance）→ proxies，让测速参数紧跟 type 下方，排版更清晰（用户 2026-09-02 拍板）
+    // 键顺序：name → type →（url/interval/timeout/tolerance）→ proxies，让测速参数紧跟 type 下方，排版更清晰（用户 2026-09-02 拍板）
     const group: Record<string, unknown> = {
       name: geo.name,
       type: useUrlTest ? 'url-test' : 'select',
@@ -502,6 +503,7 @@ export async function generateProxyGroups(
     if (useUrlTest) {
       group.url = 'http://www.gstatic.com/generate_204';
       group.interval = 300;
+      group.timeout = 5000;
       group.tolerance = 50;
       // 2026-09-24（吸收 Perfect-Rules）：只认 generate_204 的 204 为存活；连续 3 次失败触发强制复检
       group['expected-status'] = 204;
@@ -520,6 +522,7 @@ export async function generateProxyGroups(
         icon: geoIcon(geo.name),
         url: 'http://www.gstatic.com/generate_204',
         interval: 300,
+        timeout: 5000,
         'expected-status': 204,
         'max-failed-times': 3,
         proxies: geo.nodes,

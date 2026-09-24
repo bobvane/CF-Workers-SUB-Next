@@ -430,7 +430,13 @@ describe('generateMihomoConfig', () => {
     expect(lb?.name).toBe('🇺🇸 美国-负载均衡'); // 紧随其地区组之后
     expect(lb?.type).toBe('load-balance');
     expect(lb?.proxies).toEqual(['US-01', 'US-02']);
-    expect(lb?.tolerance).toBeUndefined(); // tolerance 是 url-test 专有，load-balance 不认
-    expect(lb?.strategy).toBeUndefined(); // 不写死，走内核默认 consistent-hashing
+    expect(lb.tolerance).toBeUndefined(); // tolerance 是 url-test 专有
+    expect(lb.strategy).toBeUndefined(); // 不写死，走内核默认 consistent-hashing
+    // 2026-09-24：所有带 interval: 300 的组统一补 timeout: 5000
+    expect(lb.timeout).toBe(5000);
+    expect(groups[idx].timeout).toBe(5000); // 地区 url-test 组
+    expect(groups.find(g => g.name === '自动选择')?.timeout).toBe(5000);
+    // 非测速组不该被波及
+    expect(groups.find(g => g.name === '手动切换')?.timeout).toBeUndefined();
   });
 });
