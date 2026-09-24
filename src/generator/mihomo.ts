@@ -315,8 +315,8 @@ export interface GeoResolver {
  *   由函数末尾 PANEL_ORDER 排序实现。结构为：
  *   顶层切换组（节点选择/手动切换/自动选择）
  *   → 业务分类组（用户规则/广告拦截/AI 平台/YouTube/GitHub/Google服务/微软服务/苹果服务/社交/国外媒体/加密货币/游戏平台）
- *   → 漏网之鱼（MATCH 兜底）→ GLOBAL（显式定义）→ 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，除指定 6 国外全部 select；
- *     美国/马来西亚/日本/新加坡/台湾/韩国 6 组 url-test 自动测速，且各自另配一组 load-balance 负载均衡组）
+ *   → 漏网之鱼（MATCH 兜底）→ GLOBAL（显式定义）→ 地理组（🇭🇰 香港 / 🇯🇵 日本 / ...，除指定 7 地区外全部 select；
+ *     香港/美国/马来西亚/日本/新加坡/台湾/韩国 7 组 url-test 自动测速，且各自另配一组 load-balance 负载均衡组）
  *
  * 不生成「全球直连」「国内媒体」策略组：国内直连规则在 rule-providers 中直接写 RULE-SET,xxx,DIRECT。
  * 应用净化已移除（CATEGORY-ADS⊂CATEGORY-ADS-ALL，93% 重叠，并入广告拦截）。
@@ -482,9 +482,10 @@ export async function generateProxyGroups(
     'default-selected': '自动选择',
   });
 
-  // 11. 地理组：指定六国/地区自动测速(url-test)，其余 select
-  // 美国/马来西亚/日本/新加坡/台湾/韩国 六组 url-test（用户 2026-08-30 指定），其余 select
-  const URL_TEST_REGIONS = ['美国', '马来西亚', '日本', '新加坡', '台湾', '韩国'];
+  // 11. 地理组：指定地区自动测速(url-test)，其余 select
+  // 美国/马来西亚/日本/新加坡/台湾/韩国 六组 url-test（用户 2026-08-30 指定），
+  // 香港同样 url-test（用户 2026-09-24：原手工选定改为自动测速组），其余 select
+  const URL_TEST_REGIONS = ['香港', '美国', '马来西亚', '日本', '新加坡', '台湾', '韩国'];
   // 地理组图标：国家码 → Qure IconSet 国旗（缺失/无法识别的回落 Area.png）
   const geoIcon = (name: string): string => {
     const code = GEO_CODE_BY_NAME[name];

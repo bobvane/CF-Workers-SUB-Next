@@ -439,4 +439,27 @@ describe('generateMihomoConfig', () => {
     // 非测速组不该被波及
     expect(groups.find(g => g.name === '手动切换')?.timeout).toBeUndefined();
   });
+
+  it('香港组：手工选定改为 url-test 自动测速 + 负载均衡（2026-09-24 用户指令）', async () => {
+    const hkResolver = async (): Promise<string | null> => '🇭🇰 香港';
+    const groups = await generateProxyGroups(
+      [
+        makeNode({ name: 'HK-01', server: 'hk1.example.com' }),
+        makeNode({ id: 'n2', name: 'HK-02', server: 'hk2.example.com' }),
+      ],
+      [],
+      [],
+      hkResolver
+    );
+    const idx = groups.findIndex(g => g.name === '🇭🇰 香港');
+    expect(idx).toBeGreaterThan(-1);
+    expect(groups[idx]?.type).toBe('url-test'); // 原为 select 手工选定
+    expect(groups[idx]?.interval).toBe(300);
+    expect(groups[idx]?.timeout).toBe(5000);
+    expect(groups[idx]?.tolerance).toBe(50);
+    const lb = groups[idx + 1];
+    expect(lb?.name).toBe('🇭🇰 香港-负载均衡');
+    expect(lb?.type).toBe('load-balance');
+    expect(lb?.proxies).toEqual(['HK-01', 'HK-02']);
+  });
 });
