@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.30.3] - 2026-09-26
+
+### 文档纠错：`.env.example` 对 `GITHUB_TOKEN` 的说法
+
+- 原文写"注释说这些值只在首次启动初始化时使用"——错，`GITHUB_TOKEN` 每次同步规则目录都读，代理变量每次出网都读，只有 `ADMIN_PASSWORD` / `SESSION_SECRET` 是首次初始化用的
+- 补清楚 `GITHUB_TOKEN` 的用途和取舍：只被「规则目录同步」用（每月 1 日、3 次 API 调用）；不填照样跑，区别只是 GitHub API 额度 60/h → 5000/h（按出口 IP 算）；填的话用 fine-grained token 只勾 Public Repositories 只读
+
+代码零改动。
+
 ## [2.30.2] - 2026-09-26
 
 ### 项目改名：CF-Workers-SUB-Next → SUB-Aggregation
