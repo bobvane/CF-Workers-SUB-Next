@@ -24,6 +24,17 @@ import { createCatalogSyncService, CatalogSyncService } from '@/services/catalog
 import { RuleCatalogMeta } from '@/models/rule-catalog';
 
 /**
+ * 请求是否走 https。
+ * 直连时看 URL 协议；nginx / tailscale serve 等反代后面 URL 永远是 http，
+ * 由反代给的 x-forwarded-proto 决定。决定 session cookie 要不要带 Secure 属性
+ * （明文 http 下带 Secure 会被浏览器整条丢弃 → 登录后立刻掉线）。
+ */
+function isHttpsRequest(c: { req: { url: string; header: (name: string) => string | undefined } }): boolean {
+  const proto = c.req.header('x-forwarded-proto') ?? new URL(c.req.url).protocol.replace(':', '');
+  return proto === 'https';
+}
+
+/**
  * 恒定时间字符串比较（防时序侧信道）。
  * 不用 crypto.subtle.timingSafeEqual（各运行时支持不一），
  * 自实现：先比对长度避免泄漏，再逐字节异或累加，时间与内容无关。
@@ -152,7 +163,7 @@ export function createApp(deps: AppDeps): Hono {
       );
     }
 
-    c.header('Set-Cookie', createSessionCookie(token));
+    c.header('Set-Cookie', createSessionCookie(token, isHttpsRequest(c)));
     return c.json({ success: true, data: { token } });
   });
 
@@ -161,7 +172,7 @@ export function createApp(deps: AppDeps): Hono {
     if (token) {
       await auth.logout(token);
     }
-    c.header('Set-Cookie', createClearCookie());
+    c.header('Set-Cookie', createClearCookie(isHttpsRequest(c)));
     return c.json({ success: true });
   });
 
@@ -844,7 +855,7 @@ export function createApp(deps: AppDeps): Hono {
     // 吊销当前 session，强制重新登录
     const token = getToken(c);
     if (token) await auth.logout(token);
-    c.header('Set-Cookie', createClearCookie());
+    c.header('Set-Cookie', createClearCookie(isHttpsRequest(c)));
     return c.json({ success: true, data: { relogin: true } });
   });
 

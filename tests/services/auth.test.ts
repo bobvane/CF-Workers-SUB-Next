@@ -157,6 +157,16 @@ describe('cookie handling', () => {
     expect(cookie).toContain('token123');
   });
 
+  // 明文 http 下带 Secure 会被浏览器整条丢弃（RFC 6265bis §5.4）：登录成功但一刷新就掉线
+  it('should omit Secure when serving over plain http', () => {
+    const cookie = createSessionCookie('token123', false);
+    expect(cookie).not.toContain('Secure');
+    expect(cookie).toContain('HttpOnly');
+    expect(cookie).toContain('SameSite=Strict');
+    expect(createClearCookie(false)).not.toContain('Secure');
+    expect(createClearCookie(true)).toContain('Secure');
+  });
+
   it('should create clear cookie', () => {
     const cookie = createClearCookie();
     expect(cookie).toContain('Max-Age=0');

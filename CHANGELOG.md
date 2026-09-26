@@ -2,6 +2,24 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.30.4] - 2026-09-26
+
+### 修复：明文 http 部署下登录后立刻掉线（大面积 401）
+
+**症状**：NAS 上用 `http://内网IP:20130` 访问，登录成功，但一刷新浏览器就回登录页；仪表盘 / 订阅 / 规则 / CF 统计 / 输出配置全部"加载失败"，规则库刷新报 `Authentication required`，快速预设按钮空白。
+
+**根因**：`createSessionCookie` 无条件写 `Secure`。按 RFC 6265bis §5.4，**浏览器收到非 https 连接下发的 `Secure` cookie 会整条丢弃**（curl 不遵守，所以冒烟测试没抓到）。cookie 一丢，后续每个请求都是未登录 → 401 连锁。此前跑在 Cloudflare 上是 https，从未暴露。
+
+**修复**：`createSessionCookie` / `createClearCookie` 增加 `secure` 参数（默认 `true`，行为不变）；新增 `isHttpsRequest()`（先看 `x-forwarded-proto`，再看请求 URL 协议），三个调用点按请求实际协议决定是否加 `Secure`。
+
+- 明文 http → 不带 `Secure`，浏览器正常保存，登录状态可保持
+- https / 反代（`x-forwarded-proto: https`）→ 仍然带 `Secure`，安全属性不降级
+- `HttpOnly` + `SameSite=Strict` 两种情况都保留
+
+**实测**：明文 http 登录响应头 `... HttpOnly; SameSite=Strict; Max-Age=604800`；带 `X-Forwarded-Proto: https` 时为 `... HttpOnly; Secure; SameSite=Strict ...`。带 cookie 时首屏全部接口 200（订阅 0 时给空态），无 cookie 时复现 `AUTH_REQUIRED / Authentication required`。
+
+代码逻辑仅此一处改动，另同步 docs/03、docs/12、SECURITY.md 对 cookie 属性的描述。
+
 ## [2.30.3] - 2026-09-26
 
 ### 文档纠错：`.env.example` 对 `GITHUB_TOKEN` 的说法

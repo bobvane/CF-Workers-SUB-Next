@@ -227,14 +227,18 @@ export function parseCookie(cookieHeader: string | null, name: string): string |
 /**
  * 生成 session cookie 字符串
  * 11_SECURITY.md §7.3: HttpOnly; Secure; SameSite=Strict
+ *
+ * secure 默认 true，保持原有行为；明文 http 访问（内网直连 / 反代未终止 TLS）必须传 false，
+ * 否则浏览器会按 RFC 6265bis §5.4 直接丢弃整条 cookie——表现为"登录成功，一刷新就回登录页、
+ * 所有接口 401"。判断依据见 routes.ts 的 isHttpsRequest。
  */
-export function createSessionCookie(token: string): string {
-  return `${SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=${SESSION_TTL_SECONDS}`;
+export function createSessionCookie(token: string, secure = true): string {
+  return `${SESSION_COOKIE_NAME}=${token}; Path=/; HttpOnly${secure ? '; Secure' : ''}; SameSite=Strict; Max-Age=${SESSION_TTL_SECONDS}`;
 }
 
 /**
  * 生成删除 cookie 字符串
  */
-export function createClearCookie(): string {
-  return `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly; Secure; SameSite=Strict; Max-Age=0`;
+export function createClearCookie(secure = true): string {
+  return `${SESSION_COOKIE_NAME}=; Path=/; HttpOnly${secure ? '; Secure' : ''}; SameSite=Strict; Max-Age=0`;
 }

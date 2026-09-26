@@ -36,7 +36,7 @@
 |---|---|
 | **SSRF 防护** | 订阅 URL 拒绝内网/私有 IP，重定向二次校验 |
 | **密码安全** | PBKDF2-SHA256 + 随机盐，绝不存明文 |
-| **会话** | HttpOnly + Secure + SameSite=Strict，7 天过期，密码版本失效机制 |
+| **会话** | HttpOnly + SameSite=Strict，https 下加 Secure（明文 http 下不加，否则浏览器丢弃），7 天过期，密码版本失效机制 |
 | **XSS** | 前端所有用户输入插入 DOM 前转义 |
 | **限流** | 登录 10 次/分/IP；敏感操作节流 |
 | **Secrets** | 只走环境变量 / `.env`，代码与仓库零硬编码 |
