@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.29.9] - 2026-09-26
+
+### 部署配置：容器出网走代理（修域名型节点查不出国别）
+
+- **`docker-compose.yml` 增加 `NODE_USE_ENV_PROXY=1` 与 `HTTP_PROXY` / `HTTPS_PROXY` / `NO_PROXY`**。Node 内置 `fetch` 默认**不读**代理环境变量（undici 行为，与 curl、Python 不同），不开这个开关，容器即使配了代理也是直连。而项目把域名解析成 IP 走的是 DoH（`dns.google` / `cloudflare-dns.com`），从国内直连不通 → 域名型节点拿不到 IP → 查不出国别 → 掉进「其他」组。
+- **程序代码零改动**，只改部署配置。实测（同一份订阅，含一个域名节点）：开关关闭时该节点落入「其他」组，开启并走代理后正确归入对应国家组。
+- 代理地址可在 `.env` 覆写；`NO_PROXY` 已含内网段，容器自身与本机服务不受影响。
+- 新增 `NODE_USE_ENV_PROXY` 需 Node 24.0+/22.21+，本镜像为 `node:24-alpine`。
+
 ## [2.29.8] - 2026-09-26
 
 ### 同一份代码可跑在 NAS / Docker（Cloudflare Worker 被删后的迁移）
