@@ -1,0 +1,15 @@
+node_modules
+dist
+coverage
+.git
+.github
+docs
+.hermes
+.omh
+.wrangler
+.dev.vars
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store

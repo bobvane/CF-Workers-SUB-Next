@@ -1,0 +1,100 @@
+# ============================================================
+# 构建 & 推送 NAS 版镜像到 GHCR
+#
+# 触发:
+#   1. push 到 main：版本号（package.json）未变化时自动跳过，不白打镜像
+#   2. 手动: Actions 页面 workflow_dispatch
+#
+# 说明:
+#   - 镜像版本号跟随 package.json 的 version，与 CF 版共用同一个版本号
+#   - 只出 linux/amd64（NAS 是 x86_64），不折腾多架构
+#   - Dockerfile 内部会跑 npm test，测试不通过就不出包
+# ============================================================
+name: Build NAS image
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  # 镜像名必须全小写（Docker/GHCR 强制），仓库名含大写需转小写（下方步骤计算）
+  IMAGE_BASE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute lowercase image name
+        id: image
+        run: echo "image=$(echo "${IMAGE_BASE}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+
+      - name: Read version from package.json
+        id: version
+        run: |
+          V=$(node -p "require('./package.json').version")
+          if ! echo "${V}" | grep -qE '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "ERROR: package.json version 非法: ${V}" >&2
+            exit 1
+          fi
+          echo "version=${V}" >> "$GITHUB_OUTPUT"
+          echo "本次版本: ${V}"
+
+      # ---------- 判断是否需要构建 ----------
+      # 查询 ghcr 已发布的 tags，已有该版本则跳过（push 不升版本号 = 不出包）
+      - name: Check if build needed
+        id: check
+        env:
+          IMAGE: ${{ steps.image.outputs.image }}
+          NEW_VER: ${{ steps.version.outputs.version }}
+        run: |
+          REPO_PATH="${IMAGE#ghcr.io/}"
+          # 必须用真 token 查 registry：匿名请求 GHCR 返回 401，
+          # EXISTING 会永远为空，导致每次 push 都白打一次镜像。
+          ANON=$(curl -fsSL "https://ghcr.io/token?scope=repository:${REPO_PATH}:pull" | jq -r .token || true)
+          EXISTING=$(curl -fsSL -H "Authorization: Bearer ${ANON}" \
+                       "https://ghcr.io/v2/${REPO_PATH}/tags/list" | jq -r '.tags[]?' 2>/dev/null || true)
+          # 私有包或匿名取不到时，用 GITHUB_TOKEN 兜底；首次运行（包还不存在）取不到属正常
+          if [ -z "${EXISTING}" ]; then
+            EXISTING=$(curl -fsSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+                         "https://ghcr.io/v2/${REPO_PATH}/tags/list" | jq -r '.tags[]?' 2>/dev/null || true)
+          fi
+          echo "镜像现有 tags: ${EXISTING:-（无）}"
+          if echo "${EXISTING}" | grep -qx "${NEW_VER}"; then
+            echo "版本 ${NEW_VER} 已发布，无需重新构建"
+            echo "should_build=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "检测到新版本 ${NEW_VER}，开始构建"
+            echo "should_build=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Set up Docker Buildx
+        if: steps.check.outputs.should_build == 'true'
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to GHCR
+        if: steps.check.outputs.should_build == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        if: steps.check.outputs.should_build == 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          platforms: linux/amd64
+          push: true
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          tags: |
+            ${{ steps.image.outputs.image }}:latest
+            ${{ steps.image.outputs.image }}:${{ steps.version.outputs.version }}

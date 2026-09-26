@@ -1,0 +1,26 @@
+# NAS 部署参考配置
+#
+# 镜像由 GitHub Actions 构建并推到 GHCR，NAS 只负责 pull：
+#   1. 把本文件放到 /vol1/1000/Docker/cf-sub-next/
+#   2. 同目录放一个 .env（照 .env.example 填）
+#   3. docker compose pull && docker compose up -d
+#
+# 数据落在同目录的 ./data/app.db（SQLite 单文件），备份就是复制这个文件。
+services:
+  cf-sub-next:
+    image: ghcr.io/bobvane/cf-workers-sub-next:latest
+    container_name: cf-sub-next
+    restart: unless-stopped
+    ports:
+      - "20130:20130"
+    volumes:
+      - ./data:/data
+    environment:
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SESSION_SECRET: ${SESSION_SECRET:-}
+      GITHUB_TOKEN: ${GITHUB_TOKEN:-}
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:20130/"]
+      interval: 60s
+      timeout: 5s
+      start_period: 10s

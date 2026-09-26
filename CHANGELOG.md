@@ -2,6 +2,17 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.29.8] - 2026-09-26
+
+### 同一份代码可跑在 NAS / Docker（Cloudflare Worker 被删后的迁移）
+
+- **拆出共享应用层 `src/app.ts`**：Workers 入口（`src/index.ts`）与新增的 Node 入口（`src/server/main.ts`）共用同一份装配、前端响应与定时任务逻辑，不再各写一份。
+- **新增 SQLite 存储适配器 `src/storage/sqlite.ts`**：实现与 CF 的 `KvAdapter` 相同的 `KVStorage` 接口（get/getMany/put/delete/list），仓储/服务/路由/前端零改动；用 Node 内置 `node:sqlite`，零第三方依赖。`list(prefix)` 用 `substr` 精确比较而非 `LIKE`——键名里的下划线在 `LIKE` 中是单字符通配符。
+- **Node 入口**：`@hono/node-server` + 30 秒一跳的定时器（只匹配与 `wrangler.toml` 一致的三条 cron，不引 cron 库）；补 Hono 的 `c.executionCtx` shim，否则 `POST /api/subscriptions/:id/update` 直接 500。
+- **原有业务代码零改动**：解析器、生成器、服务层、路由、前端一行未动，只新增运行时入口与存储适配器——CF 版与 NAS 版跑的是同一份业务代码。
+- **出包**：新增 `.github/workflows/build-image.yml`，push 且版本号变化时构建并推送 `ghcr.io/bobvane/cf-workers-sub-next`（只出 linux/amd64；Dockerfile 内跑测试，不通过不出包）。NAS 侧只 `docker compose pull`，参考 `docker-compose.yml`。
+- **CI 调整**：CF 的 `wrangler deploy` 改为仅手动触发（避免 push 把被删的 Worker 重新建上去）；Release 自动打 tag 拆成独立 job，推送即发版的行为不变。
+
 ## [2.29.7] - 2026-09-24
 
 ### 负载均衡组显式输出 strategy（用户 2026-09-24 指令）

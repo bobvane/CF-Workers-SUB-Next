@@ -16,7 +16,7 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -31,19 +31,21 @@ jobs:
       - name: Run tests
         run: npm test
 
+  # CF 部署改为仅手动触发：Worker 已被 Cloudflare 删除，push 时自动 deploy 会把它重新建上去
+  # （2026-09-24）。改版后走 NAS/Docker，CI 只负责测试与发版。
   deploy:
-    name: Deploy to Cloudflare Workers
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    name: Deploy to Cloudflare Workers（仅手动触发）
+    if: github.event_name == 'workflow_dispatch'
     needs: test
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
 
       - name: Install dependencies
@@ -86,6 +88,17 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           WORKER_GITHUB_TOKEN: ${{ secrets.WORKER_GITHUB_TOKEN || '' }}
+
+  # Release 与 CF 部署解耦：推送即自动打 tag（部署改手动后不影响发版）
+  release:
+    name: Create GitHub Release
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    needs: test
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
 
       # 自动发布 GitHub Release：读 package.json 版本号，打 tag + 创建 Release
       # 版本号未变化的推送会跳过（tag 已存在）
