@@ -2,6 +2,11 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.30.5] - 2026-09-26
+
+### 修复
+- 配置输出页 / 节点列表 / 订阅链接的**复制按钮在明文 http 下点了没反应**：非安全上下文浏览器不提供 `navigator.clipboard`，旧代码 `navigator.clipboard.writeText(...).then().catch()` 会**同步抛 TypeError**，`.catch()` 回退根本没机会执行。新增统一的 `copyText(text, okMsg)`（`public/index.html`），可用则走 Clipboard API，否则回退 `execCommand('copy')`；三处复制入口（`copyNodeLink` / `copyFormatUrl` / `copyUrl`）全部收敛到它。
+
 ## [2.30.4] - 2026-09-26
 
 ### 修复：明文 http 部署下登录后立刻掉线（大面积 401）

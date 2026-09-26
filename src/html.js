@@ -1530,17 +1530,37 @@ async function applySavedRulesNow() {
   } catch (e) { toast('执行失败: ' + e.message, 'error'); }
 }
 
+// 复制文本到剪贴板（v2.30.5）
+// ⚠️ 非安全上下文（内网 http 直连，如 http://NAS-IP:20130）浏览器**不提供** navigator.clipboard，
+// 直接写 navigator.clipboard.writeText(...) 会同步抛 TypeError —— .catch() 还没挂上就炸了，
+// 表现为"点了复制没反应、也没提示"。所有复制入口统一走这里：
+// 能用 Clipboard API 就用，不能用回退 execCommand('copy')（同样能在 http 下工作）。
+async function copyText(text, okMsg) {
+  try {
+    await navigator.clipboard.writeText(text);
+    toast(okMsg);
+    return true;
+  } catch {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.setAttribute('readonly', '');
+    ta.style.position = 'fixed';
+    ta.style.top = '-1000px';
+    document.body.appendChild(ta);
+    ta.select();
+    ta.setSelectionRange(0, text.length); // iOS Safari 需要
+    let ok = false;
+    try { ok = document.execCommand('copy'); } catch { ok = false; }
+    ta.remove();
+    toast(ok ? okMsg : '复制失败，请手动选中复制', ok ? undefined : 'error');
+    return ok;
+  }
+}
+
 function copyNodeLink(fingerprint) {
   const node = state.nodes.find(n => n.fingerprint === fingerprint);
   if (!node || !node.link) { toast('节点链接不可用', 'error'); return; }
-  navigator.clipboard.writeText(node.link)
-    .then(() => toast('已复制单节点链接'))
-    .catch(() => {
-      const i = document.createElement('input');
-      i.value = node.link; document.body.appendChild(i); i.select();
-      document.execCommand('copy'); i.remove();
-      toast('已复制单节点链接');
-    });
+  copyText(node.link, '已复制单节点链接');
 }
 
 function toggleSelectAll(cb) {
@@ -1667,15 +1687,7 @@ async function loadSubKey() {
 }
 
 function copyFormatUrl(format) {
-  const url = \`\${window.location.origin}/sub/\${format}/\${subKey}\`;
-  navigator.clipboard.writeText(url)
-    .then(() => toast('已复制订阅链接'))
-    .catch(() => {
-      const i = document.createElement('input');
-      i.value = url; document.body.appendChild(i); i.select();
-      document.execCommand('copy'); i.remove();
-      toast('已复制订阅链接');
-    });
+  copyText(\`\${window.location.origin}/sub/\${format}/\${subKey}\`, '已复制订阅链接');
 }
 
 // ============ 二维码 ============
@@ -1688,13 +1700,7 @@ function showQrModal(format, name) {
 }
 
 function copyUrl(url) {
-  navigator.clipboard.writeText(url).then(() => toast('已复制')).catch(() => {
-    // fallback
-    const i = document.createElement('input');
-    i.value = url; document.body.appendChild(i); i.select();
-    document.execCommand('copy'); i.remove();
-    toast('已复制');
-  });
+  copyText(url, '已复制');
 }
 
 function showConfigModal(format, name) {
