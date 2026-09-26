@@ -39,7 +39,7 @@ function createCatalogFetcher(token?: string) {
     if (token && url.includes('api.github.com')) {
       // Fine-grained PAT 只认 Bearer，不认 token 前缀
       headers['Authorization'] = `Bearer ${token}`;
-      headers['User-Agent'] = 'cf-workers-sub-next';
+      headers['User-Agent'] = 'sub-aggregation';
     }
     return fetch(url, { headers }).then((r) => {
       if (!r.ok) throw new Error(`fetch ${url} failed: ${r.status}`);

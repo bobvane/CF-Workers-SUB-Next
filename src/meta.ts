@@ -3,10 +3,10 @@
  * 集中管理，供前端 /api/meta 与页脚展示使用
  */
 export const APP_META = {
-  name: 'CF-Workers-SUB-Next',
-  version: '2.30.1',
-  repo: 'https://github.com/bobvane/CF-Workers-SUB-Next',
-  repoShort: 'bobvane/CF-Workers-SUB-Next',
+  name: 'SUB-Aggregation',
+  version: '2.30.2',
+  repo: 'https://github.com/bobvane/SUB-Aggregation',
+  repoShort: 'bobvane/SUB-Aggregation',
   author: 'Bob Vane',
   description: '订阅聚合与配置生成平台（NAS / Docker 部署）',
 } as const;

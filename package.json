@@ -1,7 +1,7 @@
 {
-  "name": "cf-workers-sub-next",
-  "version": "2.30.1",
-  "description": "CF-Workers-SUB-Next V2 - 订阅聚合与配置生成平台（NAS / Docker 部署）",
+  "name": "sub-aggregation",
+  "version": "2.30.2",
+  "description": "SUB-Aggregation V2 - 订阅聚合与配置生成平台（NAS / Docker 部署）",
   "type": "module",
   "private": true,
   "scripts": {

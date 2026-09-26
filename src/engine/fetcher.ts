@@ -171,7 +171,7 @@ export async function fetchSubscription(url: string): Promise<string> {
     for (let i = 0; i <= MAX_REDIRECTS; i++) {
       const res = await fetchWithTimeout(currentUrl, {
         headers: {
-          'User-Agent': 'CF-Workers-SUB-Next/2.0',
+          'User-Agent': 'SUB-Aggregation/2.0',
           Accept: 'text/plain,text/html,application/json,*/*',
         },
         redirect: 'manual', // 手动处理重定向以计数

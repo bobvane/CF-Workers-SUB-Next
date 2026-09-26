@@ -2,6 +2,21 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.30.2] - 2026-09-26
+
+### 项目改名：CF-Workers-SUB-Next → SUB-Aggregation
+
+仓库已改名为 `bobvane/SUB-Aggregation`（不再使用 Cloudflare，名字里的 CF-Workers 已名不副实）。同步改了：
+
+- **镜像名** `ghcr.io/bobvane/cf-workers-sub-next` → `ghcr.io/bobvane/sub-aggregation`（CI 从 `github.repository` 推导，自动跟随仓库名）
+- `package.json` / `package-lock.json` 包名 → `sub-aggregation`；`src/meta.ts` 的 name / repo / repoShort
+- 前端 `public/index.html`：标题、登录页、设置项占位、GitHub 链接；`src/api/routes.ts` 的 `GITHUB_REPO` 与默认 app_name
+- User-Agent（`src/app.ts` / `src/api/routes.ts` / `src/engine/fetcher.ts`）→ `sub-aggregation` / `SUB-Aggregation/2.0`
+- `docker-compose.yml`：服务名 / 容器名 / 数据目录 `/vol1/1000/Docker/sub-aggregation/` / 镜像名
+- README、CONTRIBUTING、SECURITY、design 稿、本地 docs（00 / 11 / 16）
+
+代码逻辑零改动。
+
 ## [2.30.1] - 2026-09-26
 
 ### 文档同步：定时任务说法与架构图对齐 Docker 版
@@ -53,7 +68,7 @@ Cloudflare 侧已于 2026-09-24 停止使用。本次把仓库里仍指向 Worke
 - **新增 SQLite 存储适配器 `src/storage/sqlite.ts`**：实现与 CF 的 `KvAdapter` 相同的 `KVStorage` 接口（get/getMany/put/delete/list），仓储/服务/路由/前端零改动；用 Node 内置 `node:sqlite`，零第三方依赖。`list(prefix)` 用 `substr` 精确比较而非 `LIKE`——键名里的下划线在 `LIKE` 中是单字符通配符。
 - **Node 入口**：`@hono/node-server` + 30 秒一跳的定时器（只匹配与 `wrangler.toml` 一致的三条 cron，不引 cron 库）；补 Hono 的 `c.executionCtx` shim，否则 `POST /api/subscriptions/:id/update` 直接 500。
 - **原有业务代码零改动**：解析器、生成器、服务层、路由、前端一行未动，只新增运行时入口与存储适配器——CF 版与 NAS 版跑的是同一份业务代码。
-- **出包**：新增 `.github/workflows/build-image.yml`，push 且版本号变化时构建并推送 `ghcr.io/bobvane/cf-workers-sub-next`（只出 linux/amd64；Dockerfile 内跑测试，不通过不出包）。NAS 侧只 `docker compose pull`，参考 `docker-compose.yml`。
+- **出包**：新增 `.github/workflows/build-image.yml`，push 且版本号变化时构建并推送 `ghcr.io/bobvane/sub-aggregation`（只出 linux/amd64；Dockerfile 内跑测试，不通过不出包）。NAS 侧只 `docker compose pull`，参考 `docker-compose.yml`。
 - **CI 调整**：CF 的 `wrangler deploy` 改为仅手动触发（避免 push 把被删的 Worker 重新建上去）；Release 自动打 tag 拆成独立 job，推送即发版的行为不变。
 
 ## [2.29.7] - 2026-09-24

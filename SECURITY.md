@@ -14,7 +14,7 @@
 
 请 **不要** 公开报告漏洞。请私下报告：
 
-- 创建 **Security Advisory**：[GitHub Security Tab](https://github.com/bobvane/CF-Workers-SUB-Next/security/advisories/new)
+- 创建 **Security Advisory**：[GitHub Security Tab](https://github.com/bobvane/SUB-Aggregation/security/advisories/new)
 - 或联系仓库维护者
 
 ---

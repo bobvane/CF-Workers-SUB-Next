@@ -85,7 +85,7 @@ export function createApp(deps: AppDeps): Hono {
   // v2.21.0：加内存缓存（TTL 6h），避免每次请求都外呼 GitHub API（无鉴权端点，防被当匿名流量放大器）
   let upgradeCheckCache: { at: number; body: unknown } | null = null;
   app.get('/api/meta/check-upgrade', async (c) => {
-    const GITHUB_REPO = 'bobvane/CF-Workers-SUB-Next';
+    const GITHUB_REPO = 'bobvane/SUB-Aggregation';
     const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
     const now = Date.now();
     if (upgradeCheckCache && now - upgradeCheckCache.at < CACHE_TTL_MS) {
@@ -95,7 +95,7 @@ export function createApp(deps: AppDeps): Hono {
     try {
       const res = await fetch(
         `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
-        { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'cf-workers-sub-next' } }
+        { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'sub-aggregation' } }
       );
       if (!res.ok) {
         payload = {
@@ -718,7 +718,7 @@ export function createApp(deps: AppDeps): Hono {
     return c.json({
       success: true,
       data: {
-        app_name: appName ?? 'CF-Workers-SUB-Next',
+        app_name: appName ?? 'SUB-Aggregation',
         sub_auto_update_hour: subHour !== null ? parseInt(subHour, 10) : 7,
       },
     });

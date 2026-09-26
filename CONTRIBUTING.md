@@ -1,6 +1,6 @@
 # Contributing
 
-欢迎对 CF-Workers-SUB-Next 做出贡献！无论是修复 Bug、添加功能还是改进文档。
+欢迎对 SUB-Aggregation 做出贡献！无论是修复 Bug、添加功能还是改进文档。
 
 ## 📋 目录
 

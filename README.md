@@ -1,4 +1,4 @@
-# CF-Workers-SUB-Next
+# SUB-Aggregation
 
 订阅聚合与配置生成平台的 V2 实现（v2.30.0）。
 
@@ -31,7 +31,7 @@
 镜像由 GitHub Actions 构建并发布到 GHCR，**部署端不需要构建**，拉下来就能跑：
 
 ```bash
-mkdir -p /vol1/1000/Docker/cf-sub-next && cd /vol1/1000/Docker/cf-sub-next
+mkdir -p /vol1/1000/Docker/sub-aggregation && cd /vol1/1000/Docker/sub-aggregation
 # 1) 放好 docker-compose.yml（仓库根目录那份）
 # 2) 建 .env，至少填 ADMIN_PASSWORD（参考 .env.example）
 docker compose pull

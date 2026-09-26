@@ -8,7 +8,7 @@ const HTML = `<!DOCTYPE html>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <!-- 系统字体，无需外部加载 -->
-<title>CF-Workers-SUB-Next</title>
+<title>SUB-Aggregation</title>
 <style>
 :root, [data-theme="light"] {
   --bg: #fafbfc; --bg2: #ffffff; --bg3: #f4f6f9;
@@ -335,8 +335,8 @@ tbody tr:hover { background: var(--accent-soft); }
         <span id="userBadge" style="font-size:12.5px;color:var(--text2)">admin</span>
         <button class="btn btn-sm" onclick="logout()">🚪 退出</button>
         <div class="sidebar-version" style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);font-size:14px;color:var(--text2);display:flex;flex-direction:column;gap:4px;align-items:center">
-          <span>CF-Workers-SUB-Next v<span id="appVersion">-</span></span>
-          <a href="https://github.com/bobvane/CF-Workers-SUB-Next" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">GitHub</a>
+          <span>SUB-Aggregation v<span id="appVersion">-</span></span>
+          <a href="https://github.com/bobvane/SUB-Aggregation" target="_blank" rel="noopener" style="color:var(--accent);text-decoration:none">GitHub</a>
           <span id="upgradeStatusSidebar" style="font-size:14px"></span>
         </div>
       </div>
@@ -498,7 +498,7 @@ tbody tr:hover { background: var(--accent-soft); }
     <div class="card">
       <div class="form-group">
         <label>系统名称</label>
-        <input id="settingAppName" placeholder="CF-Workers-SUB-Next">
+        <input id="settingAppName" placeholder="SUB-Aggregation">
       </div>
       <div class="form-group">
         <label>订阅自动更新时间（北京时间 0-23 点整，默认每天 7:00）</label>
@@ -566,7 +566,7 @@ tbody tr:hover { background: var(--accent-soft); }
   <!-- Login -->
   <div class="login-page" id="loginPage" style="display:none">
   <div class="login-card">
-    <h1 id="loginTitle">🔐 CF-Workers-SUB-Next</h1>
+    <h1 id="loginTitle">🔐 SUB-Aggregation</h1>
     <div class="form-group">
       <label>用户名</label>
       <input id="loginUsername" placeholder="admin" autocomplete="username">
@@ -579,7 +579,7 @@ tbody tr:hover { background: var(--accent-soft); }
     <p class="text-center mt-12" style="color:var(--text2);font-size:14px">首次登录使用 ADMIN_PASSWORD 环境变量设置的密码</p>
     <!-- 项目品牌信息 -->
     <div class="login-footer">
-      <a href="https://github.com/bobvane/CF-Workers-SUB-Next" target="_blank" rel="noopener">⭐ GitHub</a>
+      <a href="https://github.com/bobvane/SUB-Aggregation" target="_blank" rel="noopener">⭐ GitHub</a>
       <span class="dot">·</span>
       <span>v<span id="loginVersion">-</span></span>
       <span class="dot">·</span>
@@ -2134,7 +2134,7 @@ async function loadMeta() {
   try {
     const metaRes = await api('/meta');
     const meta = metaRes.data?.meta || {};
-    const appName = metaRes.data?.app_name || meta.name || 'CF-Workers-SUB-Next';
+    const appName = metaRes.data?.app_name || meta.name || 'SUB-Aggregation';
     const ver = meta.version || '-';
     // 同时更新 sidebar 和 login 页的版本号
     const av = document.getElementById('appVersion');
