@@ -41,4 +41,27 @@ describe('前端 HTML 缓存', () => {
     const b = (await call()).headers.get('ETag');
     expect(a).toBe(b);
   });
+
+  it('Accept-Encoding: gzip 时应返回 gzip 压缩体，解压后与原文一致', async () => {
+    const plain = await call();
+    const gz = await call({ 'Accept-Encoding': 'gzip' });
+    expect(gz.headers.get('Content-Encoding')).toBe('gzip');
+    expect(gz.headers.get('Vary')).toBe('Accept-Encoding');
+    // 两种表示用不同 ETag，避免缓存串味
+    expect(gz.headers.get('ETag')).toBe(`${(plain.headers.get('ETag') as string).slice(0, -1)}-gzip"`);
+    const plainText = await plain.text();
+    const gzBytes = await gz.arrayBuffer();
+    const raw = await new Response(
+      new Blob([gzBytes]).stream().pipeThrough(new DecompressionStream('gzip'))
+    ).text();
+    expect(raw).toBe(plainText);
+    // 确实变小了（107KB → 20KB 量级）
+    expect(gzBytes.byteLength).toBeLessThan(plainText.length / 3);
+  });
+
+  it('gzip 客户端带对应 ETag 复访应命中 304', async () => {
+    const etag = (await call({ 'Accept-Encoding': 'gzip' })).headers.get('ETag');
+    const res = await call({ 'Accept-Encoding': 'gzip', 'If-None-Match': etag as string });
+    expect(res.status).toBe(304);
+  });
 });

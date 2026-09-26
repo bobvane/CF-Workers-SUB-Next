@@ -2,6 +2,13 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.30.8] - 2026-09-26
+
+### 修复：首页 HTML 一直没被压缩（v2.30.6 的压缩漏网之鱼）
+- **根因**：`handleHtml()` 在 `app.fetch()` 之前就短路返回，页面响应根本不进 Hono 的中间件链，`compress()` 看不到它 —— 所以 API 全压了，最大的那个文件（首页 HTML **107 KB**）一直原样传输。hono 的 compress 内部 `await next()` 后检查的是 `ctx.res`，那时还是默认 404（9 B，低于 1 KB 阈值）而直接跳过。
+- **修复**：在 `handleHtml()` 里自己压 —— 首次请求用 `CompressionStream('gzip')` 压一次并常驻内存，之后直接复用；带 `Vary: Accept-Encoding`，gzip 表示用 `-gzip` 后缀的 ETag 区分，304 逻辑保持命中。
+- 实测：**107,289 B → 29,947 B（-72%）**；解压后与原文逐字节一致；gzip 复访 ETag 命中 304。
+
 ## [2.30.7] - 2026-09-26
 
 ### 精简（移除死代码 / 修正依赖声明）

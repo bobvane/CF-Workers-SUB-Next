@@ -130,22 +130,47 @@ function getHtmlEtag(): Promise<string> {
 }
 
 /**
+ * 预压缩的 HTML：首次请求时压一次，常驻内存。
+ * 页面响应由入口直接返回（handleHtml 在 app.fetch 之前短路），
+ * 走不到 Hono 的 compress() 中间件，所以这里自己压。
+ */
+let htmlGzipPromise: Promise<Uint8Array> | null = null;
+function getHtmlGzip(): Promise<Uint8Array> {
+  if (!htmlGzipPromise) {
+    htmlGzipPromise = new Response(
+      new Blob([HTML]).stream().pipeThrough(new CompressionStream('gzip'))
+    )
+      .arrayBuffer()
+      .then((buf) => new Uint8Array(buf));
+  }
+  return htmlGzipPromise;
+}
+
+/**
  * 前端页面：非 API 和非 /sub 请求返回 HTML，带内容哈希 ETag（二次访问命中 304，
  * 省掉约 105KB 传输；内容变了 ETag 自动变，不会读到旧页面）。
+ * 客户端支持 gzip 时返回预压缩体（107KB → 约 20KB），ETag 加 `-gzip` 后缀区分两种表示。
  * 返回 null 表示不是页面请求，交给 API 路由。
  */
 export async function handleHtml(request: Request): Promise<Response | null> {
   const url = new URL(request.url);
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/sub/')) return null;
 
-  const etag = await getHtmlEtag();
+  const gzip = /\bgzip\b/.test(request.headers.get('accept-encoding') ?? '');
+  const base = await getHtmlEtag(); // "xxxx"（带引号的 32 位十六进制）
+  const etag = gzip ? `${base.slice(0, -1)}-gzip"` : base;
   const headers: Record<string, string> = {
     'Content-Type': 'text/html; charset=utf-8',
     'Cache-Control': 'public, max-age=0, must-revalidate',
+    Vary: 'Accept-Encoding',
     ETag: etag,
   };
   if (request.headers.get('If-None-Match') === etag) {
     return new Response(null, { status: 304, headers });
+  }
+  if (gzip) {
+    headers['Content-Encoding'] = 'gzip';
+    return new Response(await getHtmlGzip(), { headers });
   }
   return new Response(HTML, { headers });
 }
