@@ -1,9 +1,16 @@
 # ============================================================
-# 构建 & 推送 NAS 版镜像到 GHCR
+# 构建 & 推送 NAS 版镜像
 #
 # 触发:
 #   1. push 到 main：版本号（package.json）未变化时自动跳过，不白打镜像
 #   2. 手动: Actions 页面 workflow_dispatch
+#
+# 推到两个 registry:
+#   - GHCR（主）: ghcr.io/<repo>:latest / :<version>
+#   - Docker Hub（可选，配了 DOCKERHUB_USERNAME + DOCKERHUB_TOKEN 才推）:
+#     <user>/sub-aggregation:latest / :<version>
+#   推 Docker Hub 是为了 NAS：飞牛 fnOS 的「镜像可更新」检测只认 Docker Hub，
+#   GHCR 这类第三方仓库不检测。没配 secret 时自动跳过，不影响构建。
 #
 # 说明:
 #   - 镜像版本号跟随 package.json 的 version，与 CF 版共用同一个版本号
@@ -46,17 +53,38 @@ jobs:
           echo "version=${V}" >> "$GITHUB_OUTPUT"
           echo "本次版本: ${V}"
 
+      # ---------- Docker Hub 凭据（没配就跳过推送） ----------
+      - name: Check Docker Hub credentials
+        id: dh
+        env:
+          DH_USER: ${{ secrets.DOCKERHUB_USERNAME }}
+          DH_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [ -n "${DH_USER}" ] && [ -n "${DH_TOKEN}" ]; then
+            echo "user=$(echo "${DH_USER}" | tr '[:upper:]' '[:lower:]')" >> "$GITHUB_OUTPUT"
+            echo "enabled=true" >> "$GITHUB_OUTPUT"
+            echo "Docker Hub 推送: 已启用"
+          else
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "Docker Hub 推送: 未配置 DOCKERHUB_USERNAME / DOCKERHUB_TOKEN，跳过"
+          fi
+
       # ---------- 判断是否需要构建 ----------
-      # 查询 ghcr 已发布的 tags，已有该版本则跳过（push 不升版本号 = 不出包）
+      # 两个 registry 都「该版本 tag 已存在」才算已发布；
+      # 任一处缺（例如上次 Docker Hub 推送失败）就重建，避免两边版本对不上。
       - name: Check if build needed
         id: check
         env:
           IMAGE: ${{ steps.image.outputs.image }}
           NEW_VER: ${{ steps.version.outputs.version }}
+          DH_USER: ${{ steps.dh.outputs.user }}
+          DH_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
         run: |
+          MISSING=""
+
           REPO_PATH="${IMAGE#ghcr.io/}"
           # 必须用真 token 查 registry：匿名请求 GHCR 返回 401，
-          # EXISTING 会永远为空，导致每次 push 都白打一次镜像。
+          # 否则 EXISTING 会永远为空，导致每次 push 都白打一次镜像。
           ANON=$(curl -fsSL "https://ghcr.io/token?scope=repository:${REPO_PATH}:pull" | jq -r .token || true)
           EXISTING=$(curl -fsSL -H "Authorization: Bearer ${ANON}" \
                        "https://ghcr.io/v2/${REPO_PATH}/tags/list" | jq -r '.tags[]?' 2>/dev/null || true)
@@ -65,12 +93,25 @@ jobs:
             EXISTING=$(curl -fsSL -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
                          "https://ghcr.io/v2/${REPO_PATH}/tags/list" | jq -r '.tags[]?' 2>/dev/null || true)
           fi
-          echo "镜像现有 tags: ${EXISTING:-（无）}"
-          if echo "${EXISTING}" | grep -qx "${NEW_VER}"; then
-            echo "版本 ${NEW_VER} 已发布，无需重新构建"
+          echo "GHCR 现有 tags: ${EXISTING:-（无）}"
+          echo "${EXISTING}" | grep -qx "${NEW_VER}" || MISSING="ghcr"
+
+          if [ -n "${DH_USER}" ] && [ -n "${DH_TOKEN}" ]; then
+            DH_REPO="${DH_USER}/sub-aggregation"
+            DH_T=$(curl -fsSL -u "${DH_USER}:${DH_TOKEN}" \
+                     "https://auth.docker.io/token?service=registry.docker.io&scope=repository:${DH_REPO}:pull" \
+                     | jq -r .token || true)
+            DH_TAGS=$(curl -fsSL -H "Authorization: Bearer ${DH_T}" \
+                        "https://registry-1.docker.io/v2/${DH_REPO}/tags/list" | jq -r '.tags[]?' 2>/dev/null || true)
+            echo "Docker Hub 现有 tags: ${DH_TAGS:-（无）}"
+            echo "${DH_TAGS}" | grep -qx "${NEW_VER}" || MISSING="${MISSING:+${MISSING},}dockerhub"
+          fi
+
+          if [ -z "${MISSING}" ]; then
+            echo "版本 ${NEW_VER} 两个 registry 都已有，无需构建"
             echo "should_build=false" >> "$GITHUB_OUTPUT"
           else
-            echo "检测到新版本 ${NEW_VER}，开始构建"
+            echo "版本 ${NEW_VER} 在 ${MISSING} 缺失，开始构建"
             echo "should_build=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -86,6 +127,34 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Log in to Docker Hub
+        if: steps.check.outputs.should_build == 'true' && steps.dh.outputs.enabled == 'true'
+        uses: docker/login-action@v3
+        with:
+          registry: docker.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Compute image tags
+        id: tags
+        if: steps.check.outputs.should_build == 'true'
+        env:
+          GHCR_IMAGE: ${{ steps.image.outputs.image }}
+          DH_USER: ${{ steps.dh.outputs.user }}
+          DH_ENABLED: ${{ steps.dh.outputs.enabled }}
+          VER: ${{ steps.version.outputs.version }}
+        run: |
+          {
+            echo "tags<<EOF"
+            echo "${GHCR_IMAGE}:latest"
+            echo "${GHCR_IMAGE}:${VER}"
+            if [ "${DH_ENABLED}" = "true" ]; then
+              echo "${DH_USER}/sub-aggregation:latest"
+              echo "${DH_USER}/sub-aggregation:${VER}"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Build and push
         if: steps.check.outputs.should_build == 'true'
         uses: docker/build-push-action@v6
@@ -100,6 +169,4 @@ jobs:
           sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          tags: |
-            ${{ steps.image.outputs.image }}:latest
-            ${{ steps.image.outputs.image }}:${{ steps.version.outputs.version }}
+          tags: ${{ steps.tags.outputs.tags }}

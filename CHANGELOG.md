@@ -4,6 +4,13 @@
 
 ## [2.31.0] - 2026-09-26
 
+### 新增：镜像可同时推送到 Docker Hub（给 NAS 的升级检测用）
+- 飞牛 fnOS 的「镜像可更新」检测只认 Docker Hub，不检测 GHCR 这类第三方仓库。
+- CI 构建时会同时推 GHCR 与 Docker Hub；配了 `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN`
+  两个仓库 secret 才启用，没配则自动跳过，不影响原有构建。
+- 版本是否已发布的判断改为「两个 registry 都有该版本的 tag」，任一处缺失就重建，
+  避免某次推送失败后两边版本对不上。
+
 ### 修复：镜像 tag 不再带 buildx 的 `unknown/unknown` 证明条目
 - buildx 默认会给镜像加 provenance 证明清单，于是 `latest` 指向的不是单一镜像，而是一个 index：
   `linux/amd64` + 一个 `unknown/unknown` 的证明条目。
