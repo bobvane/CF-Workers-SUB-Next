@@ -2,6 +2,13 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.31.3] - 2026-09-26
+
+### 变更：Google服务 组默认选中改回「手动切换」
+- 此前固化策略组硬编码 `default-selected: DIRECT`；用户拍板改为「手动切换」（与设定中 AI 平台默认一致）。
+- 修复处：`src/generator/mihomo.ts` 5b 固化组；mihomo.test.ts 补充该默认值断言
+  （「default-selected ∈ proxies」既有恒等式校验对全部组继续生效）。
+
 ## [2.31.2] - 2026-09-26
 
 ### 变更：订阅自动更新改为「每隔 N 小时」

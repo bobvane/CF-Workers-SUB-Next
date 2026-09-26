@@ -404,12 +404,12 @@ export async function generateProxyGroups(
     proxies: ['自动选择', '节点选择', ...geoChoices, '手动切换', 'DIRECT'],
   });
 
-  // 5b. Google服务（v2.15.0，用户拍板：放国外媒体后面，default-selected 手动切换）——固化策略组
+  // 5b. Google服务（v2.15.0 建组，v2.31.3 用户拍板：default-selected 改手动切换，跟 AI 平台一致）——固化策略组
   groups.push({
     name: 'Google服务',
     type: 'select',
     icon: 'https://raw.githubusercontent.com/Orz-3/mini/master/Color/Google.png',
-    'default-selected': 'DIRECT',
+    'default-selected': '手动切换',
     proxies: ['自动选择', '节点选择', ...geoChoices, '手动切换', 'DIRECT'],
   });
 

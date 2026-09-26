@@ -147,6 +147,7 @@ describe('generateMihomoConfig', () => {
     expect(byName.get('广告拦截')?.['default-selected']).toBe('REJECT');
     expect(byName.get('国外媒体')?.['default-selected']).toBe('自动选择'); // v2.14.0: 国外媒体默认自动选择
     expect(byName.get('GLOBAL')?.['default-selected']).toBe('自动选择'); // v2.19.5: 用户修改从 DIRECT 改为自动选择
+    expect(byName.get('Google服务')?.['default-selected']).toBe('手动切换'); // v2.31.3: 用户拍板默认手动切换（跟 AI 平台口径一致）
     // V3.1: 不再有 应用净化、国内媒体 策略组
     expect(byName.has('应用净化')).toBe(false);
     expect(byName.has('国内媒体')).toBe(false);
