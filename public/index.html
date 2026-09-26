@@ -438,7 +438,7 @@ tbody tr:hover { background: var(--accent-soft); }
       <!-- 规则库：从 MetaCubeX 全量分类挑选加入分流规则 + 同步管理（右侧栏） -->
       <div class="card" style="position:sticky;top:16px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px">
-        <h3 style="margin:0">📚 规则库 <span style="color:var(--text2);font-size:14px;font-weight:normal">从 1546 个 MetaCubeX 分类中挑选加入分流规则</span></h3>
+        <h3 style="margin:0">📚 规则库 <span style="color:var(--text2);font-size:14px;font-weight:normal">从 MetaCubeX 分类中挑选加入分流规则</span></h3>
         <div style="display:flex;align-items:center;gap:12px">
           <span style="color:var(--text2);font-size:14px" id="catalogCount"></span>
           <button class="btn btn-sm" onclick="refreshCatalog()" id="catalogRefreshBtn">🔄 立即刷新</button>
@@ -1975,7 +1975,7 @@ async function refreshCatalog() {
 }
 
 // ============ 规则库（设置页） ============
-let catalogAll = [];      // 全量 1546 分类
+let catalogAll = [];      // 全量分类清单（实际条数以「共 N 个分类」为准，会随上游同步增长）
 let catalogSearchTimer = null;
 let catalogType = '';     // 当前分类筛选：'' | 'aggregate' | 'site' | 'tld'
 let addRuleGroupOptions = []; // 目标分组下拉选项

@@ -5,6 +5,7 @@
  */
 
 import { Hono } from 'hono';
+import { compress } from 'hono/compress';
 import { Repositories, KVStorage } from '@/storage/kv';
 import { AuthService } from '@/services/auth.service';
 import {
@@ -78,6 +79,13 @@ export function createApp(deps: AppDeps): Hono {
 
   // ============ 全局错误处理 ============
   app.onError(errorHandler);
+
+  // ============ 响应压缩 ============
+  // 大响应（首页 HTML 107KB、/api/nodes 86KB、输出配置 120KB）不压缩会浪费带宽，
+  // 走 Tailscale 远程访问时尤其明显。用 hono 自带中间件，零新依赖。
+  // 注意：c.json() 不带 Content-Length，hono 的 1KB 阈值对它不生效，小响应也会被压
+  // （几十字节的开销，忽略不计）。
+  app.use('*', compress());
 
   // ============ Health ============
   app.get('/api/health', (c) => c.json({ status: 'ok' }));
@@ -234,6 +242,7 @@ export function createApp(deps: AppDeps): Hono {
       data: list.map((s) => ({
         id: s.id,
         name: s.name,
+        url: s.url,
         enabled: s.enabled,
         status: s.status,
         nodeCount: s.nodeCount ?? 0,
