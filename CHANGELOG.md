@@ -2,6 +2,14 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.30.9] - 2026-09-26
+
+### 修复：页面左下角的版本升级提示不再出现
+- **现象**：Web 页面左下角的版本号旁边不再冒出「有新版」提示。
+- **根因（实测复现）**：升级检测走的是 GitHub REST API `api.github.com/.../releases/latest`，**匿名额度只有 60 次/小时/出口 IP**。实测该出口 IP 已被打满：`{"message":"API rate limit exceeded for 104.28.166.48"}`，HTTP **403**。而旧代码把「非 2xx」和「网络异常」都折叠成 `hasUpdate:false / checked:true` —— **失败被伪装成「已检查、无更新」**，前端自然永远不提示。CF Workers 时代出口是 Cloudflare 边缘 IP，很少撞限流；换成 Docker 走自家旁路由出口后就必撞。
+- **修复**：改用 **releases 的 Atom 订阅**（`https://github.com/bobvane/SUB-Aggregation/releases.atom`，免鉴权、无配额，实测 200 + 解析出 `v2.30.8`）；失败时如实返回 `checked:false` 并带 `checkError`（`network` / `http 403`），不再谎报「无更新」；成功缓存 6h 不变，**失败只缓存 10min**（不把一次网络抖动锁 6 小时）。
+- 回归测试：`tests/integration/meta-api.test.ts` 由「打真网」改为注入桩（Atom 解析 / 网络异常 / 403 三例），不再依赖外网。
+
 ## [2.30.8] - 2026-09-26
 
 ### 修复：首页 HTML 一直没被压缩（v2.30.6 的压缩漏网之鱼）

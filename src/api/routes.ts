@@ -100,49 +100,65 @@ export function createApp(deps: AppDeps): Hono {
     });
   });
 
-  // 升级检测：查 GitHub releases 最新版本（服务端代理，避免前端 CORS/限流）
-  // v2.21.0：加内存缓存（TTL 6h），避免每次请求都外呼 GitHub API（无鉴权端点，防被当匿名流量放大器）
-  let upgradeCheckCache: { at: number; body: unknown } | null = null;
+  // 升级检测：读 GitHub releases 的 Atom 订阅
+  // 为什么不用 REST API（/releases/latest）：匿名额度只有 60 次/小时/出口 IP，
+  // 共享出口（代理/旁路由）下经常是 403，而 403 会被静默当成「无更新」→ 前端永远不提示。
+  // Atom 免鉴权、无配额，实测可用。
+  let upgradeCheck: { at: number; ttl: number; body: unknown } | null = null;
   app.get('/api/meta/check-upgrade', async (c) => {
-    const GITHUB_REPO = 'bobvane/SUB-Aggregation';
-    const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 6h
+    const FEED = 'https://github.com/bobvane/SUB-Aggregation/releases.atom';
+    const CACHE_TTL_MS = 6 * 60 * 60 * 1000; // 成功缓存 6h
+    const FAIL_TTL_MS = 10 * 60 * 1000; // 失败只缓存 10min，别把一次网络抖动锁 6 小时
     const now = Date.now();
-    if (upgradeCheckCache && now - upgradeCheckCache.at < CACHE_TTL_MS) {
-      return c.json(upgradeCheckCache.body);
+    if (upgradeCheck && now - upgradeCheck.at < upgradeCheck.ttl) {
+      return c.json(upgradeCheck.body);
     }
+
     let payload: unknown;
+    let ttl = FAIL_TTL_MS;
     try {
-      const res = await fetch(
-        `https://api.github.com/repos/${GITHUB_REPO}/releases/latest`,
-        { headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'sub-aggregation' } }
-      );
-      if (!res.ok) {
-        payload = {
-          success: true,
-          data: { current: APP_META.version, latest: APP_META.version, hasUpdate: false, checked: true },
-        };
-      } else {
-        const release = (await res.json()) as { tag_name?: string; html_url?: string };
-        const latest = (release.tag_name || APP_META.version).replace(/^v/, '');
-        const hasUpdate = isNewerVersion(latest, APP_META.version);
+      const res = await fetch(FEED, { headers: { 'User-Agent': 'sub-aggregation' } });
+      const entry = res.ok ? ((await res.text()).split('<entry>')[1] ?? '') : '';
+      const tag = entry.match(/<title>([^<]+)<\/title>/)?.[1] ?? '';
+      const url = entry.match(/href="([^"]*\/releases\/tag\/[^"]+)"/)?.[1];
+      const latest = tag.trim().replace(/^v/, '');
+      if (latest) {
         payload = {
           success: true,
           data: {
             current: APP_META.version,
             latest,
-            hasUpdate,
-            releaseUrl: release.html_url || APP_META.repo,
+            hasUpdate: isNewerVersion(latest, APP_META.version),
+            releaseUrl: url || APP_META.repo,
             checked: true,
+          },
+        };
+        ttl = CACHE_TTL_MS;
+      } else {
+        payload = {
+          success: true,
+          data: {
+            current: APP_META.version,
+            latest: APP_META.version,
+            hasUpdate: false,
+            checked: false,
+            checkError: `http ${res.status}`,
           },
         };
       }
     } catch {
       payload = {
         success: true,
-        data: { current: APP_META.version, latest: APP_META.version, hasUpdate: false, checked: false },
+        data: {
+          current: APP_META.version,
+          latest: APP_META.version,
+          hasUpdate: false,
+          checked: false,
+          checkError: 'network',
+        },
       };
     }
-    upgradeCheckCache = { at: Date.now(), body: payload };
+    upgradeCheck = { at: Date.now(), ttl, body: payload };
     return c.json(payload);
   });
 
