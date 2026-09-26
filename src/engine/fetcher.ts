@@ -102,7 +102,7 @@ export function isBlockedIp(ip: string): boolean {
 
 /**
  * 从 URL 提取主机名并检查是否合法
- * 只做静态检查（域名→IP 解析后的检查在 Workers 运行时不可控，尽力而为）
+ * 只做静态检查（域名→IP 解析后的检查在运行时不可控，尽力而为）
  */
 export function validateUrl(url: string): { ok: true; parsed: URL } | { ok: false; reason: string } {
   let parsed: URL;
@@ -145,7 +145,7 @@ export function validateUrl(url: string): { ok: true; parsed: URL } | { ok: fals
 /**
  * 带超时的 fetch
  */
-async function fetchWithTimeout(input: RequestInfo | URL, init: RequestInit): Promise<Response> {
+async function fetchWithTimeout(input: string | URL | Request, init: RequestInit): Promise<Response> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
   try {

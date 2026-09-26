@@ -3,7 +3,7 @@
  */
 
 /**
- * 生成唯一 ID（兼容 Cloudflare Workers 的 crypto.randomUUID）
+ * 生成唯一 ID（crypto.randomUUID）
  */
 export function generateId(): string {
   if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {

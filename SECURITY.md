@@ -39,7 +39,7 @@
 | **会话** | HttpOnly + Secure + SameSite=Strict，7 天过期，密码版本失效机制 |
 | **XSS** | 前端所有用户输入插入 DOM 前转义 |
 | **限流** | 登录 10 次/分/IP；敏感操作节流 |
-| **Secrets** | 只存 Cloudflare Secrets，代码零硬编码 |
+| **Secrets** | 只走环境变量 / `.env`，代码与仓库零硬编码 |
 
 ---
 

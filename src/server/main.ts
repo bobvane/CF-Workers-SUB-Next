@@ -1,11 +1,12 @@
 /**
  * Node 入口（NAS / Docker 部署）
  *
- * 把 Cloudflare Workers 的 fetch / scheduled 两个入口映射到 @hono/node-server 与定时器，
- * 业务逻辑全部来自 src/app.ts —— 与 CF 版是同一份代码，产物只差一个存储适配器。
+ * fetch → @hono/node-server；scheduled → setInterval（三个固定时刻）。
+ * 装配与业务逻辑全部在 src/app.ts。
  */
 
 import { serve } from '@hono/node-server';
+import type { ExecutionContext } from 'hono';
 import type { Env } from '@/app';
 import { getApp, handleHtml, runScheduled } from '@/app';
 import { SqliteAdapter } from '@/storage/sqlite';
@@ -49,7 +50,8 @@ serve(
 );
 
 // ============ 定时任务 ============
-// 三个 cron 与 wrangler.toml 一致。只匹配这三个固定表达式，不引入通用 cron 解析器（328KB 换个 12 行不值）。
+// 三个固定时刻：每分钟 Geo 重试、每小时订阅更新、每月 1 日 03:00 规则目录同步。
+// 只匹配这三个固定表达式，不引入通用 cron 解析器（328KB 换个 12 行不值）。
 
 const CRONS = ['* * * * *', '0 * * * *', '0 3 1 * *'] as const;
 

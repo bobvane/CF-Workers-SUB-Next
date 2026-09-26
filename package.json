@@ -1,16 +1,16 @@
 {
   "name": "cf-workers-sub-next",
-  "version": "2.29.9",
-  "description": "CF-Workers-SUB-Next V2 - Cloudflare Native 订阅管理与配置生成平台",
+  "version": "2.30.0",
+  "description": "CF-Workers-SUB-Next V2 - 订阅聚合与配置生成平台（NAS / Docker 部署）",
   "type": "module",
   "private": true,
   "scripts": {
-    "dev": "wrangler dev --local",
+    "dev": "npm run build:server && node dist/server.mjs",
+    "start": "node dist/server.mjs",
     "build:html": "node scripts/inline-html.js",
     "build:server": "npm run build:html && esbuild src/server/main.ts --bundle --platform=node --format=esm --target=node24 --banner:js='import{createRequire}from\"node:module\";const require=createRequire(import.meta.url);' --outfile=dist/server.mjs",
     "build": "npm run build:html && tsc --noEmit",
     "typecheck": "tsc --noEmit",
-    "deploy": "npm run build && wrangler deploy",
     "test": "vitest run",
     "test:watch": "vitest",
     "lint": "eslint . --ext .ts",
@@ -22,7 +22,6 @@
     "zod": "^3"
   },
   "devDependencies": {
-    "@cloudflare/workers-types": "^5",
     "@types/node": "^22",
     "@typescript-eslint/eslint-plugin": "^8",
     "@typescript-eslint/parser": "^8",
@@ -33,17 +32,15 @@
     "typescript": "^5",
     "vite": "^7.3.6",
     "vitest": "^5",
-    "wrangler": "^4.136.3",
     "yaml": "^2"
   },
   "overrides": {
     "js-yaml": "^4.3.2"
   },
   "engines": {
-    "node": ">=22.13"
+    "node": ">=22.21"
   },
   "allowScripts": {
-    "workerd@1.20260921.1": true,
     "esbuild@0.28.2": true,
     "esbuild@0.28.1": true
   }

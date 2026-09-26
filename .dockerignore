@@ -6,8 +6,6 @@ coverage
 docs
 .hermes
 .omh
-.wrangler
-.dev.vars
 .env
 .env.*
 !.env.example

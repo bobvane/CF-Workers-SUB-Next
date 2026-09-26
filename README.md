@@ -1,12 +1,11 @@
 # CF-Workers-SUB-Next
 
-Cloudflare Native 订阅管理与配置生成平台的 V2 实现（v2.28.4）。
+订阅聚合与配置生成平台的 V2 实现（v2.30.0）。
 
-把机场订阅聚合、清洗、解析，并按 mihomo / sing-box / shadowrocket 等格式在线生成客户端可用的配置。运行在 Cloudflare Workers 上，免费额度内零成本运营，无需 VPS / Docker / 本地数据库。
+把机场订阅聚合、清洗、解析，并按 mihomo / sing-box / shadowrocket 等格式在线生成客户端可用的配置。以 **Docker 容器**运行（NAS / VPS / 任意 x86_64 Linux），数据落本机 SQLite，不依赖任何第三方托管服务。
 
-[![CI workflow](https://img.shields.io/badge/CI-通过-green)]()
-![Version](https://img.shields.io/badge/版本-2.28.4-blue)
-![Tests](https://img.shields.io/badge/测试-475%20passed-green)
+![Version](https://img.shields.io/badge/版本-2.30.0-blue)
+![Tests](https://img.shields.io/badge/测试-487%20passed-green)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
@@ -27,21 +26,24 @@ Cloudflare Native 订阅管理与配置生成平台的 V2 实现（v2.28.4）。
 /sub/:format/:token 供客户端直接订阅
 ```
 
-## 快速部署
+## 快速部署（Docker）
 
-1. Fork / 克隆仓库，创建 KV 命名空间（绑定到 `DATABASE`）
-2. 配置环境变量：`ADMIN_PASSWORD`（必配）、`SESSION_SECRET`、`GITHUB_TOKEN`（可选）
-3. 部署：`npm install && npm run deploy`
+镜像由 GitHub Actions 构建并发布到 GHCR，**部署端不需要构建**，拉下来就能跑：
 
 ```bash
-git clone https://github.com/bobvane/CF-Workers-SUB-Next
-cd CF-Workers-SUB-Next
-wrangler kv:namespace create DATABASE    # 把返回的 id 填进 wrangler.toml
-wrangler secret put ADMIN_PASSWORD       # 管理后台登录密码
-npm install && npm run deploy
+mkdir -p /vol1/1000/Docker/cf-sub-next && cd /vol1/1000/Docker/cf-sub-next
+# 1) 放好 docker-compose.yml（仓库根目录那份）
+# 2) 建 .env，至少填 ADMIN_PASSWORD（参考 .env.example）
+docker compose pull
+docker compose up -d
 ```
 
-部署后访问 Worker 域名，用 `admin` + `ADMIN_PASSWORD` 登录。完整说明见 [11 部署](./docs/11_DEPLOYMENT.md)。
+- 默认端口 **20130**，数据落在挂载目录（SQLite 单文件，**备份＝复制这个目录**）
+- 默认监听 `0.0.0.0`，走 http 即可；要外部访问可 `tailscale serve --http=80 http://127.0.0.1:20130`
+- 首次访问用 `admin` + `ADMIN_PASSWORD` 登录，登录后可在设置页改密码
+- 容器出网默认走旁路由代理（compose 里已配 `NODE_USE_ENV_PROXY=1`）。**这一项不要删**：Node 内置 fetch 不认 `HTTP_PROXY`，删了以后 server 字段填域名的节点解析不到 IP，会掉进「其他」组
+
+完整部署说明见 [11 部署](./docs/11_DEPLOYMENT.md) 与 NAS 落地记录 `docs/16_NAS_DEPLOY.md`（后者仅本地）。
 
 ## 功能特性
 
@@ -53,7 +55,7 @@ npm install && npm run deploy
 - **多格式输出**：mihomo / sing-box / shadowrocket / v2ray / v2rayN / nekoray，不支持的协议自动跳过
 - **DNS 防泄露**：生成配置内置「国内域名→国内 DoH / 国外域名→国外 DoH」分流 + fake-ip 全接管 + 严格路由；若经 OpenClash 导入，请在面板关闭「自定义上游 DNS 服务器」以免覆盖订阅 DNS 段
 - **内置管理后台**：仪表盘 / 订阅 / 节点 / 规则 / 输出 / 设置，自带鉴权
-- **CF 用量统计**：绑定最多 3 个 Cloudflare 账户，仪表盘显示今日请求量
+- **Cloudflare 用量统计**：绑定最多 3 个 Cloudflare 账户，仪表盘显示今日请求量（可选功能，与本项目自身部署方式无关）
 
 ## 支持的协议
 
@@ -61,7 +63,7 @@ npm install && npm run deploy
 
 ## API
 
-完整端点清单见 [03 API 规范](./docs/03_API_SPEC.md)。核心：
+核心端点：
 
 | 方法 | 路径 | 说明 | 鉴权 |
 |---|---|---|---|
@@ -77,41 +79,35 @@ npm install && npm run deploy
 
 ## 定时任务
 
+进程内定时器（每分钟检查一次），三个固定时刻：
+
 | 任务 | 触发 | 说明 |
 |---|---|---|
-| 订阅自动更新 | 每小时 Cron（默认北京 07:00） | 拉取全部订阅并预填充 IP 地理缓存 |
-| 规则目录同步 | 每月 1 日 03:00 UTC | 同步 MetaCubeX 最新分类清单 |
-| Geo 重试 | 每分钟 Cron | 批量重查未识别 IP，10 次上限后停止 |
-
-详见 [07 定时任务](./docs/07_SCHEDULER.md)。
+| 订阅自动更新 | 每小时整点 | 拉取全部订阅并预填充 IP 地理缓存 |
+| 规则目录同步 | 每月 1 日 03:00 | 同步 MetaCubeX 最新分类清单 |
+| Geo 重试 | 每分钟 | 批量重查未识别 IP，10 次上限后停止 |
 
 ## 项目结构
 
 ```
 src/
-├── index.ts            # Worker 入口（fetch + scheduled）
+├── server/main.ts      # Node 入口（HTTP + 定时器）
+├── app.ts              # 共享应用层（装配 / 前端响应 / 定时任务）
 ├── api/                # Hono 路由 / 中间件 / 限流
 ├── services/           # 业务服务（auth/订阅/配置/IP地理/CF用量/规则目录）
 ├── parser/             # 12 种协议解析 + 订阅格式检测
 ├── generator/          # mihomo/singbox/shadowrocket/base64 + 序列化
 ├── data/               # 策略组定义 / 国家码 / 格式映射
-├── storage/kv.ts       # KV 仓储层（统一键管理）
+├── storage/
+│   ├── kv.ts           # 存储契约 + 仓储层（统一键管理）
+│   └── sqlite.ts       # SQLite 适配器（node:sqlite 内置）
 ├── models/             # 数据模型
 └── html.js             # 构建生成的前端内嵌（勿手改）
 public/index.html       # 前端单文件源码
 tests/                  # vitest 测试
-docs/                   # 技术文档（见下）
+Dockerfile              # 多阶段构建（构建层跑测试，运行层只有单文件）
+docker-compose.yml      # 部署模板
 ```
-
-## 文档
-
-[00 快速上手](./docs/00_START_HERE.md) → [架构](./docs/01_ARCHITECTURE.md) → [数据模型](./docs/02_DATA_MODEL.md) → [API](./docs/03_API_SPEC.md) → [解析器](./docs/04_PARSER_SPEC.md) → [生成器](./docs/05_GENERATOR_SPEC.md) → [分流规则](./docs/06_RULES_SYSTEM.md) → [定时任务](./docs/07_SCHEDULER.md) → [IP 归属](./docs/08_IP_GEO.md) → [CF 用量](./docs/09_CF_USAGE.md) → [测试](./docs/10_TESTING.md) → [部署](./docs/11_DEPLOYMENT.md) → [安全](./docs/12_SECURITY.md) → [前端](./docs/13_FRONTEND.md) → [路线图](./docs/14_ROADMAP.md)
-
-## 开发文档
-
->`docs/00–14` 是**内部开发文档**（架构/数据模型/API/解析器/生成器/规则/定时/IP 归属/CF 用量/测试/部署/安全/前端/路线图），按项目约定仅保留在本地工作目录、**不上传 GitHub**。公开读者以本 README 为准。
-
-本 README 已内嵌了供外部使用的最小集：快速部署、功能特性、API 摘要、结构、定时任务、开发命令。
 
 ## 开发与测试
 
@@ -119,9 +115,9 @@ docs/                   # 技术文档（见下）
 npm install
 npm run typecheck   # tsc --noEmit
 npm run lint        # eslint
-npm test            # vitest run（475 项）
-npm run build       # build:html + typecheck
-npm run deploy      # build + wrangler deploy
+npm test            # vitest run（487 项）
+npm run build:server  # 打单文件产物 dist/server.mjs
+npm run dev         # 打产物并本地启动（默认 :20130）
 ```
 
 ## License

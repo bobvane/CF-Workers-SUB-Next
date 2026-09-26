@@ -1,6 +1,6 @@
 /**
- * 共享应用层：Workers 入口（src/index.ts）与 Node 入口（src/server/main.ts）共用。
- * 两条运行时的装配、前端响应、定时任务逻辑只有这一份，避免双入口漂移。
+ * 共享应用层：Node 入口（src/server/main.ts）与测试共用。
+ * 应用装配、前端响应、定时任务的逻辑只有这一份。
  */
 
 import { Hono } from 'hono';
@@ -15,7 +15,7 @@ import { fetchSubscription } from '@/engine/fetcher';
 import { CleanRule } from '@/models/clean-rule';
 import HTML from '@/html';
 
-/** 运行时配置：Workers 来自 env 绑定，Node 来自 process.env */
+/** 运行时配置：来自 process.env（容器环境变量） */
 export interface Env {
   ADMIN_PASSWORD?: string;
   SESSION_SECRET?: string;
@@ -25,7 +25,7 @@ export interface Env {
 
 /**
  * 执行上下文：应用层只需要 waitUntil。
- * Workers 传原生 ExecutionContext；Node 入口传等价 shim —— Hono v4 的 c.executionCtx
+ * 入口传入等价 shim —— Hono v4 的 c.executionCtx
  * getter 在缺第三参时是 throw 而非返回 undefined，`?.` 防不住，必须实打实传进来。
  */
 export interface ExecutionContextLike {

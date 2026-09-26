@@ -70,7 +70,7 @@ npm run build     # 构建（含前端内嵌）
 - 模块化，禁止巨型单文件
 - 禁止硬编码敏感信息（API Key、Token 等）
 - 遵循架构分层（API → Service → Repository → Storage）
-- 敏感信息统一存 Cloudflare Secrets
+- 敏感信息统一走环境变量（`.env`），不入库
 
 ## 🏗️ 架构分层
 
@@ -91,8 +91,8 @@ src/
 ├── generator/     # 配置生成层（mihomo/singbox/shadowrocket/base64）
 ├── models/        # 数据模型
 ├── data/          # 静态规则数据
-├── storage/       # 数据访问层（KV 仓储）
-├── index.ts       # Worker 入口
+├── storage/       # 数据访问层（KV 契约 + SQLite 适配）
+├── server/main.ts # Node 入口（HTTP + 定时器）
 └── meta.ts        # 项目元信息
 ```
 
