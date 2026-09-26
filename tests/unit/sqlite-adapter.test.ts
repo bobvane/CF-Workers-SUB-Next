@@ -77,7 +77,7 @@ describe('SqliteAdapter', () => {
     const repos = createRepositories(kv);
     const sub = await repos.subscriptions.create({ name: 'n', url: 'https://example.com/sub' });
     expect((await repos.subscriptions.list()).map((s) => s.id)).toEqual([sub.id]);
-    await repos.settings.set('sub_auto_update_hour', '7');
-    expect(await repos.settings.get('sub_auto_update_hour')).toBe('7');
+    await repos.settings.set('sub_update_interval', '7');
+    expect(await repos.settings.get('sub_update_interval')).toBe('7');
   });
 });

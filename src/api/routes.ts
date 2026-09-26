@@ -750,27 +750,27 @@ export function createApp(deps: AppDeps): Hono {
 
   app.get('/api/settings', requireAuth(auth), async (c) => {
     const appName = await repos.settings.get('app_name');
-    const subHour = await repos.settings.get('sub_auto_update_hour');
+    const intervalRaw = await repos.settings.get('sub_update_interval');
     return c.json({
       success: true,
       data: {
         app_name: appName ?? 'SUB-Aggregation',
-        sub_auto_update_hour: subHour !== null ? parseInt(subHour, 10) : 7,
+        sub_update_interval: intervalRaw !== null ? parseInt(intervalRaw, 10) : 24,
       },
     });
   });
 
   app.put('/api/settings', requireAuth(auth), async (c) => {
-    const body = await readBody<{ app_name?: string; sub_auto_update_hour?: number }>(c);
+    const body = await readBody<{ app_name?: string; sub_update_interval?: number }>(c);
     if (body.app_name) {
       await repos.settings.set('app_name', body.app_name);
     }
-    if (body.sub_auto_update_hour !== undefined) {
-      const h = Number(body.sub_auto_update_hour);
-      if (!Number.isInteger(h) || h < 0 || h > 23) {
-        return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: '更新时间须为 0-23 的整数（北京时间）' } }, 400);
+    if (body.sub_update_interval !== undefined) {
+      const h = Number(body.sub_update_interval);
+      if (!Number.isInteger(h) || h < 0 || h > 24) {
+        return c.json({ success: false, error: { code: 'INVALID_PARAMETER', message: '自动更新间隔须为 0-24 的整数（小时，0 = 不更新）' } }, 400);
       }
-      await repos.settings.set('sub_auto_update_hour', String(h));
+      await repos.settings.set('sub_update_interval', String(h));
     }
     return c.json({ success: true });
   });

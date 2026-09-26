@@ -175,7 +175,18 @@ export async function handleHtml(request: Request): Promise<Response | null> {
   return new Response(HTML, { headers });
 }
 
-/** 定时任务：每月 1 号 03:00 UTC 规则目录同步；每天按用户设定时间(默认北京时间07:00)自动更新全部订阅 */
+/**
+ * 订阅自动更新是否到点。
+ * 间隔单位小时，取值 1-24；0 或非法值 = 不更新。
+ * 判定按整点 tick 做，留 1 分钟余量：否则 24 小时的间隔每逢整点会差几毫秒，
+ * 天天空过一次、顺延成 25 小时并持续漂移。
+ */
+export function isSubAutoUpdateDue(intervalHours: number, lastAtMs: number, nowMs: number): boolean {
+  if (!Number.isInteger(intervalHours) || intervalHours < 1 || intervalHours > 24) return false;
+  return nowMs - lastAtMs >= intervalHours * 3_600_000 - 60_000;
+}
+
+/** 定时任务：每月 1 号 03:00 UTC 规则目录同步；按用户设定间隔（默认 24 小时）自动更新全部订阅 */
 export async function runScheduled(
   cron: string,
   scheduledTime: number,
@@ -248,13 +259,13 @@ export async function runScheduled(
     return;
   }
 
-  // 每日订阅自动更新（时间由设置页 sub_auto_update_hour 控制，北京时间）
-  const hourSetting = await repos.settings.get('sub_auto_update_hour');
-  const hour = hourSetting !== null ? parseInt(hourSetting, 10) : 7;
-  if (Number.isNaN(hour) || hour < 0 || hour > 23) return;
-  // UTC 时间 = 北京时间 - 8
-  const utcHourNow = scheduledTime ? new Date(scheduledTime).getUTCHours() : new Date().getUTCHours();
-  if (utcHourNow !== ((hour - 8 + 24) % 24)) return;
+  // 订阅自动更新（设置页 sub_update_interval：间隔小时数 1-24，0 = 不更新，默认 24）
+  // v2.31.2：由「每天固定时刻」改为「每隔 N 小时」，时间戳落 sub_update_last_at
+  const now = scheduledTime || Date.now();
+  const parsedInterval = Number.parseInt((await repos.settings.get('sub_update_interval')) ?? '', 10);
+  const interval = Number.isInteger(parsedInterval) ? parsedInterval : 24;
+  const lastAt = Number((await repos.settings.get('sub_update_last_at')) ?? 0);
+  if (!isSubAutoUpdateDue(interval, lastAt, now)) return;
 
   const subs = createSubscriptionService(
     repos,
@@ -280,6 +291,8 @@ export async function runScheduled(
       results.push(`${s.name}:失败(${(e as Error).message})`);
     }
   }
+  // 记下本次自动更新的时刻（无论个别订阅成败），下一次间隔从这个点开始算
+  await repos.settings.set('sub_update_last_at', String(now));
   // 主动预填充 IP 地理缓存：全部订阅更新后，批量查一遍 server 归属地
   // v2.25.0：cache 统一走 repos.settings（setting: 前缀，与手动更新/前端统计同口径）；
   //          预热后若有未识别 IP 则激活 GeoRetry 门闩，唤醒每分钟 cron 继续重查
@@ -297,5 +310,5 @@ export async function runScheduled(
   } catch (e) {
     console.warn(`[SubAutoUpdate] IP地理预填充失败(不阻塞): ${(e as Error).message}`);
   }
-  console.warn(`[SubAutoUpdate] 每日订阅更新完成: ${results.join(', ')}`);
+  console.warn(`[SubAutoUpdate] 订阅自动更新完成: ${results.join(', ')}`);
 }

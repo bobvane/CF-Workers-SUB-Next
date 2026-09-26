@@ -501,8 +501,9 @@ tbody tr:hover { background: var(--accent-soft); }
         <input id="settingAppName" placeholder="SUB-Aggregation">
       </div>
       <div class="form-group">
-        <label>订阅自动更新时间（北京时间 0-23 点整，默认每天 7:00）</label>
-        <input id="settingSubUpdateHour" type="number" min="0" max="23" placeholder="7">
+        <label>订阅自动更新间隔（小时，1-24；0 = 不更新。默认 24）</label>
+        <input id="settingSubUpdateInterval" type="number" min="0" max="24" placeholder="24">
+        <div class="hint" style="margin-top:6px;color:var(--muted-foreground);font-size:12px">每隔设定的小时数自动拉取全部订阅（按整点判断，实际误差不超过 1 小时）</div>
       </div>
       <button class="btn btn-primary mt-12" onclick="saveSettings()">💾 保存</button>
     </div>
@@ -1792,7 +1793,7 @@ async function loadSettings() {
   try {
     const data = await api('/settings');
     document.getElementById('settingAppName').value = data.data?.app_name || '';
-    document.getElementById('settingSubUpdateHour').value = data.data?.sub_auto_update_hour ?? 7;
+    document.getElementById('settingSubUpdateInterval').value = data.data?.sub_update_interval ?? 24;
   } catch {}
   loadCatalogStatus();
   loadCFAccounts();
@@ -1872,11 +1873,11 @@ async function deleteCFAccount(id) {
 
 async function saveSettings() {
   const appName = document.getElementById('settingAppName').value.trim();
-  const hourRaw = document.getElementById('settingSubUpdateHour').value.trim();
-  const subHour = hourRaw === '' ? 7 : parseInt(hourRaw, 10);
-  if (Number.isNaN(subHour) || subHour < 0 || subHour > 23) { toast('更新时间须为 0-23 的整数', 'error'); return; }
+  const intervalRaw = document.getElementById('settingSubUpdateInterval').value.trim();
+  const subInterval = intervalRaw === '' ? 24 : parseInt(intervalRaw, 10);
+  if (Number.isNaN(subInterval) || subInterval < 0 || subInterval > 24) { toast('自动更新间隔须为 0-24 的整数（0 = 不更新）', 'error'); return; }
   try {
-    await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName, sub_auto_update_hour: subHour }) });
+    await api('/settings', { method: 'PUT', body: JSON.stringify({ app_name: appName, sub_update_interval: subInterval }) });
     toast('设置已保存');
     // 立即刷新页面标题
     document.getElementById('sidebarLogo').textContent = appName;
