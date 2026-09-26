@@ -1,14 +1,24 @@
 # NAS 部署参考配置
 #
-# 镜像由 GitHub Actions 构建并推到 GHCR，NAS 只负责 pull：
+# 镜像由 GitHub Actions 构建，同时推到 GHCR 和 Docker Hub，NAS 只负责 pull：
 #   1. 把本文件放到 /vol1/1000/Docker/sub-aggregation/
 #   2. 同目录放一个 .env（照 .env.example 填）
 #   3. docker compose pull && docker compose up -d
 #
+# 镜像用哪个？两份内容完全一样，选一个填进下面的 image：
+#   - Docker Hub（推荐）：把 <你的DockerHub用户名> 换成你自己的 Docker Hub 用户名。
+#     飞牛 fnOS 的「镜像可更新」检测只认 Docker Hub，用这份才会提示升级。
+#     注意：CI 默认只推 GHCR，要推 Docker Hub 得先在 GitHub 仓库配
+#     DOCKERHUB_USERNAME / DOCKERHUB_TOKEN 两个 secret。
+#   - GHCR：换成 ghcr.io/<你的GitHub用户名>/sub-aggregation:latest，无需任何配置，
+#     但 fnOS 检测不到它的更新。
+#
 # 数据落在同目录的 ./data/app.db（SQLite 单文件），备份就是复制这个文件。
 services:
   sub-aggregation:
-    image: ghcr.io/bobvane/sub-aggregation:latest
+    # ← 换成 docker.io/<你的DockerHub用户名>/sub-aggregation:latest
+    #    或 ghcr.io/<你的GitHub用户名>/sub-aggregation:latest
+    image: docker.io/<你的DockerHub用户名>/sub-aggregation:latest
     container_name: sub-aggregation
     restart: unless-stopped
     ports:

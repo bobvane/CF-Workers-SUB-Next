@@ -1,11 +1,11 @@
 # SUB-Aggregation
 
-订阅聚合与配置生成平台的 V2 实现（v2.30.0）。
+订阅聚合与配置生成平台的 V2 实现（v2.31.1）。
 
 把机场订阅聚合、清洗、解析，并按 mihomo / sing-box / shadowrocket 等格式在线生成客户端可用的配置。以 **Docker 容器**运行（NAS / VPS / 任意 x86_64 Linux），数据落本机 SQLite，不依赖任何第三方托管服务。
 
-![Version](https://img.shields.io/badge/版本-2.30.0-blue)
-![Tests](https://img.shields.io/badge/测试-487%20passed-green)
+![Version](https://img.shields.io/badge/版本-2.31.1-blue)
+![Tests](https://img.shields.io/badge/测试-495%20passed-green)
 ![License](https://img.shields.io/badge/License-MIT-green)
 
 ---
@@ -28,15 +28,20 @@
 
 ## 快速部署（Docker）
 
-镜像由 GitHub Actions 构建并发布到 GHCR，**部署端不需要构建**，拉下来就能跑：
+镜像由 GitHub Actions 构建，同时发布到 **GHCR** 和 **Docker Hub**（两份内容相同），**部署端不需要构建**，拉下来就能跑：
 
 ```bash
 mkdir -p /vol1/1000/Docker/sub-aggregation && cd /vol1/1000/Docker/sub-aggregation
 # 1) 放好 docker-compose.yml（仓库根目录那份）
+#    并把 image 那行的 <你的DockerHub用户名>（或 GHCR 那行的 <你的GitHub用户名>）换成自己的
 # 2) 建 .env，至少填 ADMIN_PASSWORD（参考 .env.example）
 docker compose pull
 docker compose up -d
 ```
+
+> **选哪个 registry**：飞牛 fnOS 的「镜像可更新」提示只认 **Docker Hub**，想让它检测到升级就用 Docker Hub 那份。
+> Docker Hub 那份要 CI 推得上去，需先在仓库配 `DOCKERHUB_USERNAME` / `DOCKERHUB_TOKEN` 两个 secret；
+> 不配也能构建，只是不会有 Docker Hub 镜像，此时用 GHCR 那份（`ghcr.io/<你的GitHub用户名>/sub-aggregation`）。
 
 - 默认端口 **20130**，数据落在挂载目录（SQLite 单文件，**备份＝复制这个目录**）
 - 默认监听 `0.0.0.0`，走 http 即可；要外部访问可 `tailscale serve --http=80 http://127.0.0.1:20130`

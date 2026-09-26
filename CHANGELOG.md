@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.31.1] - 2026-09-26
+
+### 变更：部署模板与文档改为通用占位符
+- `docker-compose.yml` 的 `image` 改为 `docker.io/<你的DockerHub用户名>/sub-aggregation:latest`，
+  并注明另一份 GHCR 镜像怎么写 —— 直接抄走的人必须自己填一次，不会拿着别人的镜像名跑。
+- README / 部署文档同步说明「两份镜像内容一样、Docker Hub 那份才会被 NAS 检测到更新」，
+  顺手把 README 里过期的版本号与测试数徽章改对（2.30.0/487 → 2.31.1/495）。
+- 无代码改动，运行行为不变。
+
 ## [2.31.0] - 2026-09-26
 
 ### 新增：镜像可同时推送到 Docker Hub（给 NAS 的升级检测用）
