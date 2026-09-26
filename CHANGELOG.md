@@ -2,6 +2,15 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.31.0] - 2026-09-26
+
+### 修复：镜像 tag 不再带 buildx 的 `unknown/unknown` 证明条目
+- buildx 默认会给镜像加 provenance 证明清单，于是 `latest` 指向的不是单一镜像，而是一个 index：
+  `linux/amd64` + 一个 `unknown/unknown` 的证明条目。
+- 一些第三方 registry / NAS 的镜像更新检测解析这种 index 会出问题（飞牛 NAS 检测不到本镜像更新即为一例）。
+- 改为 `provenance: false` + `sbom: false`：`latest` 回归单一 `linux/amd64` 镜像，语义干净，推送也更快。
+- 运行行为、镜像内容、体积均无变化。
+
 ## [2.30.9] - 2026-09-26
 
 ### 修复：页面左下角的版本升级提示不再出现

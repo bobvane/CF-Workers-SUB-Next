@@ -93,6 +93,11 @@ jobs:
           context: .
           platforms: linux/amd64
           push: true
+          # 关掉 buildx 默认的 provenance 证明清单：否则 latest 会变成一个 index，
+          # 里面除了 linux/amd64 还多一个 unknown/unknown 的证明条目，
+          # 一些第三方 registry/UI（如 NAS 的镜像更新检测）解析这种 index 会出错。
+          provenance: false
+          sbom: false
           cache-from: type=gha
           cache-to: type=gha,mode=max
           tags: |
