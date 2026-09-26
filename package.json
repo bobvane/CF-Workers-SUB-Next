@@ -1,6 +1,6 @@
 {
   "name": "sub-aggregation",
-  "version": "2.30.6",
+  "version": "2.30.7",
   "description": "SUB-Aggregation V2 - 订阅聚合与配置生成平台（NAS / Docker 部署）",
   "type": "module",
   "private": true,
@@ -19,7 +19,7 @@
   "dependencies": {
     "@hono/node-server": "^2.1.1",
     "hono": "^4.13.8",
-    "zod": "^3"
+    "yaml": "^2"
   },
   "devDependencies": {
     "@types/node": "^22",
@@ -31,8 +31,7 @@
     "prettier": "^3",
     "typescript": "^5",
     "vite": "^7.3.6",
-    "vitest": "^5",
-    "yaml": "^2"
+    "vitest": "^5"
   },
   "overrides": {
     "js-yaml": "^4.3.2"

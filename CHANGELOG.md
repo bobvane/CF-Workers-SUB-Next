@@ -2,6 +2,17 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.30.7] - 2026-09-26
+
+### 精简（移除死代码 / 修正依赖声明）
+- 移除从未被 import 的运行时依赖 **`zod`**（全仓 0 处引用）。
+- **`yaml` 从 devDependencies 移到 dependencies**：`src/parser/clash.ts` 与 `src/generator/yaml-serializer.ts` 都在运行时 import 它，声明在 dev 里是隐患（`npm ci --omit=dev` 后构建会失败）。
+- 删除死文件 `src/data/rule-format-mapping.ts`（sing-box `.srs` URL 工具，全仓 0 处引用，功能已由 `rule-providers.ts` 承担）。
+
+### 实测记录（本次未改动代码，仅确认现状）
+- 单进程启动到首个响应：**113 ms**；228 节点生成完整 mihomo 配置：**14 ms**；`nodes.getAll()` 0.4 ms。
+- 镜像体积 58.9 MB（压缩），其中本项目代码仅 **176 KB（0.3%）**，其余全是 Node 24 运行时 —— 体积没有可压缩空间，`--minify` 只能省 44 KB（-0.07%），且会让线上 500 的堆栈不可读，故不做。
+
 ## [2.30.6] - 2026-09-26
 
 ### 改进
