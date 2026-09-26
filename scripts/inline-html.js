@@ -1,7 +1,7 @@
 /**
  * scripts/inline-html.js
  * 构建脚本：将 public/index.html 内联为 src/html.js ES module
- * 用于 Cloudflare Workers 直接返回前端 HTML
+ * 把前端 HTML 内联成 src/html.js，供入口直接返回（不用静态托管）
  */
 
 import { readFileSync, writeFileSync } from 'node:fs';

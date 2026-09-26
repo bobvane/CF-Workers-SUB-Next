@@ -18,19 +18,6 @@ import {
   createCatalogMeta,
 } from '@/models/rule-catalog';
 
-/** CF KV 批量读单次上限（官方文档：单次最多 100 键） */
-const KV_BATCH_LIMIT = 100;
-
-/**
- * 边缘缓存秒数（CF KV 原生 cacheTtl，官方最小 30，默认 60）。
- * 写少读多的键靠它省掉回源冷读延迟；CF 在写入时会重新校验缓存，不会读到旧值。
- * 例外见 KV_UNCACHED_PREFIXES。
- */
-const KV_CACHE_TTL = 60;
-
-/** 不参与边缘缓存的键：会话吊销与密码版本必须即时生效 */
-const KV_UNCACHED_PREFIXES = ['session:', 'setting:password_version'];
-
 export interface KVStorage {
   // 通用 KV 操作
   get(key: string): Promise<string | null>;
@@ -39,78 +26,6 @@ export interface KVStorage {
   put(key: string, value: string, options?: { expirationTtl?: number }): Promise<void>;
   delete(key: string): Promise<void>;
   list(prefix: string): Promise<{ key: string }[]>;
-}
-
-/**
- * Cloudflare KV 命名空间适配器
- */
-export class KvAdapter implements KVStorage {
-  constructor(private readonly ns: KVNamespace) {}
-
-  /** 边缘缓存选项：会话类键不缓存，其余走 cacheTtl 减少冷读 */
-  private cacheOpts(keys: string[]): { cacheTtl?: number } {
-    const uncached = keys.some((k) => KV_UNCACHED_PREFIXES.some((p) => k.startsWith(p)));
-    return uncached ? {} : { cacheTtl: KV_CACHE_TTL };
-  }
-
-  async get(key: string): Promise<string | null> {
-    try {
-      return await this.ns.get(key, this.cacheOpts([key]));
-    } catch (err) {
-      throw new Error(`KV get failed for key ${key}: ${(err as Error).message}`);
-    }
-  }
-
-  /** 批量读取：1 次请求替代 N 次串行 get（CF KV 单次上限 100 键） */
-  async getMany(keys: string[]): Promise<Map<string, string | null>> {
-    const out = new Map<string, string | null>();
-    if (keys.length === 0) return out;
-    try {
-      for (let i = 0; i < keys.length; i += KV_BATCH_LIMIT) {
-        const chunk = keys.slice(i, i + KV_BATCH_LIMIT);
-        const res = await this.ns.get(chunk, this.cacheOpts(chunk));
-        for (const key of chunk) out.set(key, res.get(key) ?? null);
-      }
-      return out;
-    } catch (err) {
-      throw new Error(`KV batch get failed (${keys.length} keys): ${(err as Error).message}`);
-    }
-  }
-
-  async put(
-    key: string,
-    value: string,
-    options?: { expirationTtl?: number }
-  ): Promise<void> {
-    try {
-      await this.ns.put(key, value, options);
-    } catch (err) {
-      throw new Error(`KV put failed for key ${key}: ${(err as Error).message}`);
-    }
-  }
-
-  async delete(key: string): Promise<void> {
-    try {
-      await this.ns.delete(key);
-    } catch (err) {
-      throw new Error(`KV delete failed for key ${key}: ${(err as Error).message}`);
-    }
-  }
-
-  async list(prefix: string): Promise<{ key: string }[]> {
-    try {
-      const keys: { key: string }[] = [];
-      let cursor: string | undefined;
-      do {
-        const page = await this.ns.list({ prefix, cursor });
-        for (const k of page.keys) keys.push({ key: k.name });
-        cursor = page.list_complete ? undefined : page.cursor;
-      } while (cursor);
-      return keys;
-    } catch (err) {
-      throw new Error(`KV list failed for prefix ${prefix}: ${(err as Error).message}`);
-    }
-  }
 }
 
 /**

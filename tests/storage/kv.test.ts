@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import {
-  KvAdapter,
   MemoryKvAdapter,
   KvSubscriptionRepository,
   KvNodeRepository,
@@ -60,56 +59,6 @@ describe('MemoryKvAdapter', () => {
 
   it('should return empty map for empty key list', async () => {
     expect((await kv.getMany([])).size).toBe(0);
-  });
-});
-
-describe('KvAdapter 批量读分批', () => {
-  /** 最小假 KVNamespace：记录每次批量读的键数 */
-  const fakeNs = (store: Record<string, string>, calls: string[][]) =>
-    ({
-      async get(key: string | string[]) {
-        if (Array.isArray(key)) {
-          calls.push(key);
-          return new Map(key.map((k) => [k, store[k] ?? null]));
-        }
-        return store[key] ?? null;
-      },
-    }) as unknown as KVNamespace;
-
-  it('should chunk more than 100 keys', async () => {
-    const store: Record<string, string> = {};
-    for (let i = 0; i < 250; i++) store[`k${i}`] = `v${i}`;
-    const calls: string[][] = [];
-    const res = await new KvAdapter(fakeNs(store, calls)).getMany(Object.keys(store));
-    expect(res.size).toBe(250);
-    expect(res.get('k249')).toBe('v249');
-    expect(calls.map((c) => c.length)).toEqual([100, 100, 50]);
-  });
-
-  it('should not touch KV for an empty key list', async () => {
-    const calls: string[][] = [];
-    const res = await new KvAdapter(fakeNs({}, calls)).getMany([]);
-    expect(res.size).toBe(0);
-    expect(calls.length).toBe(0);
-  });
-
-  it('should pass cacheTtl except for session/password-version keys', async () => {
-    const opts: Array<{ cacheTtl?: number } | undefined> = [];
-    const ns = {
-      async get(key: string | string[], options?: { cacheTtl?: number }) {
-        opts.push(options);
-        return Array.isArray(key) ? new Map(key.map((k) => [k, null])) : null;
-      },
-    } as unknown as KVNamespace;
-    const kv = new KvAdapter(ns);
-    await kv.get('subscription:sub001');
-    await kv.get('session:abc');
-    await kv.get('setting:password_version');
-    await kv.getMany(['nodes:sub001']);
-    expect(opts[0]?.cacheTtl).toBe(60);
-    expect(opts[1]?.cacheTtl).toBeUndefined();
-    expect(opts[2]?.cacheTtl).toBeUndefined();
-    expect(opts[3]?.cacheTtl).toBe(60);
   });
 });
 

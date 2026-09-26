@@ -1,17 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import worker, { type Env } from '@/index';
+import { handleHtml } from '@/app';
 
 /**
- * Worker 入口 - 前端 HTML 缓存
- * `/` 在 buildApp 之前直接返回，因此不需要 mock KV。
+ * 前端 HTML 响应缓存（ETag / 304）
+ * `/` 由 handleHtml 直接应答，不经过应用装配，因此不需要 KV。
  */
-describe('Worker / 前端 HTML 缓存', () => {
-  const call = (headers?: Record<string, string>) =>
-    worker.fetch(
-      new Request('https://example.com/', { headers }),
-      {} as Env,
-      {} as ExecutionContext
-    );
+describe('前端 HTML 缓存', () => {
+  const call = async (headers?: Record<string, string>) => {
+    const res = await handleHtml(new Request('https://example.com/', { headers }));
+    if (!res) throw new Error('handleHtml 未对 / 返回响应');
+    return res;
+  };
 
   it('应返回 200 且带内容哈希 ETag 与 Cache-Control', async () => {
     const res = await call();

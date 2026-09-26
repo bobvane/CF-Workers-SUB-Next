@@ -25,7 +25,7 @@ import { RuleCatalogMeta } from '@/models/rule-catalog';
 
 /**
  * 恒定时间字符串比较（防时序侧信道）。
- * Cloudflare Workers 无 crypto.subtle（仅 CryptoJS/HMAC），
+ * 不用 crypto.subtle.timingSafeEqual（各运行时支持不一），
  * 自实现：先比对长度避免泄漏，再逐字节异或累加，时间与内容无关。
  * 用于比较长期有效的订阅访问密钥。
  */
@@ -57,7 +57,7 @@ export interface AppDeps {
 export function createApp(deps: AppDeps): Hono {
   const app = new Hono();
   const { repos, auth, subscriptions, config } = deps;
-  // 规则目录同步服务：默认用 Workers 全局 fetch 拉 GitHub；测试可注入 mock
+  // 规则目录同步服务：默认用全局 fetch 拉 GitHub；测试可注入 mock
   const catalogSync: CatalogSyncService =
     deps.catalogSync ??
     createCatalogSyncService(repos, (url) => fetch(url).then((r) => {

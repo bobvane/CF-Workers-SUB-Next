@@ -2,6 +2,29 @@
 
 本项目遵循 [Semantic Versioning](https://semver.org/)。
 
+## [2.30.0] - 2026-09-26
+
+### 项目转为 Docker 专用：清掉全部 Cloudflare 部署残留
+
+Cloudflare 侧已于 2026-09-24 停止使用。本次把仓库里仍指向 Workers 的部分全部移除，只保留 Docker / NAS 一条部署路径。
+
+**删除**
+- `wrangler.toml`、`.dev.vars.example`
+- `src/index.ts`（Workers 入口）与 `KvAdapter`（CF KV 适配器），以及 KvAdapter 专用测试
+- CI 里的 `deploy` job（原为仅手动触发）
+
+**改动**
+- `package.json`：去掉 `wrangler` / `@cloudflare/workers-types` 依赖与 `deploy` 脚本；`dev` 改为本地跑 Node 产物；`engines` 提到 `>=22.21`（`NODE_USE_ENV_PROXY` 的下限）
+- `tsconfig.json`：`types` 只留 `node`（不再需要 workers-types）
+- CI 只管测试与发版；镜像构建仍由 `build-image.yml` 负责
+- README / CONTRIBUTING / SECURITY 按 Docker 版重写；代码注释与元信息里残留的 Workers 语境改为中性表述
+
+**顺带修掉两处类型问题**（去掉 workers-types 后暴露）
+- `src/engine/fetcher.ts`：`RequestInfo` → `string | URL | Request`
+- `src/server/main.ts`：`ExecutionContext` 改为从 `hono` 导入
+
+**测试**：490 → 487（移除的 3 项是 KvAdapter 专用；前端 HTML 缓存测试改为直测 `handleHtml`，覆盖未减）。
+
 ## [2.29.9] - 2026-09-26
 
 ### 部署配置：容器出网走代理（修域名型节点查不出国别）

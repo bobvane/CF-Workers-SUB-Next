@@ -4,11 +4,11 @@
  */
 export const APP_META = {
   name: 'CF-Workers-SUB-Next',
-  version: '2.29.9',
+  version: '2.30.0',
   repo: 'https://github.com/bobvane/CF-Workers-SUB-Next',
   repoShort: 'bobvane/CF-Workers-SUB-Next',
   author: 'Bob Vane',
-  description: 'Cloudflare Native 订阅管理与配置生成平台',
+  description: '订阅聚合与配置生成平台（NAS / Docker 部署）',
 } as const;
 
 /** 记录一个版本是否比当前版本新（语义化 semver 简单比较） */

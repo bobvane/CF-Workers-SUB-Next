@@ -9,7 +9,7 @@ import { SessionRepository } from '@/storage/kv';
 // ============ 密码哈希 ============
 
 /**
- * 计算 PBKDF2-SHA256 哈希（Web Crypto API，兼容 Cloudflare Workers）
+ * 计算 PBKDF2-SHA256 哈希（Web Crypto API）
  */
 export async function hashPassword(password: string, salt: string): Promise<string> {
   const encoder = new TextEncoder();
